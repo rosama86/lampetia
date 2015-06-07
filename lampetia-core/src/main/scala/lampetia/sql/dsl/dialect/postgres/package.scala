@@ -1,6 +1,6 @@
 package lampetia.sql.dsl.dialect
 
-import lampetia.model.Property
+import lampetia.model.{Property, Models}
 import lampetia.sql.ast._
 import lampetia.sql.syntax.{ConnectionSourceFactories, JdbcCodec}
 
@@ -8,7 +8,9 @@ import lampetia.sql.syntax.{ConnectionSourceFactories, JdbcCodec}
  * @author Hossam Karim
  */
 
-package object postgres extends PgDsl with JdbcCodec with ConnectionSourceFactories {
+package object postgres extends PgDsl with JdbcCodec with ConnectionSourceFactories with Models {
+
+  override def defaultSqlType: String = "text"
 
   implicit class Strings(val value: String) extends AnyVal with StringsDsl
 

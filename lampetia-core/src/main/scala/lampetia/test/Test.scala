@@ -1,6 +1,6 @@
 package lampetia.test
 
-import lampetia.model.Model
+import lampetia.model._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -10,26 +10,46 @@ import scala.concurrent.duration.Duration
  */
 
 object Test extends App {
+  import lampetia.sql.dsl.dialect.postgres._
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   case class Person(firstName: String, lastName: String)
 
-  object PersonModel extends Model[Person] {
-    val sqlName = "person"
-    val firstName = property[String]("first_name")
-    val lastName = property[String]("last_name")
-    override val properties = Seq(firstName, lastName)
+  object PersonModel extends Model[Person] with HasData[Person] {
+    type Data = Person
+    val name = "person"
+    object data extends DataModel[Person] {
+
+      val firstName =
+        property[String]("firstName")
+          .set(JsonFeature.name("uuid"))
+
+      val lastName =
+        property[String]("lastName")
+          .set(SqlFeature.name("last_name"))
+          .set(JsonFeature.name("last-name"))
+
+      def properties: Seq[Property[_]] = Seq(firstName, lastName)
+    }
+
+    override def features = Seq(
+      SqlFeature.name("person-table")
+    )
   }
 
-  import lampetia.sql.dsl.dialect.postgres._
-  import scala.concurrent.ExecutionContext.Implicits.global
-  implicit val context: ConnectionSource =
+  println(PersonModel.sqlName)
+
+  PersonModel.properties.foreach(p => println(s"${p.sqlName} => ${p.sqlType}"))
+  PersonModel.properties.foreach(p => println(p.jsonName))
+
+
+  /*implicit val context: ConnectionSource =
     hikari(
       "org.postgresql.ds.PGSimpleDataSource",
       "localhost", 5432, "jeelona", "admin", "admin", 3, 2000)
 
   val f =
     select(1.literal)
-    .from(PersonModel)
     .lifted
     .readSqlIO[Int]
     .run
@@ -37,6 +57,6 @@ object Test extends App {
   f.onFailure { case e => println(e) }
 
   Await.ready(f, Duration.Inf)
-  context.shutdown()
+  context.shutdown()*/
 
 }
