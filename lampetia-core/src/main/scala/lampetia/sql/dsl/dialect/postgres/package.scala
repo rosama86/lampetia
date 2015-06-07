@@ -2,13 +2,13 @@ package lampetia.sql.dsl.dialect
 
 import lampetia.model.Property
 import lampetia.sql.ast._
-import lampetia.sql.syntax.JdbcCodec
+import lampetia.sql.syntax.{ConnectionSourceFactories, JdbcCodec}
 
 /**
  * @author Hossam Karim
  */
 
-package object postgres extends PgDsl with JdbcCodec {
+package object postgres extends PgDsl with JdbcCodec with ConnectionSourceFactories {
 
   implicit class Strings(val value: String) extends AnyVal with StringsDsl
 
@@ -33,7 +33,5 @@ package object postgres extends PgDsl with JdbcCodec {
   implicit class LiftSqlStringImplicits(val context: StringContext) extends AnyVal with LiftSqlString
 
   implicit class LiftSqlIO[A](val io: SqlIO[A]) extends AnyVal with LiftIO[A]
-
-
 
 }

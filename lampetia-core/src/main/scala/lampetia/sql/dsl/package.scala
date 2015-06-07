@@ -2,7 +2,7 @@ package lampetia.sql
 
 import lampetia.model.Property
 import lampetia.sql.ast._
-import lampetia.sql.syntax.JdbcCodec
+import lampetia.sql.syntax.{ConnectionSourceFactories, JdbcCodec}
 
 import scala.language.implicitConversions
 
@@ -10,7 +10,7 @@ import scala.language.implicitConversions
  * @author Hossam Karim
  */
 
-package object dsl extends Dsl with JdbcCodec {
+package object dsl extends Dsl with JdbcCodec with ConnectionSourceFactories {
 
   implicit class Strings(val value: String) extends AnyVal with StringsDsl
 
