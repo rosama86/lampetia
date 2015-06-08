@@ -17,6 +17,7 @@ object Common {
     val playVersion = "2.4.0"
     val logbackVersion = "1.1.2"
     val postgresqlJdbcVersion = "9.4-1201-jdbc41"
+    val h2Version = "1.4.187"
     val hikariVersion = "2.3.7"
   }
 
@@ -42,6 +43,7 @@ object Common {
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
     val playFunctional = "com.typesafe.play" %% "play-functional" % playVersion
     val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion
+    val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
 
     /*val lampetiaDependencies =

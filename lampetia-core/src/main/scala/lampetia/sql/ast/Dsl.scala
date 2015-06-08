@@ -10,6 +10,8 @@ import scala.language.implicitConversions
 
 trait Dsl {
 
+  def Q = this
+
   def ? = ParameterNode
   def surround(operand: Operand) = SurroundNode(operand)
   def typeName(typeName: String) = TypeNode(typeName)

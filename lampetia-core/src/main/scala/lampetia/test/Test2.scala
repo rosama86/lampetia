@@ -1,9 +1,8 @@
 package lampetia.test
 
-import lampetia.model._
-import lampetia.sql.ast.{Operand, Operator}
+import lampetia.model.{HasData, HasRef, HasId, Model}
+import lampetia.sql.ast.{Operator, Operand}
 import shapeless._
-
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -11,20 +10,11 @@ import scala.concurrent.duration.Duration
  * @author Hossam Karim
  */
 
-object Test extends App {
+object Test2 extends App {
 
-  import TestModels._
-  import lampetia.sql.dsl.dialect.postgres
-  import postgres._
+  import lampetia.sql.dsl.dialect.h2._
   import scala.concurrent.ExecutionContext.Implicits.global
-
-
-
-  implicit val context: ConnectionSource =
-    hikari(
-      "org.postgresql.ds.PGSimpleDataSource",
-      "localhost", 5432, "jeelona", "admin", "admin", 3, 2000)
-
+  import TestModels._
   implicit val cid: Consume[PersonId] = consume[String].fmap(PersonId)
   implicit val pid: Produce[PersonId] = a => produce(a.value)
   implicit val cd: Consume[PersonData] = (consume[String] ~ consume[String])(PersonData)
@@ -32,14 +22,12 @@ object Test extends App {
   implicit val ce: Consume[Person] = (consume[PersonId] ~ consume[PersonData])(Person)
   implicit val pe: Produce[Person] = a => produce(a.id) andThen produce(a.data)
 
-  val m = PersonModel
-
   implicit class ModelOps[E](val model: Model[E]) extends AnyVal with ModelSchema[E] with Find[E] {
     def echo: String = "model"
   }
   implicit class Model2Ops[E, Id](
-      val model: Model[E] with
-                 HasId[E, Id] {type Shape = Id::HNil})
+                                   val model: Model[E] with
+                                     HasId[E, Id] {type Shape = Id::HNil})
     extends AnyVal with ModelSchema[E] with Find[E] {
     def echo: String = "model with id"
     def instance(id: Id): E = model.combine(id::HNil)
@@ -86,9 +74,9 @@ object Test extends App {
   }
 
   implicit class Model3Ops[E, Id, R](
-      val model: Model[E] with
-                 HasId[E, Id] with
-                 HasRef[E, R] {type Shape = Id::R::HNil})
+                                      val model: Model[E] with
+                                        HasId[E, Id] with
+                                        HasRef[E, R] {type Shape = Id::R::HNil})
     extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
     def echo: String = "model with id"
     def instance(id: Id, ref: R): E = model.combine(id::ref::HNil)
@@ -102,9 +90,9 @@ object Test extends App {
     }
   }
   implicit class Model4Ops[E, Id, D](
-      val model: Model[E] with
-                 HasId[E, Id] with
-                 HasData[E, D] {type Shape = Id::D::HNil})
+                                      val model: Model[E] with
+                                        HasId[E, Id] with
+                                        HasData[E, D] {type Shape = Id::D::HNil})
     extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
     def echo: String = "model with id with data"
     def instance(id: Id, data: D): E = model.combine(id::data::HNil)
@@ -124,10 +112,10 @@ object Test extends App {
     }
   }
   implicit class Model5Ops[E, Id, D, R](
-      val model: Model[E] with
-                 HasId[E, Id] with
-                 HasRef[E, R] with
-                 HasData[E, D] {type Shape = Id::R::D::HNil})
+                                         val model: Model[E] with
+                                           HasId[E, Id] with
+                                           HasRef[E, R] with
+                                           HasData[E, D] {type Shape = Id::R::D::HNil})
     extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
     def echo: String = "model with id with data with ref"
     def instance(id: Id, ref: R, data: D): E = model.combine(id::ref::data::HNil)
@@ -138,6 +126,11 @@ object Test extends App {
     }
   }
 
+  implicit lazy val context: ConnectionSource = {
+    val ds = new org.h2.jdbcx.JdbcDataSource
+    ds.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
+    connectionSource(ds)
+  }
 
   def run[A](io: SqlIO[A]): Unit = {
     val f = io.run
@@ -146,19 +139,14 @@ object Test extends App {
     Await.ready(f, Duration.Inf)
   }
 
-  println(PersonModel.echo)
-
-
   val p = Person(PersonId("1"), PersonData("a", "b"))
   val s = 'tmp
   val q = for {
     _ <- "create schema tmp".sql.writeSqlIO
     _ <- "create table tmp.person_t(id text, first_name text, last_name text)".sql.writeSqlIO
-    e <- PersonModel.insert(p.data)
-    _ <- PersonModel.update(liftProperty(m.data.firstName) -> "another".bind)(m.id === e.id.bind)
+    _ <- PersonModel.insert(PersonData("a", "b"))
     r <- PersonModel.find
-    _ <- PersonModel.delete
-    _ <- "drop schema tmp cascade".sql.writeSqlIO
+    _ <- "drop schema tmp".sql.writeSqlIO
   } yield r
 
   run(q.transactionally)

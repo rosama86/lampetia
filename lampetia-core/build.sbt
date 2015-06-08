@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   akkaActor,
   playFunctional,
   postgresql,
+  h2,
   hikari)
 
 
