@@ -22,7 +22,7 @@ package object postgres extends PgDsl with JdbcCodec with ConnectionSourceFactor
 
   implicit class Symbols(val symbol: Symbol) extends AnyVal with SymbolsDsl
 
-  implicit class PropertyLifter[A](val property: Property[A]) extends AnyVal with PropertyLifterDsl[A]
+  implicit class PropertyLifter[E, A](val property: Property[E, A]) extends AnyVal with PropertyLifterDsl[E, A]
 
   implicit class StringSqlImplicits(val sqlString: String) extends AnyVal with StringsSql
 

@@ -58,7 +58,7 @@ case class TableIdentifierNode[A](model: Model[A]) extends Operand {
   def leftOuterJoin[B](other: B)(implicit ev: B => Operand): InfixNode = InfixNode(" left outer join ", this, other)
 }
 
-case class ColumnIdentifierNode[A](property: Property[A]) extends Operand {
+case class ColumnIdentifierNode[E, A](property: Property[E, A]) extends Operand {
   val sqlString: String = property.sqlName
 }
 

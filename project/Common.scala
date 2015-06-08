@@ -12,6 +12,7 @@ object Common {
     val jodaTimeVersion = "2.8"
     val jodaConvertVersion = "1.7"
     val ficusVersion = "1.1.1"
+    val shapelessVersion = "2.2.0"
     val akkaVersion = "2.3.9"
     val playVersion = "2.4.0"
     val logbackVersion = "1.1.2"
@@ -36,6 +37,7 @@ object Common {
     val ficus = "net.ceedubs" %% "ficus" % ficusVersion
     val jodaTime = "joda-time" % "joda-time" % jodaTimeVersion
     val jodaConvert = "org.joda" % "joda-convert" % jodaConvertVersion
+    val shapeless = "com.chuusai" %% "shapeless" % shapelessVersion
     val logback = "ch.qos.logback" % "logback-classic" % logbackVersion
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
     val playFunctional = "com.typesafe.play" %% "play-functional" % playVersion

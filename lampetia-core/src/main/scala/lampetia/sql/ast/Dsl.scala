@@ -89,14 +89,14 @@ trait Dsl {
 
   implicit def liftModel[A](model: Model[A]): TableIdentifierNode[A] = TableIdentifierNode(model)
 
-  implicit def liftProperty[A](property: Property[A]): ColumnIdentifierNode[A] = ColumnIdentifierNode(property)
+  implicit def liftProperty[E, A](property: Property[E, A]): ColumnIdentifierNode[E, A] = ColumnIdentifierNode(property)
 
-  implicit def liftProperties(properties: Seq[Property[_]]): Seq[ColumnIdentifierNode[_]] =
+  implicit def liftProperties(properties: Seq[Property[_, _]]): Seq[ColumnIdentifierNode[_, _]] =
     properties.map(p => ColumnIdentifierNode(p))
 
-  trait PropertyLifterDsl[A] extends Any with OperandOps {
-    def property: Property[A]
-    def value: ColumnIdentifierNode[A] = ColumnIdentifierNode[A](property)
+  trait PropertyLifterDsl[E, A] extends Any with OperandOps {
+    def property: Property[E, A]
+    def value: ColumnIdentifierNode[E, A] = ColumnIdentifierNode[E, A](property)
   }
 
 

@@ -5,6 +5,7 @@ import sbt._
 import com.typesafe.sbt.SbtGit._
 import scala.Console._
 
+
 object Build extends sbt.Build {
 
   val buildPrompt: State => String = { state =>
@@ -30,8 +31,7 @@ object Build extends sbt.Build {
       scalacOptions in Test ++= Seq("-Yrangepos"), // review this
       resolvers ++= Common.Resolvers.all,
       shellPrompt := buildPrompt,
-      fork in Test := true
-    )
+      fork in Test := true)
 
 
   lazy val `lampetia-model` =
