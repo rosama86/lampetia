@@ -1,4 +1,4 @@
-package lampetia.sql.syntax
+package lampetia.sql
 
 import lampetia.codec.Codec
 import lampetia.io.BackendIO

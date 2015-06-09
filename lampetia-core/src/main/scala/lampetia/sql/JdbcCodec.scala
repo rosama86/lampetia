@@ -1,9 +1,8 @@
-package lampetia.sql.syntax
+package lampetia.sql
 
 import java.sql.{PreparedStatement, ResultSet}
 
 import com.zaxxer.hikari.HikariDataSource
-import lampetia.sql.ast.Operand
 import org.joda.time.DateTime
 
 import scala.collection.mutable.ListBuffer

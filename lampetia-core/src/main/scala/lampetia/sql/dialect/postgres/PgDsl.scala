@@ -1,12 +1,17 @@
-package lampetia.sql.dsl.dialect.postgres
+package lampetia.sql.dialect.postgres
 
+import lampetia.model.sql.DefaultSqlType
 import lampetia.sql.ast._
 
 /**
  * @author Hossam Karim
  */
 
-trait PgDsl extends Dsl {
+trait PgDsl {
+
+  implicit val postgresDefaultSqlType: DefaultSqlType = new DefaultSqlType {
+    def name: String = "text"
+  }
 
   case class WithNode(alias: IdentifierNode, body: Operand, selection: Operand, recursive: Boolean = false) extends DQLNode {
 

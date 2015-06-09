@@ -8,7 +8,7 @@ import shapeless._
  * @author Hossam Karim
  */
 
-trait Feature
+trait Feature extends Any
 
 // O: owner type
 // V: property values type

@@ -1,9 +1,9 @@
 package lampetia.sql.ast
 
-import lampetia.model.{Models, Model, Property}
+import lampetia.model.{Model, Property}
+import lampetia.model.sql._
 
 import scala.language.implicitConversions
-import Models._
 
 /**
  * @author Hossam Karim

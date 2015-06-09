@@ -89,6 +89,11 @@ trait Dsl {
     def ? : NamedParameterNode = NamedParameterNode(symbol.name)
   }
 
+  trait UpdateCoupleDsl[E, A] extends Any {
+    def property: Property[E, A]
+    def :=(operand: Operand): (Operand, Operand) = liftProperty(property) -> operand
+  }
+
   implicit def liftModel[A](model: Model[A]): TableIdentifierNode[A] = TableIdentifierNode(model)
 
   implicit def liftProperty[E, A](property: Property[E, A]): ColumnIdentifierNode[E, A] = ColumnIdentifierNode(property)

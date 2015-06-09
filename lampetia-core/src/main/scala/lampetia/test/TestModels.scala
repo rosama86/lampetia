@@ -3,6 +3,7 @@ package lampetia.test
 import java.util.UUID
 
 import lampetia.model._
+import lampetia.sql.dsl._
 import shapeless._
 import scala.util.Success
 
@@ -32,14 +33,14 @@ object TestModels {
 
       val firstName: Property[PersonData, String] =
         property[String]("firstName", _.firstName, e => v => e.copy(firstName = v))
-          .set(SqlFeature.name("first_name"))
-          .set(JsonFeature.name("first-name"))
+          .set(sql.name("first_name"))
+          .set(json.name("first-name"))
 
       val lastName: Property[PersonData, String] =
         property[String]("lastName", _.lastName, e => v => e.copy(lastName = v))
-          .set(SqlFeature.name("last_name"))
-          .set(SqlFeature.`type`("jsonb"))
-          .set(JsonFeature.name("last-name"))
+          .set(sql.name("last_name"))
+          .set(sql.`type`("jsonb"))
+          .set(json.name("last-name"))
 
       val properties = Seq(firstName, lastName)
       def get(instance: Person): PersonData = instance.data
@@ -48,8 +49,8 @@ object TestModels {
     }
 
     override def features = Seq(
-      SqlFeature.name("person_t"),
-      SqlFeature.schema("tmp")
+      sql.name("person_t"),
+      sql.schema("tmp")
     )
 
     def combine(hl: PersonId::PersonData::HNil): Person = hl match {
@@ -57,6 +58,13 @@ object TestModels {
     }
 
   }
+
+  implicit val cid: Consume[PersonId] = consume[String].fmap(PersonId)
+  implicit val pid: Produce[PersonId] = a => produce(a.value)
+  implicit val cd: Consume[PersonData] = (consume[String] ~ consume[String])(PersonData)
+  implicit val pd: Produce[PersonData] = a => produce(a.firstName) andThen produce(a.lastName)
+  implicit val ce: Consume[Person] = (consume[PersonId] ~ consume[PersonData])(Person)
+  implicit val pe: Produce[Person] = a => produce(a.id) andThen produce(a.data)
 
 
 

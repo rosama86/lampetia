@@ -1,4 +1,4 @@
-package lampetia.sql.syntax
+package lampetia.sql
 
 import java.sql
 import javax.sql.DataSource
