@@ -41,11 +41,21 @@ object Build extends sbt.Build {
     Project("lampetia-core", file("lampetia-core"))
       .dependsOn(`lampetia-model`)
 
+  lazy val `lampetia-security-model` =
+    Project("lampetia-security-model", file("lampetia-security-model"))
+      .dependsOn(`lampetia-model`, `lampetia-core`)
+
+  lazy val `lampetia-security` =
+    Project("lampetia-security", file("lampetia-security"))
+      .dependsOn(`lampetia-model`, `lampetia-core`, `lampetia-security-model`)
+
   lazy val `lampetia` =
     Project("lampetia", file("."))
       .aggregate(
         `lampetia-model`,
-        `lampetia-core`)
+        `lampetia-core`,
+        `lampetia-security-model`,
+        `lampetia-security`)
 
 
 }

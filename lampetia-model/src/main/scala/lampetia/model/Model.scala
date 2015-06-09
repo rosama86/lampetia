@@ -17,12 +17,20 @@ trait Property[O, V] {
   def get(instance: O): V
   def set(feature: Feature): Property[O, V]
   def features: Seq[Feature]
+  def liftOption: Property[Option[O], Option[V]]
 }
 
 case class CProperty[O, A](name: String, features: Seq[Feature], fg: O => A, fs: O => A => O) extends Property[O, A] {
   def get(instance: O): A = fg(instance)
   def set(instance: O, value: A): O = fs(instance)(value)
   def set(feature: Feature): CProperty[O, A] = copy(features = this.features :+ feature)
+  def liftOption: Property[Option[O], Option[A]] =
+    CProperty(name, features, (oo: Option[O]) => oo.map(fg), e => v =>
+    for {
+      ee <- e
+      vv <- v
+    } yield fs(ee)(vv)
+  )
 }
 
 case class PropertyValue[O, A](property: Property[O, A], value: A)
@@ -30,10 +38,10 @@ case class PropertyValue[O, A](property: Property[O, A], value: A)
 trait Composite[O, V] {
   def set(instance: O, value: V): O
   def get(instance: O): V
-  def properties: Seq[Property[V, _]]
+  def properties: Seq[Property[_, _]]
   def features: Seq[Feature] = Seq.empty[Feature]
 
-  def property[A](name: String, fg: V => A, fs: V => A => V): Property[V, A] =
+  def property[A](name: String)(fg: V => A)(fs: V => A => V): Property[V, A] =
     CProperty[V, A](name, Seq.empty[Feature], fg, fs)
 }
 
@@ -90,7 +98,7 @@ trait CanCombine5[E, A1, A2, A3, A4, A5] {
 
 trait Model[E] extends HasProperties[E] {
   def name: String
-  def property[A](name: String, fg: E => A, fs: E => A => E): Property[E, A] =
+  def property[A](name: String)(fg: E => A)(fs: E => A => E): Property[E, A] =
     CProperty[E, A](name, Seq.empty[Feature], fg, fs)
 
   def properties: Properties = Seq.empty[Property[_, _]]

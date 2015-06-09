@@ -1,5 +1,6 @@
 package lampetia.model
 
+import lampetia.model.util._
 /**
  * @author Hossam Karim
  */
@@ -23,7 +24,7 @@ package object sql {
 
     def sqlName: String = model.features.collectFirst {
       case SqlName(value) => value
-    }.getOrElse(model.name)
+    }.getOrElse(model.name.snakeCase)
 
     def sqlSchema: Option[String] = model.features.collectFirst {
       case SqlSchema(value) => value
@@ -34,7 +35,7 @@ package object sql {
 
     def sqlName: String = p.features.collectFirst {
       case SqlName(value) => value
-    }.getOrElse(p.name)
+    }.getOrElse(p.name.snakeCase)
 
     def sqlType(implicit dmt: DefaultSqlType): String = p.features.collectFirst {
       case SqlType(value) => value
