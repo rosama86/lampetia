@@ -1,8 +1,6 @@
 package lampetia.security.model
 
 import lampetia.model._
-
-
 import scala.util.{Success, Try}
 
 
@@ -129,7 +127,10 @@ object ProfileModel
   def combine(a1: ProfileId, a2: ProfileRef, a3: ProfileData): Profile = Profile(a1,a2,a3)
 
   override val features: Seq[Feature] = Seq(
-    sql.name("security_profile")
+    sql.name("security_profile"),
+    sql.primaryKey("security_profile_pk")(id),
+    sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel.id),
+    sql.uniqueIndex("security_profile_udx_1")(data.providerId, data.email)
   )
 }
 
@@ -240,8 +241,12 @@ object AclModel
     object parentResource extends Composite[AclData, Option[Resource]] {
       val resourceId: Property[Option[Resource], Option[ResourceId]] =
         resource.resourceId.liftOption
+          .set(sql.optional)
+          .set(sql.name("parent_resource_id"))
       val resourceType: Property[Option[Resource], Option[ResourceType]] =
         resource.resourceType.liftOption
+          .set(sql.optional)
+          .set(sql.name("parent_resource_type"))
       def get(instance: AclData): Option[Resource] = instance.parentResource
       def set(instance: AclData, value: Option[Resource]): AclData = instance.copy(parentResource = value)
       val properties: Seq[Property[_, _]] = Seq(resourceId, resourceType)
@@ -313,10 +318,8 @@ object SecuritySqlFormat {
   implicit lazy val produceAclData: Produce[AclData] =
     a => produce(a.subject) andThen produce(a.resource) andThen produce(a.parentResource) andThen produce(a.permission)
 
-  implicit lazy val consumeAcl: Consume[Acl] =
-    (consume[AclId] ~ consume[AclData])(Acl)
-  implicit lazy val produceAcl: Produce[Acl] =
-    a => produce(a.id) andThen produce(a.data)
+  implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
+  implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)
 }
 
 
@@ -344,19 +347,16 @@ object SecurityModelTest extends App {
   val acl = AclModel
   val s = 'jeelona
 
-  val q = select(acl.properties:_*).from(s dot acl)
+  import lampetia.sql.dialect.postgres._
+  val q = createTable(acl).sqlString
   println(q.sqlString)
 
-  val f = q.lifted.readSqlIO[Acl]
+  //val f = q.lifted.readSqlIO[Acl]
 
-  run(f)
+  //run(f)
 
+  //context.shutdown()
 
-
-  context.shutdown()
-
-
-  
 }
 
 

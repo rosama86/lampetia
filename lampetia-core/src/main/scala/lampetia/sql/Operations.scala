@@ -47,4 +47,10 @@ trait Operations {
 
   }
 
+  trait DDL[E] extends Any { ms: ModelSchema[E] =>
+
+    def create(implicit dst: DefaultSqlType): SqlIO[Int] = createTable(model).lifted.writeSqlIO
+
+  }
+
 }

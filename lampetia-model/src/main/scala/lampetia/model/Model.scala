@@ -10,7 +10,7 @@ import scala.util.Try
 trait Feature extends Any
 
 // O: owner type
-// V: property values type
+// V: property value type
 trait Property[O, V] {
   def name: String
   def set(instance: O, value: V): O

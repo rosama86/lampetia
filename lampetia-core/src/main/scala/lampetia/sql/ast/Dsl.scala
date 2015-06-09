@@ -1,5 +1,6 @@
 package lampetia.sql.ast
 
+import lampetia.model.sql.DefaultSqlType
 import lampetia.model.{Model, Property}
 
 import scala.language.implicitConversions
@@ -24,6 +25,8 @@ trait Dsl {
   def function(name: String, operands: Operand*) = FunctionNode(name, operands)
   def jsonBuildObject(operands: Operand*) = FunctionNode("json_build_object", operands)
   def coalesce(operands: Operand*) = FunctionNode("coalesce", operands)
+
+  def createTable[E](model: Model[E])(implicit dst: DefaultSqlType) = CreateTableNode(model)
 
   trait StringsDsl extends Any {
     def value: String

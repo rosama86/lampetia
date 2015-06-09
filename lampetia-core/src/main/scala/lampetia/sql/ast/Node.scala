@@ -21,27 +21,29 @@ trait Operator extends Operand {
 
 trait UnaryOperator[O <: Operand] extends Operator {
   def operand: O
-  def operands: Seq[Operand] = Seq(operand)
+  val operands: Seq[Operand] = Seq(operand)
 }
 
 trait BinaryOperator[A <: Operand, B <: Operand] extends Operator {
   def first: A
   def second: B
-  def operands: Seq[Operand] = Seq(first, second)
+  val operands: Seq[Operand] = Seq(first, second)
 }
 
 trait DQLNode extends Operator
 
 trait DMLNode extends Operator
 
+trait DDLNode extends Operator
+
 trait LiteralNode extends Operand
 
 case class StringLiteralNode(value: String) extends LiteralNode {
-  def sqlString: String = s"'$value'"
+  val sqlString: String = s"'$value'"
 }
 
 case class IntegerLiteralNode(value: Integer) extends LiteralNode {
-  def sqlString: String = s"$value"
+  val sqlString: String = s"$value"
 }
 
 case class IdentifierNode(name: String) extends Operand {
@@ -71,7 +73,7 @@ case class NamedParameterNode(parameterName: String) extends Operand {
 }
 
 case class InfixNode(symbol: String, first: Operand, second: Operand, groupSecond: Boolean = false) extends BinaryOperator[Operand, Operand] {
-  def sqlString: String =
+  val sqlString: String =
     if (groupSecond)
       s"${first.sqlString}$symbol(${second.sqlString})"
     else
@@ -79,20 +81,20 @@ case class InfixNode(symbol: String, first: Operand, second: Operand, groupSecon
 }
 
 case class PrefixNode(symbol: String, operands: Seq[Operand]) extends Operator {
-  def sqlString: String = s"$symbol ${operands.map(_.sqlString).mkString(",")}"
+  val sqlString: String = s"$symbol ${operands.map(_.sqlString).mkString(",")}"
 }
 
 case class PostfixNode(symbol: String, operands: Seq[Operand]) extends Operator {
-  def sqlString: String = s"${operands.map(_.sqlString).mkString(",")} $symbol"
+  val sqlString: String = s"${operands.map(_.sqlString).mkString(",")} $symbol"
 }
 
 case class SurroundNode(operand: Operand) extends Operator {
-  def operands: Seq[Operand] = Seq(operand)
-  def sqlString: String = s"(${operand.sqlString})"
+  val operands: Seq[Operand] = Seq(operand)
+  val sqlString: String = s"(${operand.sqlString})"
 }
 
 case class TypeNode(typeName: String) extends Operand {
-  def sqlString: String = typeName
+  val sqlString: String = typeName
 }
 
 case class BetweenNode(lhs: Operand, first: Operand, second: Operand) extends Operator {
@@ -101,27 +103,27 @@ case class BetweenNode(lhs: Operand, first: Operand, second: Operand) extends Op
 }
 
 case class AndNode(operands: Seq[Operand]) extends Operator {
-  def sqlString: String = s"(${operands.map(_.sqlString).mkString(" and ")})"
+  val sqlString: String = s"(${operands.map(_.sqlString).mkString(" and ")})"
   def and(other: Operand): AndNode = copy(operands = operands :+ other)
 }
 
 case class OrNode(operands: Seq[Operand]) extends Operator {
-  def sqlString: String = s"(${operands.map(_.sqlString).mkString(" or ")})"
+  val sqlString: String = s"(${operands.map(_.sqlString).mkString(" or ")})"
   def or(other: Operand): OrNode = copy(operands = operands :+ other)
 }
 
 case class NotNode(operand: Operand) extends UnaryOperator[Operand] {
-  def sqlString: String = s"(not ${operand.sqlString})"
+  val sqlString: String = s"(not ${operand.sqlString})"
 }
 
 case class FunctionNode(name: String, operands: Seq[Operand]) extends Operator {
-  def sqlString: String = s"$name(${operands.map(_.sqlString).mkString(",")})"
+  val sqlString: String = s"$name(${operands.map(_.sqlString).mkString(",")})"
 }
 
 
 case class QueryNode(operands: Seq[Operand]) extends DQLNode {
   protected def append(operand: Operand): QueryNode = copy(operands = operands :+ operand)
-  def sqlString: String = s"${operands.map(_.sqlString).mkString(" ")}"
+  val sqlString: String = s"${operands.map(_.sqlString).mkString(" ")}"
   def select(operands: Operand*) = append(SelectNode(operands))
   def from(operands: Operand*) = append(FromNode(operands))
   def where(operand: Operand) = append(WhereNode(operand))
@@ -132,15 +134,15 @@ case class QueryNode(operands: Seq[Operand]) extends DQLNode {
   def offset(operands: Operand*) = append(PrefixNode("offset", operands))
 }
 case class SelectNode(operands: Seq[Operand]) extends DQLNode {
-  def sqlString: String = s"select ${operands.map(_.sqlString).mkString(",")}"
+  val sqlString: String = s"select ${operands.map(_.sqlString).mkString(",")}"
 }
 
 case class FromNode(operands: Seq[Operand]) extends DQLNode {
-  def sqlString: String = s"from ${operands.map(_.sqlString).mkString(",")}"
+  val sqlString: String = s"from ${operands.map(_.sqlString).mkString(",")}"
 }
 
 case class WhereNode(operand: Operand) extends DQLNode with UnaryOperator[Operand] {
-  def sqlString: String = s"where ${operands.map(_.sqlString).mkString(" ")}"
+  val sqlString: String = s"where ${operands.map(_.sqlString).mkString(" ")}"
 }
 
 sealed trait JoinType {
@@ -203,8 +205,8 @@ case class InsertInto(into: Operand, columns: Seq[Operand]) {
 }
 
 case class InsertNode(into: Operand, columns: Seq[Operand], values: Seq[Operand]) extends DMLNode {
-  def operands: Seq[Operand] = Seq(into) ++ columns ++ values
-  def sqlString: String =
+  val operands: Seq[Operand] = Seq(into) ++ columns ++ values
+  val sqlString: String =
     if (columns.isEmpty)
       s"insert into ${into.sqlString} values (${values.map(_.sqlString).mkString(",")})"
     else
@@ -213,18 +215,18 @@ case class InsertNode(into: Operand, columns: Seq[Operand], values: Seq[Operand]
 
 case class DeleteFromNode(table: Operand) extends DMLNode {
   def where(operator: Operator): DeleteNode = DeleteNode(table, WhereNode(operator))
-  def operands: Seq[Operand] = Seq(table)
-  def sqlString: String = s"delete from ${table.sqlString}"
+  val operands: Seq[Operand] = Seq(table)
+  val sqlString: String = s"delete from ${table.sqlString}"
 }
 
 case class DeleteNode(table: Operand, where: WhereNode) extends DMLNode {
-  def operands: Seq[Operand] = Seq(table, where)
-  def sqlString: String = s"delete from ${table.sqlString} ${where.sqlString}"
+  val operands: Seq[Operand] = Seq(table, where)
+  val sqlString: String = s"delete from ${table.sqlString} ${where.sqlString}"
 }
 
 case class UpdatePair(lhs: Operand, rhs: Operand) extends Operator {
-  def operands: Seq[Operand] = Seq(lhs, rhs)
-  def sqlString: String = s"set ${lhs.sqlString} = ${rhs.sqlString}"
+  val operands: Seq[Operand] = Seq(lhs, rhs)
+  val sqlString: String = s"set ${lhs.sqlString} = ${rhs.sqlString}"
 }
 
 case class Update(table: Operand) {
@@ -233,12 +235,32 @@ case class Update(table: Operand) {
 
 case class UpdateNode(table: Operand, pairs: Seq[UpdatePair]) extends DMLNode {
   def set(lhs: Operand, rhs: Operand): UpdateNode = copy(pairs = pairs :+ UpdatePair(lhs, rhs))
-  def operands: Seq[Operand] = Seq(table) ++ pairs
-  def sqlString: String = s"update ${table.sqlString} ${pairs.map(_.sqlString).mkString(",")}"
+  val operands: Seq[Operand] = Seq(table) ++ pairs
+  val sqlString: String = s"update ${table.sqlString} ${pairs.map(_.sqlString).mkString(",")}"
   def where(operator: Operator): UpdateWhereNode = UpdateWhereNode(this, WhereNode(operator))
 }
 
 case class UpdateWhereNode(node: UpdateNode, where: WhereNode) extends DMLNode {
-  def operands: Seq[Operand] = Seq(node, where)
-  def sqlString: String = s"${node.sqlString} ${where.sqlString}"
+  val operands: Seq[Operand] = Seq(node, where)
+  val sqlString: String = s"${node.sqlString} ${where.sqlString}"
+}
+
+case class CreateSchemaNode(id: IdentifierNode) extends DDLNode {
+  val operands = Seq(id)
+  val sqlString = s"create schema ${id.sqlString}"
+}
+
+case class CreateTableNode[E](model: Model[E])(implicit dt: DefaultSqlType) extends DDLNode {
+  val operands: Seq[Operand] = Seq(TableIdentifierNode(model))
+  val prefix = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  def nullability(p: Property[_, _]) =
+    if (p.optional) "" else " not null"
+  def column(p: Property[_, _]) =
+    s"${p.sqlName} ${p.sqlType}${nullability(p)}"
+  val body =
+    if(model.properties.isEmpty)
+      ""
+    else
+      s"(${model.properties.map(column).mkString(",")})"
+  val sqlString: String = s"""create table $prefix$body"""
 }
