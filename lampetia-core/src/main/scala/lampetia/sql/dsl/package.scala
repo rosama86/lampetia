@@ -2,7 +2,6 @@ package lampetia.sql
 
 import lampetia.model._
 import lampetia.sql.ast._
-import shapeless._
 
 
 /**
@@ -42,20 +41,18 @@ package object dsl
   implicit class LiftSqlIO[A](val io: SqlIO[A]) extends AnyVal with LiftIO[A]
 
 
-  implicit class ModelOps[E](val model: Model[E])
-    extends AnyVal with ModelSchema[E] with Find[E] with Update[E] with Delete[E] {
-  }
+  implicit class Model0Ops[E](val model: Model[E])
+    extends AnyVal with ModelSchema[E] with Find[E] with Update[E] with Delete[E]
 
-  implicit class Model2Ops[E, Id](val model: Model[E] with HasId[E, Id] {type Shape = Id::HNil})
+  implicit class Model1Ops[E, Id](val model: Model[E] with HasId[E, Id] with CanCombine1[E, Id])
     extends AnyVal with ModelSchema[E] with Find[E] with Update[E] with Delete[E] {
-    def instance(id: Id): E = model.combine(id::HNil)
     def insert(id: Id)(implicit pid: Produce[Id]): SqlIO[Int] =
       insertInto(schemaPrefixed).values(id.bind).lifted.writeSqlIO
   }
 
-  implicit class Model3Ops[E, Id, R](val model: Model[E] with HasId[E, Id] with HasRef[E, R] {type Shape = Id::R::HNil})
+  implicit class Model2ROps[E, Id, R](val model: Model[E] with HasId[E, Id] with HasRef[E, R] with CanCombine2[E, Id, R])
     extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
-    def instance(id: Id, ref: R): E = model.combine(id::ref::HNil)
+    def instance(id: Id, ref: R): E = model.combine(id, ref)
     def find(id: Id)(implicit pid: Produce[Id], ce: Consume[E]): SqlIO[Option[E]] =
       find(model.id === id.bind).map(_.headOption)
 
@@ -65,10 +62,10 @@ package object dsl
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(ref).writeSqlIO
     }
   }
-  implicit class Model4Ops[E, Id, D](val model: Model[E] with HasId[E, Id] with HasData[E, D] {type Shape = Id::D::HNil})
+  implicit class Model2DOps[E, Id, D](val model: Model[E] with HasId[E, Id] with HasData[E, D] with CanCombine2[E, Id, D])
     extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
 
-    def instance(id: Id, data: D): E = model.combine(id::data::HNil)
+    def instance(id: Id, data: D): E = model.combine(id, data)
 
     def insert(id: Id, data: D)(implicit pid: Produce[Id], pdata: Produce[D]): SqlIO[Int] = {
       val ps = model.id +: model.data.properties
@@ -81,15 +78,16 @@ package object dsl
       val vs = ps.map(_ => ?)
       val id = model.generate
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(data).writeSqlIO.flatMap {
-        case i if i > 0 => IOPure(model.combine(id::data::HNil))
+        case i if i > 0 => IOPure(model.combine(id, data))
         case _          => IOFailed(new Exception("No Instance"))
       }
     }
   }
 
-  implicit class Model5Ops[E, Id, D, R](val model: Model[E] with HasId[E, Id] with HasRef[E, R] with HasData[E, D] {type Shape = Id::R::D::HNil})
+  implicit class Model3Ops[E, Id, D, R]
+  (val model: Model[E] with HasId[E, Id] with HasRef[E, R] with HasData[E, D] with CanCombine3[E, Id, R, D])
       extends AnyVal with ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
-    def instance(id: Id, ref: R, data: D): E = model.combine(id::ref::data::HNil)
+    def instance(id: Id, ref: R, data: D): E = model.combine(id, ref, data)
     def insert(id: Id, ref: R, data: D)(implicit pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): SqlIO[Int] = {
       val ps = model.id +: (model.ref.properties ++ model.data.properties)
       val vs = ps.map(_ => ?)

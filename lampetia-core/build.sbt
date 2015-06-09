@@ -7,7 +7,6 @@ libraryDependencies ++= Seq(
   jodaConvert,
   jodaTime,
   logback,
-  shapeless,
   akkaActor,
   playFunctional,
   postgresql,

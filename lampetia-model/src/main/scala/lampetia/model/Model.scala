@@ -2,7 +2,6 @@ package lampetia.model
 
 import scala.language.implicitConversions
 import scala.util.Try
-import shapeless._
 
 /**
  * @author Hossam Karim
@@ -64,19 +63,38 @@ trait HasData[E, Data] extends HasProperties[E] { this: Model[E] =>
   abstract override def properties: Properties = super.properties ++ data.properties
 }
 
+trait CanCombine0[E] {
+  def combine: E
+}
+
+trait CanCombine1[E, A1] {
+  def combine(a1: A1): E
+}
+
+trait CanCombine2[E, A1, A2] {
+  def combine(a1: A1, a2: A2): E
+}
+
+trait CanCombine3[E, A1, A2, A3] {
+  def combine(a1: A1, a2: A2, a3: A3): E
+}
+
+trait CanCombine4[E, A1, A2, A3, A4] {
+  def combine(a1: A1, a2: A2, a3: A3, a4: A4): E
+}
+
+trait CanCombine5[E, A1, A2, A3, A4, A5] {
+  def combine(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): E
+}
 
 
 trait Model[E] extends HasProperties[E] {
-  type Shape
   def name: String
   def property[A](name: String, fg: E => A, fs: E => A => E): Property[E, A] =
     CProperty[E, A](name, Seq.empty[Feature], fg, fs)
 
   def properties: Properties = Seq.empty[Property[_, _]]
   def features: Seq[Feature] = Seq.empty[Feature]
-
-  def combine(hl: Shape): E
-
 }
 
 

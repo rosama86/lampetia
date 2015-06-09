@@ -4,7 +4,6 @@ import java.util.UUID
 
 import lampetia.model._
 import lampetia.sql.dsl._
-import shapeless._
 import scala.util.Success
 
 /**
@@ -21,8 +20,8 @@ object TestModels {
   implicit object PersonModel
     extends Model[Person]
     with    HasId[Person, PersonId]
-    with    HasData[Person, PersonData] {
-    type Shape = PersonId :: PersonData :: HNil
+    with    HasData[Person, PersonData]
+    with    CanCombine2[Person, PersonId, PersonData] {
     val name = "person"
 
     def id = property[PersonId]("id", _.id, e => v => e.copy(id = v))
@@ -53,9 +52,7 @@ object TestModels {
       sql.schema("tmp")
     )
 
-    def combine(hl: PersonId::PersonData::HNil): Person = hl match {
-      case id::data::HNil => Person(id, data)
-    }
+    def combine(id: PersonId, data: PersonData): Person = Person(id, data)
 
   }
 

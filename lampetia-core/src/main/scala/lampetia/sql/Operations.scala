@@ -42,7 +42,7 @@ trait Operations {
 
     def update[F <: Operator](first: (Operand, Operand), next: (Operand, Operand)*)(filter: F): SqlIO[Int] = {
       val init = Q.update(ms.schemaPrefixed).set(first._1, first._2)
-      next.foldLeft(init)( (upd, c) => upd.set(c._1, c._2)).where(filter).liftedDebug.writeSqlIO
+      next.foldLeft(init)( (upd, c) => upd.set(c._1, c._2)).where(filter).lifted.writeSqlIO
     }
 
   }
