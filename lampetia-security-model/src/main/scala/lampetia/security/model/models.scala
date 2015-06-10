@@ -162,7 +162,8 @@ object GroupModel
   }
   def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
   override val features: Seq[Feature] = Seq(
-    sql.name("security_group")
+    sql.name("security_group"),
+    sql.primaryKey("security_group_pk")(id)
   )
 }
 
@@ -183,7 +184,9 @@ object GroupMemberModel
 
   def combine(a1: GroupMemberRef): GroupMember = GroupMember(a1)
   override val features: Seq[Feature] = Seq(
-    sql.name("security_group_member")
+    sql.name("security_group_member"),
+    sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel.id),
+    sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel.id)
   )
 }
 
@@ -273,7 +276,7 @@ object AclModel
 
 
 
-import lampetia.sql.dialect.postgres._
+import lampetia.sql.dialect.h2._
 
 object SecuritySqlFormat {
 
@@ -372,13 +375,12 @@ object SecurityModelTest extends App {
   val u = UserModel
   val acl = AclModel
   val g = GroupModel
+  val gm = GroupMemberModel
   val s = 'jeelona
 
   val q = for {
-    _ <- g.create
-    i <- g.insert(GroupRef(None), GroupData(Code("abc")))
-    x <- g.find(g.id === i.id.bind)
-  } yield x
+    i <- gm.create
+  } yield i
 
   run(q.transactionally)
 

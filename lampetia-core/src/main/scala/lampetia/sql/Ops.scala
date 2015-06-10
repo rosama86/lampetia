@@ -1,14 +1,15 @@
-package lampetia.sql.dialect
+package lampetia.sql
 
+import lampetia.io.BackendIO
 import lampetia.model._
 import lampetia.model.sql._
-import lampetia.sql._
-import lampetia.sql.ast.{Dialect, Dsl, Operator, Operand}
+import lampetia.sql.ast.{Dsl, Operand, Operator}
+import lampetia.sql.dialect.Dialect
 
 /**
  * @author Hossam Karim
  */
-trait Ops { self: Dsl with Dialect with JdbcCodec =>
+trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =>
 
   implicit def defaultSqlType: DefaultSqlType
 
@@ -83,7 +84,15 @@ trait Ops { self: Dsl with Dialect with JdbcCodec =>
 
   trait DDL[E] extends Any { ms: ModelSchema[E] =>
 
-    def create: IO[Int] = createTable(model).lifted.write
+    def create: IO[Int] = {
+      val c = createTable(model).sql.write
+      val pk = model.sqlPrimaryKey.map(pk => primaryKey(model, pk).sql.write).fold(IOPure(0): IO[Int])(identity)
+      val fks = model.sqlForeignKeys.map(fk => foreignKey(model, fk).sql.write)
+      val idxs = model.sqlIndexes.map(idx => index(model, idx).sql.write)
+      c.flatMap(_ => pk)
+        .flatMap(_ => fks.reduce( (l, r) => l.flatMap(_ => r)))
+        .flatMap(_ => idxs.reduce( (l, r) => l.flatMap(_ => r)))
+    }
 
   }
 

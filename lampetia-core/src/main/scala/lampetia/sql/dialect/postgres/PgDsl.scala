@@ -2,6 +2,7 @@ package lampetia.sql.dialect.postgres
 
 import lampetia.model.sql.DefaultSqlType
 import lampetia.sql.ast._
+import lampetia.sql.dialect.Dialect
 
 /**
  * @author Hossam Karim

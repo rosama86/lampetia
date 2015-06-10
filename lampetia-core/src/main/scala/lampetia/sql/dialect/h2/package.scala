@@ -1,6 +1,6 @@
 package lampetia.sql.dialect
 
-import lampetia.sql.{ConnectionSourceFactories, JdbcCodec}
+import lampetia.sql.{Ops, ConnectionSourceFactories, JdbcCodec}
 
 /**
  * @author Hossam Karim

@@ -516,15 +516,68 @@ case class DefaultCreateTableNode[E](model: Model[E])
                                     (implicit dst: DefaultSqlType,
                                      tb: TableIdentifierNodeBuilder) extends CreateTableNode[E] {
   val operands: Seq[Operand] = Seq(tb(model))
-  val prefix = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
   def nullability(p: Property[_, _]) =
     if (p.optional) "" else " not null"
   def column(p: Property[_, _]) =
     s"${p.sqlName} ${p.sqlType}${nullability(p)}"
-  val body =
+  private val body =
     if(model.properties.isEmpty)
       ""
     else
       s"(${model.properties.map(column).mkString(",")})"
-  val sqlString: String = s"""create table $prefix$body"""
+  val sqlString: String = s"""create table $prefixed$body"""
 }
+
+trait PrimaryKeyNodeBuilder {
+  def apply[E](model: Model[E], primaryKey: SqlPrimaryKey)(implicit tb: TableIdentifierNodeBuilder): PrimaryKeyNode[E]
+}
+trait PrimaryKeyNode[E] extends DDLNode {
+  def model: Model[E]
+  def primaryKey: SqlPrimaryKey
+}
+
+case class DefaultPrimaryKeyNode[E](model: Model[E], primaryKey: SqlPrimaryKey)
+                                   (implicit tb: TableIdentifierNodeBuilder) extends PrimaryKeyNode[E] {
+  val operands: Seq[Operand] = Seq(tb(model))
+  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  private val named = primaryKey.name.fold("primary key")(n => s"constraint $n primary key")
+  val sqlString: String =  s"alter table $prefixed add $named (${primaryKey.properties.map(_.sqlName).mkString(",")})"
+}
+
+trait IndexNodeBuilder {
+  def apply[E](model: Model[E], index: SqlIndex)(implicit tb: TableIdentifierNodeBuilder): IndexNode[E]
+}
+trait IndexNode[E] extends DDLNode {
+  def model: Model[E]
+  def index: SqlIndex
+}
+
+case class DefaultIndexNode[E](model: Model[E], index: SqlIndex)
+                              (implicit tb: TableIdentifierNodeBuilder) extends IndexNode[E] {
+  val operands: Seq[Operand] = Seq(tb(model))
+  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  private val named = index.name.fold("index")(n => s"index $n")
+  private val unique = if(index.unique) " unique" else ""
+  val sqlString: String =  s"create$unique $named on $prefixed (${index.properties.map(_.sqlName).mkString(",")})"
+}
+
+trait ForeignKeyNodeBuilder {
+  def apply[E](model: Model[E], foreignKey: SqlForeignKey)(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E]
+}
+trait ForeignKeyNode[E] extends DDLNode {
+  def model: Model[E]
+  def foreignKey: SqlForeignKey
+}
+
+case class DefaultForeignKeyNode[E](model: Model[E], foreignKey: SqlForeignKey)
+                                   (implicit tb: TableIdentifierNodeBuilder) extends ForeignKeyNode[E] {
+  val operands: Seq[Operand] = Seq(tb(model))
+  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  private val named = foreignKey.name.fold("foreign key")(n => s"constraint $n foreign key")
+  private val keys = s"(${foreignKey.keys.map(_.sqlName).mkString(",")})"
+  private val references = s"(${foreignKey.references.map(_.sqlName).mkString(",")}) "
+  val sqlString: String =  s"alter table $prefixed add $named $keys references $references"
+}
+
+

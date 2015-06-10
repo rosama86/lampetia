@@ -28,6 +28,7 @@ trait JdbcCodec extends SqlCodec { self =>
   def flatMap[A, B](fa: Try[A])(f: (A) => Try[B]): Try[B] = fa.flatMap(f)
   def withFilter[A](fa: Try[A])(f: (A) => Boolean): Try[A] = fa.filter(f)
 
+
   trait JdbcSqlType[A] {
     def sqlType: Int
   }
