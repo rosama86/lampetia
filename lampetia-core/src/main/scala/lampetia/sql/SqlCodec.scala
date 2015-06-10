@@ -72,12 +72,12 @@ trait SqlCodec extends Codec with BackendIO {
     }
   }
 
-  type SqlIO[A] = IO[A]
+  //type SqlIO[A] = IO[A]
 
   sealed trait Sql {
     def sqlString: String
-    def readSqlIO[R](implicit consumer: Consume[R]): SqlIO[Seq[R]]
-    def writeSqlIO: SqlIO[Int]
+    def read[R](implicit consumer: Consume[R]): IO[Seq[R]]
+    def write: IO[Int]
   }
 
   sealed trait InterpretedSql extends Sql {
@@ -101,20 +101,20 @@ trait SqlCodec extends Codec with BackendIO {
     def set[A](parameterName: String, parameterValue: A)(implicit producer: Produce[A]): NamedParametersSql =
       NamedParameterizedSql(sqlString, Seq(Parameter(parameterName, parameterValue, producer)))
 
-    def readSqlIO[R](implicit consumer: Consume[R]): ReadPlainSql[R] =
+    def read[R](implicit consumer: Consume[R]): ReadPlainSql[R] =
       createReadPlainSql(this, consumer)
 
-    def writeSqlIO: WritePlainSql = createWritePlainSql(this)
+    def write: WritePlainSql = createWritePlainSql(this)
   }
 
   case class ParameterizedSql(sqlString: String, parameters: Seq[Parameter]) extends PositionalParametersSql {
     def set[A](parameterValue: A)(implicit producer: Produce[A]): PositionalParametersSql =
       copy(parameters = parameters :+ Parameter(parameterValue, producer))
 
-    def readSqlIO[R](implicit consumer: Consume[R]): ReadParameterizedSql[R] =
+    def read[R](implicit consumer: Consume[R]): ReadParameterizedSql[R] =
       createReadParameterizedSql(this, consumer)
 
-    def writeSqlIO: WriteParameterizedSql = createWriteParameterizedSql(this)
+    def write: WriteParameterizedSql = createWriteParameterizedSql(this)
   }
 
   case class ReOrdering(sql: String, original: Seq[Parameter], reordered: Seq[Parameter])
@@ -147,45 +147,45 @@ trait SqlCodec extends Codec with BackendIO {
 
     def positional: PositionalParametersSql = namedToPositional(this)
 
-    def readSqlIO[R](implicit consumer: Consume[R]): ReadParameterizedSql[R] =
+    def read[R](implicit consumer: Consume[R]): ReadParameterizedSql[R] =
       createReadParameterizedSql(namedToPositional(this), consumer)
 
-    def writeSqlIO: WriteParameterizedSql =
+    def write: WriteParameterizedSql =
       createWriteParameterizedSql(namedToPositional(this))
   }
 
-  trait ReadPlainSql[R] extends SqlIO[Seq[R]] {
+  trait ReadPlainSql[R] extends IO[Seq[R]] {
     def plainSql: PlainSql
     def consumer: Consume[R]
   }
 
   def createReadPlainSql[R](plainSql: PlainSql, consumer: Consume[R]): ReadPlainSql[R]
 
-  trait WritePlainSql extends SqlIO[Int] {
+  trait WritePlainSql extends IO[Int] {
     def plainSql: PlainSql
   }
 
   def createWritePlainSql(plainSql: PlainSql): WritePlainSql
 
-  trait ReadParameterizedSql[R] extends SqlIO[Seq[R]] {
+  trait ReadParameterizedSql[R] extends IO[Seq[R]] {
     def parameterizedSql: ParameterizedSql
     def consumer: Consume[R]
   }
 
   def createReadParameterizedSql[R](parameterizedSql: ParameterizedSql, consumer: Consume[R]): ReadParameterizedSql[R]
 
-  trait WriteParameterizedSql extends SqlIO[Int] {
+  trait WriteParameterizedSql extends IO[Int] {
     def parameterizedSql: ParameterizedSql
   }
 
   def createWriteParameterizedSql[R](parameterizedSql: ParameterizedSql): WriteParameterizedSql
 
 
-  trait TransactionalSqlIO[R] extends SqlIO[R] {
-    def sqlIO: SqlIO[R]
+  trait TransactionalIO[R] extends IO[R] {
+    def sqlIO: IO[R]
   }
 
-  def createTransactionalSqlIO[R](sqlIO: SqlIO[R]): TransactionalSqlIO[R]
+  def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R]
 
 
   trait StringsSql extends Any {
@@ -193,9 +193,9 @@ trait SqlCodec extends Codec with BackendIO {
     def sql: PlainSql = PlainSql(sqlString)
   }
 
-  trait SqlIOOps[A] extends Any {
-    def sqlIO: SqlIO[A]
-    def transactionally: TransactionalSqlIO[A] = createTransactionalSqlIO(sqlIO)
+  trait IOOps[A] extends Any {
+    def sqlIO: IO[A]
+    def transactionally: TransactionalIO[A] = createTransactionalIO(sqlIO)
   }
 
   case class PresetParameterNode(parameter: Parameter) extends Operand {

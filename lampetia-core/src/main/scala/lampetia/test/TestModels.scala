@@ -3,7 +3,6 @@ package lampetia.test
 import java.util.UUID
 
 import lampetia.model._
-import lampetia.sql.dsl._
 import scala.util.Success
 
 /**
@@ -56,12 +55,7 @@ object TestModels {
 
   }
 
-  implicit val cid: Consume[PersonId] = consume[String].fmap(PersonId)
-  implicit val pid: Produce[PersonId] = a => produce(a.value)
-  implicit val cd: Consume[PersonData] = (consume[String] ~ consume[String])(PersonData)
-  implicit val pd: Produce[PersonData] = a => produce(a.firstName) andThen produce(a.lastName)
-  implicit val ce: Consume[Person] = (consume[PersonId] ~ consume[PersonData])(Person)
-  implicit val pe: Produce[Person] = a => produce(a.id) andThen produce(a.data)
+
 
 
 

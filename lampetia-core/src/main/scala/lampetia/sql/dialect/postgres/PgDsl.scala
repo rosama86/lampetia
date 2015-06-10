@@ -7,9 +7,9 @@ import lampetia.sql.ast._
  * @author Hossam Karim
  */
 
-trait PgDsl {
+trait PgDsl extends Dsl with Dialect {
 
-  implicit val postgresDefaultSqlType: DefaultSqlType = new DefaultSqlType {
+  implicit val defaultSqlType: DefaultSqlType = new DefaultSqlType {
     def name: String = "text"
   }
 
@@ -28,10 +28,10 @@ trait PgDsl {
   def withRecursive(alias: IdentifierNode, body: Operand, selection: Operand) = WithNode(alias, body, selection, recursive = true)
 
 
-  val date = TypeNode("date")
-  val timestamp = TypeNode("timestamp")
-  val json = TypeNode("json")
-  val jsonb = TypeNode("jsonb")
-  def bit(i: Int) = TypeNode(s"bit($i)")
+  val date = DefaultTypeNode("date")
+  val timestamp = DefaultTypeNode("timestamp")
+  val json = DefaultTypeNode("json")
+  val jsonb = DefaultTypeNode("jsonb")
+  def bit(i: Int) = DefaultTypeNode(s"bit($i)")
 
 }

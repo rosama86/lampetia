@@ -277,7 +277,7 @@ trait JdbcCodec extends SqlCodec { self =>
     def shutdown(): Unit = ()
   }
 
-  case class TransactionalSqlIOQ[A](sqlIO: SqlIO[A]) extends TransactionalSqlIO[A] {
+  case class TransactionalSqlIOQ[A](sqlIO: IO[A]) extends TransactionalIO[A] {
     def execute(cm: ConnectionSource): Try[A] = {
       val proxy = new ConnectionSourceProxy(cm)
       val connection = proxy.connection
@@ -300,7 +300,7 @@ trait JdbcCodec extends SqlCodec { self =>
     }
   }
 
-  def createTransactionalSqlIO[R](sqlIO: SqlIO[R]): TransactionalSqlIO[R] =
+  def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R] =
     TransactionalSqlIOQ(sqlIO)
 
 
@@ -331,34 +331,6 @@ trait JdbcCodec extends SqlCodec { self =>
 
 
 
-object JdbcCodec extends JdbcCodec {
 
-
-  object PgConnectionSource extends ConnectionSource {
-    val dataSource = {
-      val ds = new HikariDataSource()
-      ds.setMaximumPoolSize(3)
-      ds.setLeakDetectionThreshold(3000)
-      ds.setDataSourceClassName("org.postgresql.ds.PGSimpleDataSource")
-      ds.addDataSourceProperty("serverName", "localhost")
-      ds.addDataSourceProperty("portNumber", 5432)
-      ds.addDataSourceProperty("databaseName", "jeelona")
-      ds.addDataSourceProperty("user", "admin")
-      ds.addDataSourceProperty("password", "admin")
-      ds
-    }
-
-    def connection: Connection = dataSource.getConnection
-
-    def done(connection: Connection): Unit =  connection.close()
-
-    def shutdown(): Unit = dataSource.close()
-  }
-
-  def connectionSource: ConnectionSource = PgConnectionSource
-
-
-
-}
 
 

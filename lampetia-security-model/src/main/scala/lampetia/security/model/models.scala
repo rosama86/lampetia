@@ -148,6 +148,7 @@ object GroupModel
   object ref extends RefModel[Group, GroupRef] {
     val parent: Property[GroupRef, Option[GroupId]] =
       property("parent")(_.parent)(e => v => e.copy(parent = v))
+        .set(sql.optional)
     def get(instance: Group): GroupRef = instance.ref
     def set(instance: Group, value: GroupRef): Group = instance.copy(ref = value)
     val properties: Seq[Property[GroupRef, _]] = Seq(parent)
@@ -160,6 +161,9 @@ object GroupModel
     val properties: Seq[Property[GroupData, _]] = Seq(code)
   }
   def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
+  override val features: Seq[Feature] = Seq(
+    sql.name("security_group")
+  )
 }
 
 object GroupMemberModel
@@ -267,9 +271,12 @@ object AclModel
   )
 }
 
+
+
+import lampetia.sql.dialect.postgres._
+
 object SecuritySqlFormat {
-  import lampetia.sql.dsl._
-  
+
   implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)
 
@@ -310,6 +317,25 @@ object SecuritySqlFormat {
   implicit lazy val consumePermission: Consume[Permission] = consume[Int].fmap(Permission)
   implicit lazy val producePermission: Produce[Permission] = a => produce(a.code)
 
+  implicit lazy val consumeGroupId: Consume[GroupId] = consume[String].fmap(GroupId)
+  implicit lazy val consumeGroupIdOption: Consume[Option[GroupId]] = consume[Option[String]].fmap(_.map(GroupId))
+  implicit lazy val produceGroupId: Produce[GroupId] = a => produce(a.value)
+  implicit lazy val produceGroupIdOption: Produce[Option[GroupId]] = a => produce(a.map(_.value))
+
+  implicit lazy val consumeGroupRef: Consume[GroupRef] = consume[Option[GroupId]].fmap(GroupRef)
+  implicit lazy val produceGroupRef: Produce[GroupRef] = a => produce(a.parent)
+
+  implicit lazy val consumeCode: Consume[Code] = consume[String].fmap(Code)
+  implicit lazy val produceCode: Produce[Code] = a => produce(a.value)
+
+  implicit lazy val consumeGroupData: Consume[GroupData] = consume[Code].fmap(GroupData)
+  implicit lazy val produceGroupData: Produce[GroupData] = a => produce(a.code)
+
+  implicit lazy val consumeGroup: Consume[Group] =
+    (consume[GroupId] ~ consume[GroupRef] ~ consume[GroupData])(Group)
+  implicit lazy val produceGroup: Produce[Group] =
+    a => produce(a.id) andThen produce(a.ref) andThen produce(a.data)
+
   implicit lazy val consumeAclId: Consume[AclId] = consume[String].fmap(AclId)
   implicit lazy val produceAclId: Produce[AclId] = a => produce(a.value)
 
@@ -324,38 +350,39 @@ object SecuritySqlFormat {
 
 
 object SecurityModelTest extends App {
-  import lampetia.sql.dsl._
   import scala.concurrent.Await
   import scala.concurrent.duration.Duration
   import SecuritySqlFormat._
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def run[A](io: SqlIO[A]): Unit = {
+  def run[A](io: IO[A]): Unit = {
     val f = io.run
     f.onSuccess { case v => println(v) }
     f.onFailure { case e => println(e) }
     Await.ready(f, Duration.Inf)
   }
 
-  implicit val context: ConnectionSource =
-    hikari(
-      "org.postgresql.ds.PGSimpleDataSource",
-      "localhost", 5432, "jeelona", "admin", "admin", 3, 2000)
+  implicit lazy val context: ConnectionSource = {
+    val ds = new org.h2.jdbcx.JdbcDataSource
+    ds.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
+    connectionSource(ds)
+  }
 
 
   val u = UserModel
   val acl = AclModel
+  val g = GroupModel
   val s = 'jeelona
 
-  import lampetia.sql.dialect.postgres._
-  val q = createTable(acl).sqlString
-  println(q.sqlString)
+  val q = for {
+    _ <- g.create
+    i <- g.insert(GroupRef(None), GroupData(Code("abc")))
+    x <- g.find(g.id === i.id.bind)
+  } yield x
 
-  //val f = q.lifted.readSqlIO[Acl]
+  run(q.transactionally)
 
-  //run(f)
-
-  //context.shutdown()
+  context.shutdown()
 
 }
 
