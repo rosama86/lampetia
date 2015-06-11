@@ -19,12 +19,19 @@ trait PgDsl extends Dsl with Dialect {
   }
 
   trait PgQueryNode extends QueryNode {
-    def limit(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("limit", operands))
-    def offset(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("offset", operands))
+    override protected def append(operand: Operand): PgQueryNode
+    override def select(operands: Operand*)(implicit b: SelectNodeBuilder): PgQueryNode = append(b(operands))
+    override def from(operands: Operand*)(implicit b: FromNodeBuilder): PgQueryNode = append(b(operands))
+    override def where(operand: Operand)(implicit b: WhereNodeBuilder): PgQueryNode = append(b(operand))
+    override def groupBy(operands: Operand*)(implicit b: PrefixNodeBuilder): PgQueryNode = append(b("group by", operands))
+    override def having(operands: Operand*)(implicit b: PrefixNodeBuilder): PgQueryNode = append(b("having", operands))
+    override def orderBy(operands: Operand*)(implicit b: PrefixNodeBuilder): PgQueryNode = append(b("order by", operands))
+    def limit(operands: Operand*)(implicit b: PrefixNodeBuilder): PgQueryNode = append(b("limit", operands))
+    def offset(operands: Operand*)(implicit b: PrefixNodeBuilder): PgQueryNode = append(b("offset", operands))
   }
 
   case class DefaultPgQueryNode(operands: Seq[Operand]) extends PgQueryNode {
-    protected def append(operand: Operand): QueryNode = copy(operands = operands :+ operand)
+    protected def append(operand: Operand): PgQueryNode = copy(operands = operands :+ operand)
     val sqlString: String = s"${operands.map(_.sqlString).mkString(" ")}"
   }
 

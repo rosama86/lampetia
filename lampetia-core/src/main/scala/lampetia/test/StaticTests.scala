@@ -45,7 +45,7 @@ object StaticTests extends App {
   }
   def pgt1(): Unit = {
     import postgres._
-    val q = select("1".bind).limit(1.bind)
+    val q = select("1".bind).limit(1.bind).offset(3.bind)
     println(q.sqlString)
     pgrun(q.lifted.read[String])
   }
