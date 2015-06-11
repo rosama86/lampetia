@@ -267,25 +267,16 @@ trait QueryNode extends DQLNode {
   def groupBy(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("group by", operands))
   def having(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("having", operands))
   def orderBy(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("order by", operands))
-  //def limit(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("limit", operands))
-  //def offset(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("offset", operands))
 }
 
 trait QueryNodeBuilder {
-  def apply(operands: Seq[Operand]): QueryNode
+  type N <: QueryNode
+  def apply(operands: Seq[Operand]): N
 }
 
 case class DefaultQueryNode(operands: Seq[Operand]) extends QueryNode {
   protected def append(operand: Operand): QueryNode = copy(operands = operands :+ operand)
   val sqlString: String = s"${operands.map(_.sqlString).mkString(" ")}"
-  //def select(operands: Operand*) = append(SelectNode(operands))
-  //def from(operands: Operand*) = append(FromNode(operands))
-  //def where(operand: Operand) = append(WhereNode(operand))
-  //def groupBy(operands: Operand*) = append(PrefixNode("group by", operands))
-  //def having(operands: Operand*) = append(PrefixNode("having", operands))
-  //def orderBy(operands: Operand*) = append(PrefixNode("order by", operands))
-  //def limit(operands: Operand*) = append(PrefixNode("limit", operands))
-  //def offset(operands: Operand*) = append(PrefixNode("offset", operands))
 }
 
 trait SelectNodeBuilder {

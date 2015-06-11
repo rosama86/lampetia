@@ -14,6 +14,24 @@ trait PgDsl extends Dsl with Dialect {
     def name: String = "text"
   }
 
+  trait PgQueryNodeBuilder extends QueryNodeBuilder {
+    type N = PgQueryNode
+  }
+
+  trait PgQueryNode extends QueryNode {
+    def limit(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("limit", operands))
+    def offset(operands: Operand*)(implicit b: PrefixNodeBuilder): QueryNode = append(b("offset", operands))
+  }
+
+  case class DefaultPgQueryNode(operands: Seq[Operand]) extends PgQueryNode {
+    protected def append(operand: Operand): QueryNode = copy(operands = operands :+ operand)
+    val sqlString: String = s"${operands.map(_.sqlString).mkString(" ")}"
+  }
+
+  implicit lazy val QueryNodeBuilder: PgQueryNodeBuilder = new PgQueryNodeBuilder {
+    def apply(operands: Seq[Operand]): N = DefaultPgQueryNode(operands)
+  }
+
   case class WithNode(alias: IdentifierNode, body: Operand, selection: Operand, recursive: Boolean = false) extends DQLNode {
 
     def operands: Seq[Operand] = Seq(alias, body, selection)

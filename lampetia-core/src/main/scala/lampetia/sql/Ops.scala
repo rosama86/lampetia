@@ -3,7 +3,7 @@ package lampetia.sql
 import lampetia.io.BackendIO
 import lampetia.model._
 import lampetia.model.sql._
-import lampetia.sql.ast.{Dsl, Operand, Operator}
+import lampetia.sql.ast.{QueryNodeBuilder, Dsl, Operand, Operator}
 import lampetia.sql.dialect.Dialect
 
 /**
@@ -53,13 +53,13 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
   trait Find[E] extends Any { ms: ModelSchema[E] =>
 
-    def find(implicit ce: Consume[E]): IO[Seq[E]] =
+    def find(implicit ce: Consume[E], b: QueryNodeBuilder): IO[Seq[E]] =
       select(model.properties:_*).from(ms.schemaPrefixed).lifted.read[E]
 
-    def find[F <: Operator](filter: F)(implicit ce: Consume[E]): IO[Seq[E]] =
+    def find[F <: Operator](filter: F)(implicit ce: Consume[E], b: QueryNodeBuilder): IO[Seq[E]] =
       select(model.properties:_*).from(ms.schemaPrefixed).where(filter).lifted.read[E]
 
-    def findOne[F <: Operator](filter: F)(implicit ce: Consume[E]): IO[Option[E]] =
+    def findOne[F <: Operator](filter: F)(implicit ce: Consume[E], b: QueryNodeBuilder): IO[Option[E]] =
       find(filter).map(_.headOption)
 
   }

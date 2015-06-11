@@ -9,8 +9,10 @@ import lampetia.sql.ast._
  */
 
 trait Dialect {
+
   implicit lazy val StringLiteralNodeBuilder: StringLiteralNodeBuilder = new StringLiteralNodeBuilder {
-    def apply(value: String): StringLiteralNode = DefaultStringLiteralNode(value)
+    type N = StringLiteralNode
+    def apply(value: String): N = DefaultStringLiteralNode(value)
   }
   implicit lazy val IntegerLiteralNodeBuilder: IntegerLiteralNodeBuilder = new IntegerLiteralNodeBuilder {
     def apply(value: Int): IntegerLiteralNode = DefaultIntegerLiteralNode(value)
@@ -61,9 +63,7 @@ trait Dialect {
   implicit lazy val FunctionNodeBuilder: FunctionNodeBuilder = new FunctionNodeBuilder {
     def apply(name: String, operands: Seq[Operand]): FunctionNode = DefaultFunctionNode(name, operands)
   }
-  implicit lazy val QueryNodeBuilder: QueryNodeBuilder = new QueryNodeBuilder {
-    def apply(operands: Seq[Operand]): QueryNode = DefaultQueryNode(operands)
-  }
+
   implicit lazy val SelectNodeBuilder: SelectNodeBuilder = new SelectNodeBuilder {
     def apply(operands: Seq[Operand]): SelectNode = DefaultSelectNode(operands)
   }

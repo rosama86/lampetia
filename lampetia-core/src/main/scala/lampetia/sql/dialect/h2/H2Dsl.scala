@@ -15,4 +15,9 @@ trait H2Dsl extends Dsl with Dialect {
     def name: String = "varchar"
   }
 
+  implicit lazy val QueryNodeBuilder: QueryNodeBuilder = new QueryNodeBuilder {
+    type N = QueryNode
+    def apply(operands: Seq[Operand]): N = DefaultQueryNode(operands)
+  }
+
 }
