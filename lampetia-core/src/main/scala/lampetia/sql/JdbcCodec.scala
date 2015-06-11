@@ -22,11 +22,15 @@ trait JdbcCodec extends SqlCodec { self =>
   type Result[A] = Try[A]
 
   // monadic result
-  def pure[A](a: A): Try[A] = Success(a)
-  def fail[A](cause: Throwable): Try[A] = Failure[A](cause)
-  def map[A, B](fa: Try[A])(f: (A) => B): Try[B] = fa.map(f)
-  def flatMap[A, B](fa: Try[A])(f: (A) => Try[B]): Try[B] = fa.flatMap(f)
-  def withFilter[A](fa: Try[A])(f: (A) => Boolean): Try[A] = fa.filter(f)
+  object resultM extends super.ResultM {
+    def pure[A](a: A): Try[A] = Success(a)
+    def fail[A](cause: Throwable): Try[A] = Failure[A](cause)
+    def map[A, B](fa: Try[A])(f: (A) => B): Try[B] = fa.map(f)
+    def flatMap[A, B](fa: Try[A])(f: (A) => Try[B]): Try[B] = fa.flatMap(f)
+    def withFilter[A](fa: Try[A])(f: (A) => Boolean): Try[A] = fa.filter(f)
+  }
+
+
 
 
   trait JdbcSqlType[A] {

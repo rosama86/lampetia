@@ -15,11 +15,17 @@ trait BackendIO { self =>
   type Context
 
   // monadic result
-  def pure[A](a: A): Result[A]
-  def fail[A](cause: Throwable): Result[A]
-  def map[A, B](fa: Result[A])(f: A => B): Result[B]
-  def flatMap[A, B](fa: Result[A])(f: A => Result[B]): Result[B]
-  def withFilter[A](fa: Result[A])(f: A => Boolean): Result[A]
+  trait ResultM {
+    def pure[A](a: A): Result[A]
+    def fail[A](cause: Throwable): Result[A]
+    def map[A, B](fa: Result[A])(f: A => B): Result[B]
+    def flatMap[A, B](fa: Result[A])(f: A => Result[B]): Result[B]
+    def withFilter[A](fa: Result[A])(f: A => Boolean): Result[A]
+  }
+  
+  def resultM: ResultM
+
+  
 
   trait IO[A] {
     def execute(context: Context): Result[A]
@@ -29,21 +35,21 @@ trait BackendIO { self =>
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: Context): Future[R]
 
   case class IOPure[A](result: A) extends IO[A] {
-    def execute(context: Context): Result[A] = pure(result)
+    def execute(context: Context): Result[A] = resultM.pure(result)
   }
 
   case class IOFailed[A](exception: Throwable) extends IO[A] {
-    def execute(context: Context): Result[A] = fail[A](exception)
+    def execute(context: Context): Result[A] = resultM.fail[A](exception)
   }
 
   case class IOFlatMap[A, B](fa: IO[A], f: A => IO[B]) extends IO[B] {
     def execute(context: Context): Result[B] =
-      flatMap(fa.execute(context))(a => f(a).execute(context))
+      resultM.flatMap(fa.execute(context))(a => f(a).execute(context))
   }
 
   case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
     def execute(context: Context): Result[A] =
-      withFilter(fa.execute(context))(f)
+      resultM.withFilter(fa.execute(context))(f)
   }
 
 
