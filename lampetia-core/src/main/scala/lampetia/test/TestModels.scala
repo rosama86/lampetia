@@ -19,12 +19,14 @@ object TestModels {
   implicit object PersonModel
     extends Model[Person]
     with    HasId[Person, PersonId]
+    with    CanGenerate[PersonId]
+    with    CanParse[PersonId]
     with    HasData[Person, PersonData]
-    with    CanCombine2[Person, PersonId, PersonData] {
+    with    CanCombine2[Person, PersonId, PersonData]
+    with    UUIDGenerator {
     val name = "person"
     def parse(stringId: String) = Success(PersonId(stringId))
-    def generate = PersonId(UUID.randomUUID.toString)
-
+    def generate: PersonId = PersonId(generateStringId)
     object data extends DataModel[PersonData] {
 
       val firstName =

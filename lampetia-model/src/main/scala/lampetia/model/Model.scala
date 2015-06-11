@@ -15,8 +15,7 @@ trait Property[V] {
 }
 
 trait HasProperties[A] {
-  final type Properties = Seq[Property[_]]
-  def properties: Properties
+  def properties: Seq[Property[_]]
 }
 
 case class CProperty[A](name: String, features: Seq[Feature]) extends Property[A] {
@@ -26,10 +25,9 @@ case class CProperty[A](name: String, features: Seq[Feature]) extends Property[A
 case class PropertyValue[A](property: Property[A], value: A)
 
 trait Composite[V] {
-  def properties: Seq[Property[_]]
   def features: Seq[Feature] = Seq.empty[Feature]
-  def property[A](name: String): Property[A] =
-    CProperty[A](name, Seq.empty[Feature])
+  def property[A](name: String): Property[A] = CProperty[A](name, Seq.empty[Feature])
+  def properties: Seq[Property[_]]
 }
 
 trait RefModel[R] extends Composite[R]
@@ -38,18 +36,31 @@ trait DataModel[D] extends Composite[D]
 
 trait HasId[E, Id] extends HasProperties[E] { model: Model[E] =>
   def id: Property[Id] = CProperty[Id]("id", Seq.empty[Feature])
-  def parse(stringId: String): Try[Id]
-  def generate: Id
-  abstract override def properties: Properties = super.properties :+ id
+  //def parse(stringId: String): Try[Id]
+  //def generate: Id
+  abstract override def properties: Seq[Property[_]] = super.properties :+ id
+}
+
+trait CanParse[A] {
+  def parse(string: String): Try[A]
+}
+
+trait CanGenerate[A] {
+  def generate: A
+}
+
+trait HasCompositeId[E, Id] extends HasProperties[E] { model: Model[E] =>
+  def id: Composite[Id]
+  abstract override def properties: Seq[Property[_]] = super.properties ++ id.properties
 }
 trait HasRef[E, R] extends HasProperties[E] { model: Model[E] =>
   def ref: RefModel[R]
-  abstract override def properties: Properties = super.properties ++ ref.properties
+  abstract override def properties: Seq[Property[_]] = super.properties ++ ref.properties
 }
 
 trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
   def data: DataModel[D]
-  abstract override def properties: Properties = super.properties ++ data.properties
+  abstract override def properties: Seq[Property[_]] = super.properties ++ data.properties
 }
 
 trait CanCombine0[E] {
@@ -80,7 +91,7 @@ trait CanCombine5[E, A1, A2, A3, A4, A5] {
 trait Model[E] extends HasProperties[E] {
   def name: String
   def property[A](name: String): Property[A] = CProperty[A](name, Seq.empty[Feature])
-  def properties: Properties = Seq.empty[Property[_]]
+  def properties: Seq[Property[_]] = Seq.empty[Property[_]]
   def features: Seq[Feature] = Seq.empty[Feature]
 }
 

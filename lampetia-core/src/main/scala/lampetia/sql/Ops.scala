@@ -149,6 +149,18 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
     }
   }
 
+  implicit class Model03Ops[E, R, D](val model: Model[E] with HasRef[E, R] with HasData[E, D] with CanCombine2[E, R, D])
+    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
+    def insert(ref: R, data: D)(implicit pr: Produce[R], pd: Produce[D]): IO[E] = {
+      val ps = model.ref.properties ++ model.data.properties
+      val vs = ps.map(positionalParameter)
+      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(ref).set(data).write.flatMap {
+        case i if i > 0 => pureIO(model.combine(ref,data))
+        case _          => failedIO[E](new Exception("No Instance"))
+      }
+    }
+  }
+
   implicit class Model1Ops[E, Id](val model: Model[E] with HasId[E, Id] with CanCombine1[E, Id])
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] {
 
@@ -158,8 +170,8 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
         case _          => failedIO[E](new Exception("No Instance"))
       }
 
-    def insert(implicit pid: Produce[Id]): IO[E] =
-      insert(model.generate)
+    def insert(implicit cg: CanGenerate[Id], pid: Produce[Id]): IO[E] =
+      insert(cg.generate)
 
   }
 
@@ -175,8 +187,8 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
       }
     }
 
-    def insert(ref: R)(implicit pid: Produce[Id], pref: Produce[R]): IO[E] =
-      insert(model.generate, ref)
+    def insert(ref: R)(implicit cg: CanGenerate[Id], pid: Produce[Id], pref: Produce[R]): IO[E] =
+      insert(cg.generate, ref)
 
   }
 
@@ -192,12 +204,12 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
       }
     }
 
-    def insert(data: D)(implicit pid: Produce[Id], pdata: Produce[D]): IO[E] =
-      insert(model.generate, data)
+    def insert(data: D)(implicit cg: CanGenerate[Id], pid: Produce[Id], pdata: Produce[D]): IO[E] =
+      insert(cg.generate, data)
   }
 
   implicit class Model3Ops[E, Id, D, R]
-  (val model: Model[E] with HasId[E, Id] with HasRef[E, R] with HasData[E, D] with CanCombine3[E, Id, R, D])
+    (val model: Model[E] with HasId[E, Id] with HasRef[E, R] with HasData[E, D] with CanCombine3[E, Id, R, D])
     extends ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
 
     def insert(id: Id, ref: R, data: D)(implicit pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] = {
@@ -209,8 +221,8 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
       }
     }
 
-    def insert(ref: R, data: D)(implicit pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] =
-      insert(model.generate, ref, data)
+    def insert(ref: R, data: D)(implicit cg: CanGenerate[Id], pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] =
+      insert(cg.generate, ref, data)
   }
 
 }

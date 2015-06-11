@@ -9,39 +9,83 @@ case class SubjectId(value: String) extends AnyVal
 case class UserId(value: String) extends AnyVal
 case class User(id: UserId)
 
-case class ProviderId(value: String) extends AnyVal
+sealed trait AuthenticationProvider extends Any {
+  def value: String
+}
+case object UsernamePasswordProvider extends AuthenticationProvider {
+  val value = "USERNAME_PASSWORD"
+}
+case object Facebook extends AuthenticationProvider {
+  val value = "FACEBOOK"
+}
+case object Twitter extends AuthenticationProvider {
+  val value = "TWITTER"
+}
+
+object AuthenticationProvider {
+  def apply(value: String): AuthenticationProvider = value match {
+    case s if s == UsernamePasswordProvider.value => UsernamePasswordProvider
+    case s if s == Facebook.value                 => Facebook
+    case s if s == Twitter.value                  => Twitter
+  }
+}
+sealed trait AccountState extends Any {
+  def value: String
+}
+
+case object AccountActive extends AccountState {
+  val value = "ACTIVE"
+}
+
+case object AccountSuspended extends AccountState {
+  val value = "SUSPENDED"
+}
+
+object AccountState {
+  def apply(value: String): AccountState = value match {
+    case s if s == AccountActive.value => AccountActive
+    case s if s == AccountSuspended.value => AccountSuspended
+  }
+}
+
 case class ProviderUserId(value: String) extends AnyVal
 case class ProviderResponse(value: JSON) extends AnyVal
-case class UserDetails(value: JSON) extends AnyVal
+case class AccountDetails(value: JSON) extends AnyVal
 case class ProfileId(value: String) extends AnyVal
 case class ProfileRef(userId: UserId)
-case class ProfileData
-  (providerId: ProviderId,
+case class ProfileData(
+   provider: AuthenticationProvider,
    providerUserId: ProviderUserId,
-   email: Email,
    providerResponse: ProviderResponse,
-   userDetails: UserDetails)
+   email: Email,
+   accountDetails: AccountDetails,
+   accountState: AccountState)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
 
-sealed trait SubjectType
-case object SubjectUser extends SubjectType
-case object SubjectGroup extends SubjectType
-case object SubjectApplication extends SubjectType
-case object SubjectSystem extends SubjectType
+sealed trait SubjectType {
+  def value: String
+}
+case object SubjectUser extends SubjectType {
+  val value = "USER"
+}
+case object SubjectGroup extends SubjectType {
+  val value = "GROUP"
+}
+case object SubjectApplication extends SubjectType {
+  val value = "APPLICATION"
+}
+case object SubjectSystem extends SubjectType {
+  val value = "SYSTEM"
+}
+
 object SubjectType {
-  def asSubjectType(value: String) = value match {
-    case "USER"        => SubjectUser
-    case "GROUP"       => SubjectGroup
-    case "APPLICATION" => SubjectApplication
-    case "SYSTEM"      => SubjectSystem
+  def apply(value: String) = value match {
+    case s if s == SubjectUser.value        => SubjectUser
+    case s if s == SubjectGroup.value       => SubjectGroup
+    case s if s == SubjectApplication.value => SubjectApplication
+    case s if s == SubjectSystem.value      => SubjectSystem
   }
 
-  def asString(instance: SubjectType) = instance match {
-    case SubjectUser        => "USER"
-    case SubjectGroup       => "GROUP"
-    case SubjectApplication => "APPLICATION"
-    case SubjectSystem      => "SYSTEM"
-  }
 }
 
 case class Subject(subjectId: SubjectId, subjectType: SubjectType)
@@ -71,166 +115,182 @@ case class Acl(id: AclId, data: AclData)
 case class AclRoleRef(aclId: AclId, roleId: RoleId)
 case class AclRole(ref: AclRoleRef) extends AnyVal
 
+object SecurityModel {
 
-object UserModel
-  extends Model[User]
-  with HasId[User, UserId]
-  with CanCombine1[User, UserId]
-  with UUIDGenerator {
+  implicit object UserModel
+    extends Model[User]
+    with HasId[User, UserId]
+    with CanCombine1[User, UserId]
+    with CanGenerate[UserId]
+    with CanParse[UserId]
+    with UUIDGenerator {
 
-  val name: String = "User"
-  def generate: UserId = UserId(generateStringId)
-  def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-  def combine(id: UserId): User = User(id)
+    val name: String = "User"
+    def generate: UserId = UserId(generateStringId)
+    def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
+    def combine(id: UserId): User = User(id)
 
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_user"),
-    sql.primaryKey(id)
-  )
-}
-
-object ProfileModel
-  extends Model[Profile]
-  with HasId[Profile, ProfileId]
-  with HasRef[Profile, ProfileRef]
-  with HasData[Profile, ProfileData]
-  with CanCombine3[Profile, ProfileId, ProfileRef, ProfileData]
-  with UUIDGenerator {
-  val name: String = "Profile"
-  def generate: ProfileId = ProfileId(generateStringId)
-  def parse(stringId: String): Try[ProfileId] = Success(ProfileId(stringId))
-  object ref extends RefModel[ProfileRef] {
-    val userId = property[UserId]("userId")
-    val properties = Seq(userId)
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_user"),
+      sql.primaryKey(id)
+    )
   }
-  object data extends DataModel[ProfileData] {
-    val providerId = property[ProviderId]("providerId")
-    val providerUserId = property[ProviderUserId]("providerUserId")
-    val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
-    val email = property[Email]("email")
-    val userDetails = property[UserDetails]("userDetails").set(sql.`type`("jsonb"))
-    val properties = Seq(providerId, providerUserId, providerResponse, userDetails)
-  }
-  def combine(a1: ProfileId, a2: ProfileRef, a3: ProfileData): Profile = Profile(a1,a2,a3)
 
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_profile"),
-    sql.primaryKey("security_profile_pk")(id),
-    sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
-    sql.uniqueIndex("security_profile_udx_1")(data.providerId, data.email)
-  )
-}
-
-object GroupModel
-  extends Model[Group]
-  with HasId[Group, GroupId]
-  with HasRef[Group, GroupRef]
-  with HasData[Group, GroupData]
-  with CanCombine3[Group, GroupId, GroupRef, GroupData]
-  with UUIDGenerator {
-  val name: String = "Group"
-  def generate: GroupId = GroupId(generateStringId)
-  def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
-  object ref extends RefModel[GroupRef] {
-    val parent = property[GroupId]("parent").set(sql.optional)
-    val properties = Seq(parent)
-  }
-  object data extends DataModel[GroupData] {
-    val code = property[Code]("code")
-    val properties = Seq(code)
-  }
-  def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_group"),
-    sql.primaryKey("security_group_pk")(id)
-  )
-}
-
-object GroupMemberModel
-  extends Model[GroupMember]
-  with HasRef[GroupMember, GroupMemberRef]
-  with CanCombine1[GroupMember, GroupMemberRef] {
-  val name: String = "GroupMember"
-  object ref extends RefModel[GroupMemberRef] {
-    val groupId = property[GroupId]("groupId")
-    val memberId = property[SubjectId]("memberId")
-    val properties = Seq(groupId, memberId)
-  }
-  def combine(a1: GroupMemberRef): GroupMember = GroupMember(a1)
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_group_member"),
-    sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel, GroupModel.id),
-    sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel, UserModel.id)
-  )
-}
-
-object RoleModel
-  extends Model[Role]
-  with HasId[Role, RoleId]
-  with HasData[Role, RoleData]
-  with CanCombine2[Role, RoleId, RoleData]
-  with UUIDGenerator {
-  val name: String = "Role"
-  def generate: RoleId = RoleId(generateStringId)
-  def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
-  object data extends DataModel[RoleData] {
-    val code = property[Code]("code")
-    val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
-    val properties = Seq(code, permission)
-  }
-  def combine(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_role")
-  )
-}
-
-object AclModel
-  extends Model[Acl]
-  with HasId[Acl, AclId]
-  with HasData[Acl, AclData]
-  with CanCombine2[Acl, AclId, AclData]
-  with UUIDGenerator {
-  val name = "Acl"
-  def generate: AclId = AclId(generateStringId)
-  def parse(stringId: String): Try[AclId] = Success(AclId(stringId))
-  object data extends DataModel[AclData] {
-    object subject extends Composite[Subject] {
-      val subjectId = property[SubjectId]("subjectId")
-      val subjectType = property[SubjectType]("subjectType")
-      val properties = Seq(subjectId, subjectType)
+  implicit object ProfileModel
+    extends Model[Profile]
+    with HasId[Profile, ProfileId]
+    with HasRef[Profile, ProfileRef]
+    with HasData[Profile, ProfileData]
+    with CanCombine3[Profile, ProfileId, ProfileRef, ProfileData]
+    with CanGenerate[ProfileId]
+    with CanParse[ProfileId]
+    with UUIDGenerator {
+    val name: String = "Profile"
+    def generate: ProfileId = ProfileId(generateStringId)
+    def parse(stringId: String): Try[ProfileId] = Success(ProfileId(stringId))
+    object ref extends RefModel[ProfileRef] {
+      val userId = property[UserId]("userId")
+      val properties = Seq(userId)
     }
-    object resource extends Composite[Resource] {
-      val resourceId = property[ResourceId]("resourceId")
-      val resourceType = property[ResourceType]("resourceType")
-      val properties = Seq(resourceId, resourceType)
+    object data extends DataModel[ProfileData] {
+      val provider = property[AuthenticationProvider]("provider")
+      val providerUserId = property[ProviderUserId]("providerUserId")
+      val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
+      val email = property[Email]("email")
+      val accountDetails = property[AccountDetails]("accountDetails").set(sql.`type`("jsonb"))
+      val accountState = property[AccountState]("accountState")
+      val properties = Seq(provider, providerUserId, providerResponse, accountDetails, accountState)
     }
-    object parentResource extends Composite[Option[Resource]] {
-      val resourceId =
-        property[Option[ResourceId]]("resourceId")
-          .set(sql.optional)
-          .set(sql.name("parent_resource_id"))
-      val resourceType =
-        property[ResourceType]("resourceType")
-          .set(sql.optional)
-          .set(sql.name("parent_resource_type"))
-      val properties = Seq(resourceId, resourceType)
-    }
-    val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
-    val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
+    def combine(a1: ProfileId, a2: ProfileRef, a3: ProfileData): Profile = Profile(a1,a2,a3)
+
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_profile"),
+      sql.primaryKey("security_profile_pk")(id),
+      sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
+      sql.index("security_profile_user_id_idx")(ref.userId),
+      sql.index("security_profile_state_idx")(data.accountState),
+      sql.uniqueIndex("security_profile_provider_email_uidx")(data.provider, data.email)
+    )
   }
 
-  def combine(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
+  implicit object GroupModel
+    extends Model[Group]
+    with HasId[Group, GroupId]
+    with HasRef[Group, GroupRef]
+    with HasData[Group, GroupData]
+    with CanCombine3[Group, GroupId, GroupRef, GroupData]
+    with CanGenerate[GroupId]
+    with CanParse[GroupId]
+    with UUIDGenerator {
+    val name: String = "Group"
+    def generate: GroupId = GroupId(generateStringId)
+    def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
+    object ref extends RefModel[GroupRef] {
+      val parent = property[GroupId]("parent").set(sql.optional)
+      val properties = Seq(parent)
+    }
+    object data extends DataModel[GroupData] {
+      val code = property[Code]("code")
+      val properties = Seq(code)
+    }
+    def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_group"),
+      sql.primaryKey("security_group_pk")(id)
+    )
+  }
 
-  override val features: Seq[Feature] = Seq(
-    sql.schema("sec"),
-    sql.name("security_subject_grant")
-  )
+  implicit object GroupMemberModel
+    extends Model[GroupMember]
+    with HasRef[GroupMember, GroupMemberRef]
+    with CanCombine1[GroupMember, GroupMemberRef] {
+    val name: String = "GroupMember"
+    object ref extends RefModel[GroupMemberRef] {
+      val groupId = property[GroupId]("groupId")
+      val memberId = property[SubjectId]("memberId")
+      val properties = Seq(groupId, memberId)
+    }
+    def combine(a1: GroupMemberRef): GroupMember = GroupMember(a1)
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_group_member"),
+      sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel, GroupModel.id),
+      sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel, UserModel.id)
+    )
+  }
+
+  implicit object RoleModel
+    extends Model[Role]
+    with HasId[Role, RoleId]
+    with HasData[Role, RoleData]
+    with CanCombine2[Role, RoleId, RoleData]
+    with CanGenerate[RoleId]
+    with CanParse[RoleId]
+    with UUIDGenerator {
+    val name: String = "Role"
+    def generate: RoleId = RoleId(generateStringId)
+    def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
+    object data extends DataModel[RoleData] {
+      val code = property[Code]("code")
+      val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
+      val properties = Seq(code, permission)
+    }
+    def combine(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_role")
+    )
+  }
+
+  implicit object AclModel
+    extends Model[Acl]
+    with HasId[Acl, AclId]
+    with HasData[Acl, AclData]
+    with CanCombine2[Acl, AclId, AclData]
+    with CanGenerate[AclId]
+    with CanParse[AclId]
+    with UUIDGenerator {
+    val name = "Acl"
+    def generate: AclId = AclId(generateStringId)
+    def parse(stringId: String): Try[AclId] = Success(AclId(stringId))
+    object data extends DataModel[AclData] {
+      object subject extends Composite[Subject] {
+        val subjectId = property[SubjectId]("subjectId")
+        val subjectType = property[SubjectType]("subjectType")
+        val properties = Seq(subjectId, subjectType)
+      }
+      object resource extends Composite[Resource] {
+        val resourceId = property[ResourceId]("resourceId")
+        val resourceType = property[ResourceType]("resourceType")
+        val properties = Seq(resourceId, resourceType)
+      }
+      object parentResource extends Composite[Option[Resource]] {
+        val resourceId =
+          property[Option[ResourceId]]("resourceId")
+            .set(sql.optional)
+            .set(sql.name("parent_resource_id"))
+        val resourceType =
+          property[ResourceType]("resourceType")
+            .set(sql.optional)
+            .set(sql.name("parent_resource_type"))
+        val properties = Seq(resourceId, resourceType)
+      }
+      val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
+      val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
+    }
+
+    def combine(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
+
+    override val features: Seq[Feature] = Seq(
+      sql.schema("sec"),
+      sql.name("security_subject_grant")
+    )
+  }
 }
+
 
 
 
@@ -241,8 +301,8 @@ object SecuritySqlFormat {
   implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)
 
-  implicit lazy val consumeSubjectType: Consume[SubjectType] = consume[String].fmap(SubjectType.asSubjectType)
-  implicit lazy val produceSubjectType: Produce[SubjectType] = a => produce(SubjectType.asString(a))
+  implicit lazy val consumeSubjectType: Consume[SubjectType] = consume[String].fmap(SubjectType.apply)
+  implicit lazy val produceSubjectType: Produce[SubjectType] = a => produce(a.value)
 
   implicit lazy val consumeSubject: Consume[Subject] = (consume[SubjectId] ~ consume[SubjectType])(Subject)
   implicit lazy val produceSubject: Produce[Subject] = a => produce(a.subjectId) andThen produce(a.subjectType)
@@ -318,6 +378,7 @@ object SecuritySqlFormat {
 object SecurityModelTest extends App {
   import scala.concurrent.Await
   import scala.concurrent.duration.Duration
+  import SecurityModel._
   import SecuritySqlFormat._
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -362,6 +423,7 @@ object SecurityModelTest extends App {
   println("------------")
   gm.createSql.foreach(println)
   println("------------")*/
+
 
   context.shutdown()
 
