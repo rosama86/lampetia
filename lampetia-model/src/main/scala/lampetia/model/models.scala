@@ -12,7 +12,7 @@ trait UUIDGenerator extends IdGenerator {
   def generateStringId: String = UUID.randomUUID.toString
 }
 
-trait JSON {
+trait JSON extends Any {
   def stringify: String
 }
 

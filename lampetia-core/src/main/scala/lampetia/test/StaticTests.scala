@@ -1,6 +1,9 @@
 package lampetia.test
 
 
+import lampetia.model.JSON
+import play.api.libs.json.{JsValue, Json}
+
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -10,6 +13,7 @@ import scala.concurrent.duration.Duration
 object StaticTests extends App {
 
   import lampetia.sql.dialect._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit lazy val h2context: h2.ConnectionSource = {
@@ -50,8 +54,26 @@ object StaticTests extends App {
     pgrun(q.lifted.read[String])
   }
 
-  h2t1()
-  pgt1()
+  case class PlayJson(value: JsValue) extends AnyVal with JSON {
+    def stringify: String = Json.stringify(value)
+  }
+
+  def pgt2(): Unit = {
+    import postgres._
+    val jsonb = "jsonb".typeName
+    implicit val consumeJson: Consume[JSON] = consume[String].fmap(js => Json.parse(js)).fmap(PlayJson)
+    implicit val produceJson: Produce[JSON] = a => produce(a.stringify)
+
+    val v = PlayJson(Json.obj("key" -> 1))
+
+    val q = select(v.bind.cast(jsonb))
+    println(q.sqlString)
+    pgrun(q.lifted.read[JSON])
+  }
+
+  //h2t1()
+  //pgt1()
+  pgt2()
 
 
 

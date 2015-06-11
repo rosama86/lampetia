@@ -9,6 +9,7 @@ libraryDependencies ++= Seq(
   logback,
   akkaActor,
   playFunctional,
+  playJson,
   postgresql,
   h2,
   hikari)

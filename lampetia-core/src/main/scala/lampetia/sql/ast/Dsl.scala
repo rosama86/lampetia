@@ -44,7 +44,7 @@ trait Dsl {
     def surround(implicit b: SurroundNodeBuilder): SurroundNode = b(value)
     def dot[B](other: B)(implicit c: B => Operand, b: InfixNodeBuilder): InfixNode = b(".", value, other)
     def as[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" as ", value, other)
-    def cast(other: TypeNode, b: InfixNodeBuilder): InfixNode = b("::", value, other)
+    def cast(other: TypeNode)(implicit b: InfixNodeBuilder): InfixNode = b("::", value, other)
     def asc(implicit b: PostfixNodeBuilder): PostfixNode = b("asc", Seq(value))
     def desc(implicit b: PostfixNodeBuilder): PostfixNode = b("desc", Seq(value))
     def concat[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" || ", value, other)

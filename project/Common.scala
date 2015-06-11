@@ -42,6 +42,7 @@ object Common {
     val logback = "ch.qos.logback" % "logback-classic" % logbackVersion
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
     val playFunctional = "com.typesafe.play" %% "play-functional" % playVersion
+    val playJson = "com.typesafe.play" %% "play-json" % playVersion
     val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion
     val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion

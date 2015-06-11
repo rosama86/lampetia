@@ -54,6 +54,7 @@ trait BackendIO { self =>
 
 
   def pureIO[A](a: A): IO[A] = IOPure(a)
+  def failedIO[A](cause: Throwable): IO[A] = IOFailed[A](cause)
 
   trait LiftIO[A] extends Any {
 

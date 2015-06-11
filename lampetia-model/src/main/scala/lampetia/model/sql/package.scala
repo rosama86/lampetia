@@ -21,6 +21,10 @@ package object sql {
 
   def `type`(value: String): SqlFeature = SqlType(value)
 
+  case class SqlCast(typeName: String) extends AnyVal with SqlFeature
+
+  def cast(typeName: String): SqlFeature= SqlCast(typeName)
+
   case class SqlSchema(value: String) extends AnyVal with SqlFeature
 
   def schema(value: String): SqlSchema = SqlSchema(value)
@@ -91,6 +95,10 @@ package object sql {
     def optional: Boolean = p.features.collectFirst {
       case Optional => true
     }.getOrElse(false)
+
+    def sqlCast: Option[String] = p.features.collectFirst {
+      case SqlCast(v) => Some(v)
+    }.getOrElse(None)
 
   }
 

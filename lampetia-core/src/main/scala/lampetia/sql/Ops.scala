@@ -43,6 +43,11 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
   implicit class LiftSqlIO[A](val io: IO[A]) extends LiftIO[A]
 
+  def positionalParameter(p: Property[_]) = p.sqlCast match {
+    case Some(tn) => ?.cast(tn.typeName)
+    case None     => ?
+  }
+
   trait ModelSchema[E] extends Any {
     def model: Model[E]
     def schemaPrefixed: Operand = model.sqlSchema match {
@@ -124,10 +129,10 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
     def insert(ref: R)(implicit pref: Produce[R]): IO[E] = {
       val ps = model.ref.properties
-      val vs = ps.map(_ => ?)
+      val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(ref).write.flatMap {
-        case i if i > 0 => IOPure(model.combine(ref))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(ref))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
     }
   }
@@ -136,10 +141,10 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
     def insert(data: D)(implicit pref: Produce[D]): IO[E] = {
       val ps = model.data.properties
-      val vs = ps.map(_ => ?)
+      val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(data).write.flatMap {
-        case i if i > 0 => IOPure(model.combine(data))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(data))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
     }
   }
@@ -149,8 +154,8 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def insert(id: Id)(implicit pid: Produce[Id]): IO[E] =
       insertInto(schemaPrefixed).values(id.bind).lifted.write.flatMap {
-        case i if i > 0 => IOPure(model.combine(id))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(id))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
 
     def insert(implicit pid: Produce[Id]): IO[E] =
@@ -163,10 +168,10 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def insert(id: Id, ref: R)(implicit pid: Produce[Id], pref: Produce[R]): IO[E] = {
       val ps = model.id +: model.ref.properties
-      val vs = ps.map(_ => ?)
+      val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(ref).write.flatMap {
-        case i if i > 0 => IOPure(model.combine(id, ref))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(id, ref))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
     }
 
@@ -180,10 +185,10 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def insert(id: Id, data: D)(implicit pid: Produce[Id], pdata: Produce[D]): IO[E] = {
       val ps = model.id +: model.data.properties
-      val vs = ps.map(_ => ?)
+      val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(data).write.flatMap {
-        case i if i > 0 => IOPure(model.combine(id, data))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(id, data))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
     }
 
@@ -197,10 +202,10 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def insert(id: Id, ref: R, data: D)(implicit pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] = {
       val ps = model.id +: (model.ref.properties ++ model.data.properties)
-      val vs = ps.map(_ => ?)
+      val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(ref).set(data).write.flatMap {
-        case i if i > 0 => IOPure(model.combine(id, ref, data))
-        case _          => IOFailed(new Exception("No Instance"))
+        case i if i > 0 => pureIO(model.combine(id, ref, data))
+        case _          => failedIO[E](new Exception("No Instance"))
       }
     }
 
