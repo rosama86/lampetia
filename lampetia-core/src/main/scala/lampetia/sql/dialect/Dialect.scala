@@ -22,7 +22,7 @@ trait Dialect {
     def apply[A](model: Model[A]): TableIdentifierNode[A] = DefaultTableIdentifierNode(model)
   }
   implicit def ColumnIdentifierNodeBuilder: ColumnIdentifierNodeBuilder = new ColumnIdentifierNodeBuilder {
-    def apply[E, A](property: Property[E, A]): ColumnIdentifierNode[E, A] = DefaultColumnIdentifierNode(property)
+    def apply[A](property: Property[A]): ColumnIdentifierNode[A] = DefaultColumnIdentifierNode(property)
   }
   implicit def ParameterNodeBuilder: ParameterNodeBuilder = new ParameterNodeBuilder {
     def apply: ParameterNode = DefaultParameterNode
@@ -114,7 +114,7 @@ trait Dialect {
       DefaultIndexNode(model, index)(tb)
   }
   implicit def ForeignKeyNodeBuilder: ForeignKeyNodeBuilder = new ForeignKeyNodeBuilder {
-    def apply[E](model: Model[E], foreignKey: SqlForeignKey)(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E] =
+    def apply[E, R](model: Model[E], foreignKey: SqlForeignKey[R])(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E, R] =
       DefaultForeignKeyNode(model, foreignKey)(tb)
   }
 }

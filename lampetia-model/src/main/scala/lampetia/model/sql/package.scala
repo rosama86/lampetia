@@ -25,31 +25,33 @@ package object sql {
 
   def schema(value: String): SqlSchema = SqlSchema(value)
 
-  case class SqlPrimaryKey(name: Option[String], properties: Seq[Property[_, _]]) extends SqlFeature
+  case class SqlPrimaryKey(name: Option[String], properties: Seq[Property[_]]) extends SqlFeature
 
-  def primaryKey(name: String)(property: Property[_, _], properties: Property[_, _]*): SqlPrimaryKey =
+  def primaryKey(name: String)(property: Property[_], properties: Property[_]*): SqlPrimaryKey =
     SqlPrimaryKey(Some(name), property +: properties)
 
-  def primaryKey(property: Property[_, _], properties: Property[_, _]*): SqlPrimaryKey =
+  def primaryKey(property: Property[_], properties: Property[_]*): SqlPrimaryKey =
     SqlPrimaryKey(None, property +: properties)
 
-  case class SqlForeignKey(name: Option[String], keys: Seq[Property[_, _]], references: Seq[Property[_, _]]) extends SqlFeature
+  case class SqlForeignKey[R](name: Option[String], keys: Seq[Property[_]], refModel: Model[R], references: Seq[Property[_]]) extends SqlFeature
 
-  def foreignKey(name: String)(key: Property[_, _], keys: Property[_, _]*)(ref: Property[_, _], references: Property[_, _]*): SqlForeignKey =
-    SqlForeignKey(Some(name), key +: keys, ref +: references)
+  def foreignKey[R](name: String)(key: Property[_], keys: Property[_]*)
+                   (refModel: Model[R], ref: Property[_], references: Property[_]*): SqlForeignKey[R] =
+    SqlForeignKey[R](Some(name), key +: keys, refModel, ref +: references)
 
-  def foreignKey(key: Property[_, _], keys: Property[_, _]*)(ref: Property[_, _], references: Property[_, _]*): SqlForeignKey =
-    SqlForeignKey(None, key +: keys, ref +: references)
+  def foreignKey[R](key: Property[_], keys: Property[_]*)
+                   (refModel: Model[R], ref: Property[_], references: Property[_]*): SqlForeignKey[R] =
+    SqlForeignKey[R](None, key +: keys, refModel, ref +: references)
 
-  case class SqlIndex(name: Option[String], properties: Seq[Property[_, _]], unique: Boolean) extends SqlFeature
+  case class SqlIndex(name: Option[String], properties: Seq[Property[_]], unique: Boolean) extends SqlFeature
 
-  def index(name: String)(property: Property[_, _], properties: Property[_, _]*): SqlIndex =
+  def index(name: String)(property: Property[_], properties: Property[_]*): SqlIndex =
     SqlIndex(Some(name), property +: properties, unique = false)
-  def index(property: Property[_, _], properties: Property[_, _]*): SqlIndex =
+  def index(property: Property[_], properties: Property[_]*): SqlIndex =
     SqlIndex(None, property +: properties, unique = false)
-  def uniqueIndex(name: String)(property: Property[_, _], properties: Property[_, _]*): SqlIndex =
+  def uniqueIndex(name: String)(property: Property[_], properties: Property[_]*): SqlIndex =
     SqlIndex(Some(name), property +: properties, unique = true)
-  def uniqueIndex(property: Property[_, _], properties: Property[_, _]*): SqlIndex =
+  def uniqueIndex(property: Property[_], properties: Property[_]*): SqlIndex =
     SqlIndex(None, property +: properties, unique = true)
 
 
@@ -67,8 +69,8 @@ package object sql {
       case pk: SqlPrimaryKey => Some(pk)
     }.getOrElse(None)
 
-    def sqlForeignKeys: Seq[SqlForeignKey] = model.features.collect {
-      case fk: SqlForeignKey => fk
+    def sqlForeignKeys: Seq[SqlForeignKey[_]] = model.features.collect {
+      case fk: SqlForeignKey[_] => fk
     }
 
     def sqlIndexes: Seq[SqlIndex] = model.features.collect {
@@ -76,7 +78,7 @@ package object sql {
     }
   }
 
-  implicit class PropertyFeatures[E, A](val p: Property[E, A]) {
+  implicit class PropertyFeatures[A](val p: Property[A]) {
 
     def sqlName: String = p.features.collectFirst {
       case SqlName(value) => value

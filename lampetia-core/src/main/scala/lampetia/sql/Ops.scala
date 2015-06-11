@@ -25,9 +25,9 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
     def value: Operand = asIdentifier
   }
 
-  implicit class UpdateCouple[E, A](val property: Property[E, A]) extends UpdateCoupleDsl[E, A]
+  implicit class UpdateCouple[A](val property: Property[A]) extends UpdateCoupleDsl[A]
 
-  implicit class PropertyLifter[E, A](val property: Property[E, A]) extends PropertyLifterDsl[E, A] {
+  implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
     def value: Operand = asColumnIdentifier
   }
 
@@ -86,12 +86,33 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def create: IO[Int] = {
       val c = createTable(model).sql.write
-      val pk = model.sqlPrimaryKey.map(pk => primaryKey(model, pk).sql.write).fold(IOPure(0): IO[Int])(identity)
-      val fks = model.sqlForeignKeys.map(fk => foreignKey(model, fk).sql.write)
-      val idxs = model.sqlIndexes.map(idx => index(model, idx).sql.write)
-      c.flatMap(_ => pk)
-        .flatMap(_ => fks.reduce( (l, r) => l.flatMap(_ => r)))
-        .flatMap(_ => idxs.reduce( (l, r) => l.flatMap(_ => r)))
+      val pk =
+        model.sqlPrimaryKey.map(pk => primaryKey(model, pk).sql.write)
+          .fold(pureIO(0))(identity)
+      val fks =
+        model.sqlForeignKeys.map(fk => foreignKey(model, fk).sql.write)
+          .foldLeft(pureIO(0))( (l,r) => l.flatMap(_ => r))
+      val idxs =
+        model.sqlIndexes.map(idx => index(model, idx).sql.write)
+          .foldLeft(pureIO(0))( (l,r) => l.flatMap(_ => r))
+
+      c.flatMap(_ => pk).flatMap(_ => fks).flatMap(_ => idxs)
+    }
+
+    def createSql: Seq[Sql] = {
+      val c = createTable(model).sql
+      val pk =
+        model.sqlPrimaryKey.map(pk => primaryKey(model, pk).sql)
+      val fks =
+        model.sqlForeignKeys.map(fk => foreignKey(model, fk).sql)
+      val idxs =
+        model.sqlIndexes.map(idx => index(model, idx).sql)
+      pk match {
+        case Some(v) =>
+          c +: v +: (fks ++ idxs)
+        case None =>
+          c +: (fks ++ idxs)
+      }
     }
 
   }

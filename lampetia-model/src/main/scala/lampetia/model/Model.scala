@@ -1,6 +1,5 @@
 package lampetia.model
 
-import scala.language.implicitConversions
 import scala.util.Try
 
 /**
@@ -9,65 +8,47 @@ import scala.util.Try
 
 trait Feature extends Any
 
-// O: owner type
-// V: property value type
-trait Property[O, V] {
+trait Property[V] {
   def name: String
-  def set(instance: O, value: V): O
-  def get(instance: O): V
-  def set(feature: Feature): Property[O, V]
+  def set(feature: Feature): Property[V]
   def features: Seq[Feature]
-  def liftOption: Property[Option[O], Option[V]]
 }
 
-case class CProperty[O, A](name: String, features: Seq[Feature], fg: O => A, fs: O => A => O) extends Property[O, A] {
-  def get(instance: O): A = fg(instance)
-  def set(instance: O, value: A): O = fs(instance)(value)
-  def set(feature: Feature): CProperty[O, A] = copy(features = this.features :+ feature)
-  def liftOption: Property[Option[O], Option[A]] =
-    CProperty(name, features, (oo: Option[O]) => oo.map(fg), e => v =>
-    for {
-      ee <- e
-      vv <- v
-    } yield fs(ee)(vv)
-  )
-}
-
-case class PropertyValue[O, A](property: Property[O, A], value: A)
-
-trait Composite[O, V] {
-  def set(instance: O, value: V): O
-  def get(instance: O): V
-  def properties: Seq[Property[_, _]]
-  def features: Seq[Feature] = Seq.empty[Feature]
-
-  def property[A](name: String)(fg: V => A)(fs: V => A => V): Property[V, A] =
-    CProperty[V, A](name, Seq.empty[Feature], fg, fs)
-}
-
-trait RefModel[O, Ref] extends Composite[O, Ref]
-
-trait DataModel[O, Data] extends Composite[O, Data]
-
-
-trait HasProperties[O] {
-  final type Properties = Seq[Property[_, _]]
+trait HasProperties[A] {
+  final type Properties = Seq[Property[_]]
   def properties: Properties
 }
 
-trait HasId[E, Id] extends HasProperties[E] { this: Model[E] =>
-  def id: Property[E, Id]
+case class CProperty[A](name: String, features: Seq[Feature]) extends Property[A] {
+  def set(feature: Feature): Property[A] = copy(features = this.features :+ feature)
+}
+
+case class PropertyValue[A](property: Property[A], value: A)
+
+trait Composite[V] {
+  def properties: Seq[Property[_]]
+  def features: Seq[Feature] = Seq.empty[Feature]
+  def property[A](name: String): Property[A] =
+    CProperty[A](name, Seq.empty[Feature])
+}
+
+trait RefModel[R] extends Composite[R]
+
+trait DataModel[D] extends Composite[D]
+
+trait HasId[E, Id] extends HasProperties[E] { model: Model[E] =>
+  def id: Property[Id] = CProperty[Id]("id", Seq.empty[Feature])
   def parse(stringId: String): Try[Id]
   def generate: Id
   abstract override def properties: Properties = super.properties :+ id
 }
-trait HasRef[E, Ref] extends HasProperties[E] { this: Model[E] =>
-  def ref: RefModel[E, Ref]
+trait HasRef[E, R] extends HasProperties[E] { model: Model[E] =>
+  def ref: RefModel[R]
   abstract override def properties: Properties = super.properties ++ ref.properties
 }
 
-trait HasData[E, Data] extends HasProperties[E] { this: Model[E] =>
-  def data: DataModel[E, Data]
+trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
+  def data: DataModel[D]
   abstract override def properties: Properties = super.properties ++ data.properties
 }
 
@@ -98,10 +79,8 @@ trait CanCombine5[E, A1, A2, A3, A4, A5] {
 
 trait Model[E] extends HasProperties[E] {
   def name: String
-  def property[A](name: String)(fg: E => A)(fs: E => A => E): Property[E, A] =
-    CProperty[E, A](name, Seq.empty[Feature], fg, fs)
-
-  def properties: Properties = Seq.empty[Property[_, _]]
+  def property[A](name: String): Property[A] = CProperty[A](name, Seq.empty[Feature])
+  def properties: Properties = Seq.empty[Property[_]]
   def features: Seq[Feature] = Seq.empty[Feature]
 }
 

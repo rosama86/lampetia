@@ -81,11 +81,12 @@ object UserModel
   val name: String = "User"
   def generate: UserId = UserId(generateStringId)
   def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-  val id: Property[User, UserId] = property[UserId]("id")(_.id)(e => v => e.copy(id = v))
   def combine(id: UserId): User = User(id)
 
   override val features: Seq[Feature] = Seq(
-    sql.name("security_user")
+    sql.schema("sec"),
+    sql.name("security_user"),
+    sql.primaryKey(id)
   )
 }
 
@@ -99,37 +100,25 @@ object ProfileModel
   val name: String = "Profile"
   def generate: ProfileId = ProfileId(generateStringId)
   def parse(stringId: String): Try[ProfileId] = Success(ProfileId(stringId))
-  val id: Property[Profile, ProfileId] = property("id")(_.id)(e => v => e.copy(id = v))
-  object ref extends RefModel[Profile, ProfileRef] {
-    val userId: Property[ProfileRef, UserId] = property("userId")(_.userId)(e => v => e.copy(userId = v))
-    def get(instance: Profile): ProfileRef = instance.ref
-    def set(instance: Profile, value: ProfileRef): Profile = instance.copy(ref = value)
-    val properties: Seq[Property[ProfileRef, _]] = Seq(userId)
+  object ref extends RefModel[ProfileRef] {
+    val userId = property[UserId]("userId")
+    val properties = Seq(userId)
   }
-  object data extends DataModel[Profile, ProfileData] {
-    val providerId: Property[ProfileData, ProviderId] =
-      property("providerId")(_.providerId)(e => v => e.copy(providerId = v))
-    val providerUserId: Property[ProfileData, ProviderUserId] =
-      property("providerUserId")(_.providerUserId)(e => v => e.copy(providerUserId = v))
-    val providerResponse: Property[ProfileData, ProviderResponse] =
-      property("providerResponse")(_.providerResponse)(e => v => e.copy(providerResponse = v))
-        .set(sql.`type`("jsonb"))
-    val email: Property[ProfileData, Email] =
-      property("email")(_.email)(e => v => e.copy(email = v))
-    val userDetails: Property[ProfileData, UserDetails] =
-      property("userDetails")(_.userDetails)(e => v => e.copy(userDetails = v))
-        .set(sql.`type`("jsonb"))
-    def get(instance: Profile): ProfileData = instance.data
-    def set(instance: Profile, value: ProfileData): Profile = instance.copy(data = value)
-    val properties: Seq[Property[ProfileData, _]] =
-      Seq(providerId, providerUserId, providerResponse, userDetails)
+  object data extends DataModel[ProfileData] {
+    val providerId = property[ProviderId]("providerId")
+    val providerUserId = property[ProviderUserId]("providerUserId")
+    val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
+    val email = property[Email]("email")
+    val userDetails = property[UserDetails]("userDetails").set(sql.`type`("jsonb"))
+    val properties = Seq(providerId, providerUserId, providerResponse, userDetails)
   }
   def combine(a1: ProfileId, a2: ProfileRef, a3: ProfileData): Profile = Profile(a1,a2,a3)
 
   override val features: Seq[Feature] = Seq(
+    sql.schema("sec"),
     sql.name("security_profile"),
     sql.primaryKey("security_profile_pk")(id),
-    sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel.id),
+    sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
     sql.uniqueIndex("security_profile_udx_1")(data.providerId, data.email)
   )
 }
@@ -144,24 +133,17 @@ object GroupModel
   val name: String = "Group"
   def generate: GroupId = GroupId(generateStringId)
   def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
-  val id: Property[Group, GroupId] = property("id")(_.id)(e => v => e.copy(id = v))
-  object ref extends RefModel[Group, GroupRef] {
-    val parent: Property[GroupRef, Option[GroupId]] =
-      property("parent")(_.parent)(e => v => e.copy(parent = v))
-        .set(sql.optional)
-    def get(instance: Group): GroupRef = instance.ref
-    def set(instance: Group, value: GroupRef): Group = instance.copy(ref = value)
-    val properties: Seq[Property[GroupRef, _]] = Seq(parent)
+  object ref extends RefModel[GroupRef] {
+    val parent = property[GroupId]("parent").set(sql.optional)
+    val properties = Seq(parent)
   }
-  object data extends DataModel[Group, GroupData] {
-    val code: Property[GroupData, Code] =
-      property("code")(_.code)(e => v => e.copy(code = v))
-    def get(instance: Group): GroupData = instance.data
-    def set(instance: Group, value: GroupData): Group = instance.copy(data = value)
-    val properties: Seq[Property[GroupData, _]] = Seq(code)
+  object data extends DataModel[GroupData] {
+    val code = property[Code]("code")
+    val properties = Seq(code)
   }
   def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
   override val features: Seq[Feature] = Seq(
+    sql.schema("sec"),
     sql.name("security_group"),
     sql.primaryKey("security_group_pk")(id)
   )
@@ -172,21 +154,17 @@ object GroupMemberModel
   with HasRef[GroupMember, GroupMemberRef]
   with CanCombine1[GroupMember, GroupMemberRef] {
   val name: String = "GroupMember"
-  object ref extends RefModel[GroupMember, GroupMemberRef] {
-    val groupId: Property[GroupMemberRef, GroupId] =
-      property("groupId")(_.groupId)(e => v => e.copy(groupId = v))
-    val memberId: Property[GroupMemberRef, SubjectId] =
-      property("memberId")(_.memberId)(e => v => e.copy(memberId = v))
-    def get(instance: GroupMember): GroupMemberRef = instance.ref
-    def set(instance: GroupMember, value: GroupMemberRef): GroupMember = instance.copy(ref = value)
-    val properties: Seq[Property[GroupMemberRef, _]] = Seq(groupId, memberId)
+  object ref extends RefModel[GroupMemberRef] {
+    val groupId = property[GroupId]("groupId")
+    val memberId = property[SubjectId]("memberId")
+    val properties = Seq(groupId, memberId)
   }
-
   def combine(a1: GroupMemberRef): GroupMember = GroupMember(a1)
   override val features: Seq[Feature] = Seq(
+    sql.schema("sec"),
     sql.name("security_group_member"),
-    sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel.id),
-    sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel.id)
+    sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel, GroupModel.id),
+    sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel, UserModel.id)
   )
 }
 
@@ -199,19 +177,14 @@ object RoleModel
   val name: String = "Role"
   def generate: RoleId = RoleId(generateStringId)
   def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
-  val id: Property[Role, RoleId] = property("id")(_.id)(e => v => e.copy(id = v))
-  object data extends DataModel[Role, RoleData] {
-    val code: Property[RoleData, Code] =
-      property("code")(_.code)(e => v => e.copy(code = v))
-    val permission: Property[RoleData, Permission] =
-      property("permission")(_.permission)(e => v => e.copy(permission = v))
-        .set(sql.`type`("bit(32"))
-    def get(instance: Role): RoleData = instance.data
-    def set(instance: Role, value: RoleData): Role = instance.copy(data = value)
-    def properties: Seq[Property[RoleData, _]] = Seq(code, permission)
+  object data extends DataModel[RoleData] {
+    val code = property[Code]("code")
+    val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
+    val properties = Seq(code, permission)
   }
   def combine(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
   override val features: Seq[Feature] = Seq(
+    sql.schema("sec"),
     sql.name("security_role")
   )
 }
@@ -223,53 +196,38 @@ object AclModel
   with CanCombine2[Acl, AclId, AclData]
   with UUIDGenerator {
   val name = "Acl"
-  val id: Property[Acl, AclId] = property("id")(_.id)(e => v => e.copy(id = v))
   def generate: AclId = AclId(generateStringId)
   def parse(stringId: String): Try[AclId] = Success(AclId(stringId))
-  object data extends DataModel[Acl, AclData] {
-    object subject extends Composite[AclData, Subject] {
-      val subjectId: Property[Subject, SubjectId] = 
-        property("subjectId")(_.subjectId)(e => v => e.copy(subjectId = v))
-      val subjectType: Property[Subject, SubjectType] = 
-        property("subjectType")(_.subjectType)(e => v => e.copy(subjectType = v))
-      def get(instance: AclData): Subject = instance.subject
-      def set(instance: AclData, value: Subject): AclData = instance.copy(subject = value)
-      val properties: Seq[Property[Subject, _]] = Seq(subjectId, subjectType)
+  object data extends DataModel[AclData] {
+    object subject extends Composite[Subject] {
+      val subjectId = property[SubjectId]("subjectId")
+      val subjectType = property[SubjectType]("subjectType")
+      val properties = Seq(subjectId, subjectType)
     }
-    object resource extends Composite[AclData, Resource] {
-      val resourceId: Property[Resource, ResourceId] =
-        property("resourceId")(_.resourceId)(e => v => e.copy(resourceId = v))
-      val resourceType: Property[Resource, ResourceType] =
-        property("resourceType")(_.resourceType)(e => v => e.copy(resourceType = v))
-      def get(instance: AclData): Resource = instance.resource
-      def set(instance: AclData, value: Resource): AclData = instance.copy(resource = value)
-      val properties: Seq[Property[Resource, _]] = Seq(resourceId, resourceType)
+    object resource extends Composite[Resource] {
+      val resourceId = property[ResourceId]("resourceId")
+      val resourceType = property[ResourceType]("resourceType")
+      val properties = Seq(resourceId, resourceType)
     }
-    object parentResource extends Composite[AclData, Option[Resource]] {
-      val resourceId: Property[Option[Resource], Option[ResourceId]] =
-        resource.resourceId.liftOption
+    object parentResource extends Composite[Option[Resource]] {
+      val resourceId =
+        property[Option[ResourceId]]("resourceId")
           .set(sql.optional)
           .set(sql.name("parent_resource_id"))
-      val resourceType: Property[Option[Resource], Option[ResourceType]] =
-        resource.resourceType.liftOption
+      val resourceType =
+        property[ResourceType]("resourceType")
           .set(sql.optional)
           .set(sql.name("parent_resource_type"))
-      def get(instance: AclData): Option[Resource] = instance.parentResource
-      def set(instance: AclData, value: Option[Resource]): AclData = instance.copy(parentResource = value)
-      val properties: Seq[Property[_, _]] = Seq(resourceId, resourceType)
+      val properties = Seq(resourceId, resourceType)
     }
-    val permission: Property[AclData, Permission] =
-      property("permission")(_.permission)(e => v => e.copy(permission = v))
-        .set(sql.`type`("bit(32)"))
-    def get(instance: Acl): AclData = instance.data
-    def set(instance: Acl, value: AclData): Acl = instance.copy(data = value)
-    val properties: Seq[Property[_, _]] =
-      subject.properties ++ resource.properties ++ parentResource.properties :+ permission
+    val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
+    val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
   }
 
   def combine(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
 
   override val features: Seq[Feature] = Seq(
+    sql.schema("sec"),
     sql.name("security_subject_grant")
   )
 }
@@ -361,7 +319,7 @@ object SecurityModelTest extends App {
   def run[A](io: IO[A]): Unit = {
     val f = io.run
     f.onSuccess { case v => println(v) }
-    f.onFailure { case e => println(e) }
+    f.onFailure { case e => e.printStackTrace() }
     Await.ready(f, Duration.Inf)
   }
 
@@ -379,10 +337,21 @@ object SecurityModelTest extends App {
   val s = 'jeelona
 
   val q = for {
-    i <- gm.create
-  } yield i
+    _ <- "create schema sec".sql.write
+    _ <- u.create
+    _ <- g.create
+    _ <- gm.create
+    x <- g.insert(GroupRef(None), GroupData(Code("abc")))
+  } yield x
 
   run(q.transactionally)
+
+  u.createSql.foreach(println)
+  println("------------")
+  g.createSql.foreach(println)
+  println("------------")
+  gm.createSql.foreach(println)
+  println("------------")
 
   context.shutdown()
 

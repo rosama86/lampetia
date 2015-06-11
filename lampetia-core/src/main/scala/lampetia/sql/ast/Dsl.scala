@@ -23,7 +23,7 @@ trait Dsl {
   def function(name: String, operands: Operand*)(implicit b: FunctionNodeBuilder): FunctionNode = b(name, operands)
   def createTable[E](model: Model[E])(implicit b: CreateTableNodeBuilder, dst: DefaultSqlType, tb: TableIdentifierNodeBuilder) = b(model)
   def primaryKey[E](model: Model[E], pk: SqlPrimaryKey)(implicit b: PrimaryKeyNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, pk)
-  def foreignKey[E](model: Model[E], fk: SqlForeignKey)(implicit b: ForeignKeyNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, fk)
+  def foreignKey[E, R](model: Model[E], fk: SqlForeignKey[R])(implicit b: ForeignKeyNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, fk)
   def index[E](model: Model[E], index: SqlIndex)(implicit b: IndexNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, index)
 
   trait StringsDsl extends Any {
@@ -90,23 +90,23 @@ trait Dsl {
     def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
   }
 
-  trait UpdateCoupleDsl[E, A] extends Any {
-    def property: Property[E, A]
+  trait UpdateCoupleDsl[A] extends Any {
+    def property: Property[A]
     def :=(operand: Operand)(implicit b: ColumnIdentifierNodeBuilder): (Operand, Operand) = liftProperty(property) -> operand
   }
 
   implicit def liftModel[A](model: Model[A])(implicit b: TableIdentifierNodeBuilder): TableIdentifierNode[A] =
     b(model)
 
-  implicit def liftProperty[E, A](property: Property[E, A])(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[E, A] =
+  implicit def liftProperty[A](property: Property[A])(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] =
     b(property)
 
-  implicit def liftProperties(properties: Seq[Property[_, _]])(implicit b: ColumnIdentifierNodeBuilder): Seq[ColumnIdentifierNode[_, _]] =
+  implicit def liftProperties(properties: Seq[Property[_]])(implicit b: ColumnIdentifierNodeBuilder): Seq[ColumnIdentifierNode[_]] =
     properties.map(p => b(p))
 
-  trait PropertyLifterDsl[E, A] extends Any with OperandOps {
-    def property: Property[E, A]
-    def asColumnIdentifier(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[E, A] = b[E, A](property)
+  trait PropertyLifterDsl[A] extends Any with OperandOps {
+    def property: Property[A]
+    def asColumnIdentifier(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] = b[A](property)
   }
 
 

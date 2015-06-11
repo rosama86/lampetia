@@ -12,7 +12,7 @@ package object json {
 
   def name(value: String): JsonFeature = JsonName(value)
 
-  implicit class PropertyFeatures[E, A](val p: Property[E, A]) extends AnyVal {
+  implicit class PropertyFeatures[A](val p: Property[A]) extends AnyVal {
 
     def jsonName: String = p.features.collectFirst {
       case JsonName(value) => value

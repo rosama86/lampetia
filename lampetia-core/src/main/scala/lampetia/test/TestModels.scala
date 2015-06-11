@@ -22,28 +22,23 @@ object TestModels {
     with    HasData[Person, PersonData]
     with    CanCombine2[Person, PersonId, PersonData] {
     val name = "person"
-
-    def id = property[PersonId]("id")(_.id)(e => v => e.copy(id = v))
     def parse(stringId: String) = Success(PersonId(stringId))
     def generate = PersonId(UUID.randomUUID.toString)
 
-    object data extends DataModel[Person, PersonData] {
+    object data extends DataModel[PersonData] {
 
-      val firstName: Property[PersonData, String] =
-        property[String]("firstName")(_.firstName)(e => v => e.copy(firstName = v))
+      val firstName =
+        property[String]("firstName")
           .set(sql.name("first_name"))
           .set(json.name("first-name"))
 
-      val lastName: Property[PersonData, String] =
-        property[String]("lastName")(_.lastName)(e => v => e.copy(lastName = v))
+      val lastName =
+        property[String]("lastName")
           .set(sql.name("last_name"))
           .set(sql.`type`("jsonb"))
           .set(json.name("last-name"))
 
       val properties = Seq(firstName, lastName)
-      def get(instance: Person): PersonData = instance.data
-      def set(instance: Person, value: PersonData): Person = instance.copy(data = value)
-
     }
 
     override def features = Seq(

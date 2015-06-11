@@ -34,30 +34,30 @@ trait BackendIO { self =>
 
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: Context): Future[R]
 
-  case class IOPure[A](result: A) extends IO[A] {
+  protected case class IOPure[A](result: A) extends IO[A] {
     def execute(context: Context): Result[A] = resultM.pure(result)
   }
 
-  case class IOFailed[A](exception: Throwable) extends IO[A] {
+  protected case class IOFailed[A](exception: Throwable) extends IO[A] {
     def execute(context: Context): Result[A] = resultM.fail[A](exception)
   }
 
-  case class IOFlatMap[A, B](fa: IO[A], f: A => IO[B]) extends IO[B] {
+  protected case class IOFlatMap[A, B](fa: IO[A], f: A => IO[B]) extends IO[B] {
     def execute(context: Context): Result[B] =
       resultM.flatMap(fa.execute(context))(a => f(a).execute(context))
   }
 
-  case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
+  protected case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
     def execute(context: Context): Result[A] =
       resultM.withFilter(fa.execute(context))(f)
   }
 
 
+  def pureIO[A](a: A): IO[A] = IOPure(a)
+
   trait LiftIO[A] extends Any {
 
     protected def io: IO[A]
-
-    def pure(a: A): IO[A] = IOPure(a)
 
     def map[B](f: A => B): IO[B] = IOFlatMap(io, (a: A) => IOPure(f(a)))
 

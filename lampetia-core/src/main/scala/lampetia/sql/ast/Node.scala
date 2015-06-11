@@ -92,13 +92,13 @@ case class DefaultTableIdentifierNode[A](model: Model[A]) extends TableIdentifie
 }
 
 trait ColumnIdentifierNodeBuilder {
-  def apply[E, A](property: Property[E, A]): ColumnIdentifierNode[E, A]
+  def apply[A](property: Property[A]): ColumnIdentifierNode[A]
 }
-trait ColumnIdentifierNode[E, A] extends Operand {
-  def property: Property[E, A]
+trait ColumnIdentifierNode[A] extends Operand {
+  def property: Property[A]
 }
 
-case class DefaultColumnIdentifierNode[E, A](property: Property[E, A]) extends ColumnIdentifierNode[E, A] {
+case class DefaultColumnIdentifierNode[E, A](property: Property[A]) extends ColumnIdentifierNode[A] {
   val sqlString: String = property.sqlName
 }
 
@@ -517,9 +517,9 @@ case class DefaultCreateTableNode[E](model: Model[E])
                                      tb: TableIdentifierNodeBuilder) extends CreateTableNode[E] {
   val operands: Seq[Operand] = Seq(tb(model))
   private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
-  def nullability(p: Property[_, _]) =
+  def nullability(p: Property[_]) =
     if (p.optional) "" else " not null"
-  def column(p: Property[_, _]) =
+  def column(p: Property[_]) =
     s"${p.sqlName} ${p.sqlType}${nullability(p)}"
   private val body =
     if(model.properties.isEmpty)
@@ -563,21 +563,21 @@ case class DefaultIndexNode[E](model: Model[E], index: SqlIndex)
 }
 
 trait ForeignKeyNodeBuilder {
-  def apply[E](model: Model[E], foreignKey: SqlForeignKey)(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E]
+  def apply[E, R](model: Model[E], foreignKey: SqlForeignKey[R])(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E, R]
 }
-trait ForeignKeyNode[E] extends DDLNode {
+trait ForeignKeyNode[E, R] extends DDLNode {
   def model: Model[E]
-  def foreignKey: SqlForeignKey
+  def foreignKey: SqlForeignKey[R]
 }
 
-case class DefaultForeignKeyNode[E](model: Model[E], foreignKey: SqlForeignKey)
-                                   (implicit tb: TableIdentifierNodeBuilder) extends ForeignKeyNode[E] {
+case class DefaultForeignKeyNode[E, R](model: Model[E], foreignKey: SqlForeignKey[R])
+                                   (implicit tb: TableIdentifierNodeBuilder) extends ForeignKeyNode[E, R] {
   val operands: Seq[Operand] = Seq(tb(model))
   private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
   private val named = foreignKey.name.fold("foreign key")(n => s"constraint $n foreign key")
   private val keys = s"(${foreignKey.keys.map(_.sqlName).mkString(",")})"
   private val references = s"(${foreignKey.references.map(_.sqlName).mkString(",")}) "
-  val sqlString: String =  s"alter table $prefixed add $named $keys references $references"
+  val sqlString: String =  s"alter table $prefixed add $named $keys references ${foreignKey.refModel.sqlName}$references"
 }
 
 
