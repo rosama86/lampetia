@@ -120,6 +120,30 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
   implicit class Model0Ops[E](val model: Model[E])
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E]
 
+  implicit class Model01Ops[E, R](val model: Model[E] with HasRef[E, R] with CanCombine1[E, R])
+    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
+    def insert(ref: R)(implicit pref: Produce[R]): IO[E] = {
+      val ps = model.ref.properties
+      val vs = ps.map(_ => ?)
+      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(ref).write.flatMap {
+        case i if i > 0 => IOPure(model.combine(ref))
+        case _          => IOFailed(new Exception("No Instance"))
+      }
+    }
+  }
+
+  implicit class Model02Ops[E, D](val model: Model[E] with HasData[E, D] with CanCombine1[E, D])
+    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
+    def insert(data: D)(implicit pref: Produce[D]): IO[E] = {
+      val ps = model.data.properties
+      val vs = ps.map(_ => ?)
+      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(data).write.flatMap {
+        case i if i > 0 => IOPure(model.combine(data))
+        case _          => IOFailed(new Exception("No Instance"))
+      }
+    }
+  }
+
   implicit class Model1Ops[E, Id](val model: Model[E] with HasId[E, Id] with CanCombine1[E, Id])
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] {
 

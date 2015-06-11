@@ -297,6 +297,11 @@ object SecuritySqlFormat {
   implicit lazy val produceGroup: Produce[Group] =
     a => produce(a.id) andThen produce(a.ref) andThen produce(a.data)
 
+  implicit lazy val consumeGroupMemberRef: Consume[GroupMemberRef] =
+    (consume[GroupId] ~ consume[SubjectId])(GroupMemberRef)
+  implicit lazy val produceGroupMemberRef: Produce[GroupMemberRef] =
+    a => produce(a.groupId) andThen produce(a.memberId)
+
   implicit lazy val consumeAclId: Consume[AclId] = consume[String].fmap(AclId)
   implicit lazy val produceAclId: Produce[AclId] = a => produce(a.value)
 
@@ -341,17 +346,22 @@ object SecurityModelTest extends App {
     _ <- u.create
     _ <- g.create
     _ <- gm.create
-    x <- g.insert(GroupRef(None), GroupData(Code("abc")))
+    i <- g.insert(GroupRef(None), GroupData(Code("abc")))
+    _ <- g.insert(GroupRef(None), GroupData(Code("xyz")))
+    _ <- g.update(g.data.code := Code("123").bind)(g.id === i.id.bind)
+    x <- g.find//(g.id === i.id.bind)
   } yield x
 
   run(q.transactionally)
 
-  u.createSql.foreach(println)
+  gm.insert(GroupMemberRef(GroupId(""), SubjectId("")))
+
+  /*u.createSql.foreach(println)
   println("------------")
   g.createSql.foreach(println)
   println("------------")
   gm.createSql.foreach(println)
-  println("------------")
+  println("------------")*/
 
   context.shutdown()
 

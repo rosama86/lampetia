@@ -9,111 +9,111 @@ import lampetia.sql.ast._
  */
 
 trait Dialect {
-  implicit def StringLiteralNodeBuilder: StringLiteralNodeBuilder = new StringLiteralNodeBuilder {
+  implicit lazy val StringLiteralNodeBuilder: StringLiteralNodeBuilder = new StringLiteralNodeBuilder {
     def apply(value: String): StringLiteralNode = DefaultStringLiteralNode(value)
   }
-  implicit def IntegerLiteralNodeBuilder: IntegerLiteralNodeBuilder = new IntegerLiteralNodeBuilder {
+  implicit lazy val IntegerLiteralNodeBuilder: IntegerLiteralNodeBuilder = new IntegerLiteralNodeBuilder {
     def apply(value: Int): IntegerLiteralNode = DefaultIntegerLiteralNode(value)
   }
-  implicit def IdentifierNodeBuilder: IdentifierNodeBuilder = new IdentifierNodeBuilder {
+  implicit lazy val IdentifierNodeBuilder: IdentifierNodeBuilder = new IdentifierNodeBuilder {
     def apply(name: String): IdentifierNode = DefaultIdentifierNode(name)
   }
-  implicit def TableIdentifierNodeBuilder: TableIdentifierNodeBuilder = new TableIdentifierNodeBuilder {
+  implicit lazy val TableIdentifierNodeBuilder: TableIdentifierNodeBuilder = new TableIdentifierNodeBuilder {
     def apply[A](model: Model[A]): TableIdentifierNode[A] = DefaultTableIdentifierNode(model)
   }
-  implicit def ColumnIdentifierNodeBuilder: ColumnIdentifierNodeBuilder = new ColumnIdentifierNodeBuilder {
+  implicit lazy val ColumnIdentifierNodeBuilder: ColumnIdentifierNodeBuilder = new ColumnIdentifierNodeBuilder {
     def apply[A](property: Property[A]): ColumnIdentifierNode[A] = DefaultColumnIdentifierNode(property)
   }
-  implicit def ParameterNodeBuilder: ParameterNodeBuilder = new ParameterNodeBuilder {
+  implicit lazy val ParameterNodeBuilder: ParameterNodeBuilder = new ParameterNodeBuilder {
     def apply: ParameterNode = DefaultParameterNode
   }
-  implicit def NamedParameterNodeBuilder: NamedParameterNodeBuilder = new NamedParameterNodeBuilder {
+  implicit lazy val NamedParameterNodeBuilder: NamedParameterNodeBuilder = new NamedParameterNodeBuilder {
     def apply(parameterName: String): NamedParameterNode = DefaultNamedParameterNode(parameterName)
   }
-  implicit def InfixNodeBuilder: InfixNodeBuilder = new InfixNodeBuilder {
+  implicit lazy val InfixNodeBuilder: InfixNodeBuilder = new InfixNodeBuilder {
     def apply(symbol: String, first: Operand, second: Operand, groupSecond: Boolean): InfixNode =
       DefaultInfixNode(symbol, first, second, groupSecond)
   }
-  implicit def PrefixNodeBuilder: PrefixNodeBuilder = new PrefixNodeBuilder {
+  implicit lazy val PrefixNodeBuilder: PrefixNodeBuilder = new PrefixNodeBuilder {
     def apply(symbol: String, operands: Seq[Operand]): PrefixNode = DefaultPrefixNode(symbol, operands)
   }
-  implicit def PostfixNodeBuilder: PostfixNodeBuilder = new PostfixNodeBuilder {
+  implicit lazy val PostfixNodeBuilder: PostfixNodeBuilder = new PostfixNodeBuilder {
     def apply(symbol: String, operands: Seq[Operand]): PostfixNode = DefaultPostfixNode(symbol, operands)
   }
-  implicit def SurroundNodeBuilder: SurroundNodeBuilder = new SurroundNodeBuilder {
+  implicit lazy val SurroundNodeBuilder: SurroundNodeBuilder = new SurroundNodeBuilder {
     def apply(operand: Operand): SurroundNode = DefaultSurroundNode(operand)
   }
-  implicit def TypeNodeBuilder: TypeNodeBuilder = new TypeNodeBuilder {
+  implicit lazy val TypeNodeBuilder: TypeNodeBuilder = new TypeNodeBuilder {
     def apply(typeName: String): TypeNode = DefaultTypeNode(typeName)
   }
-  implicit def BetweenNodeBuilder: BetweenNodeBuilder = new BetweenNodeBuilder {
+  implicit lazy val BetweenNodeBuilder: BetweenNodeBuilder = new BetweenNodeBuilder {
     def apply(lhs: Operand, first: Operand, second: Operand): BetweenNode = DefaultBetweenNode(lhs, first, second)
   }
-  implicit def AndNodeBuilder: AndNodeBuilder = new AndNodeBuilder {
+  implicit lazy val AndNodeBuilder: AndNodeBuilder = new AndNodeBuilder {
     def apply(operands: Seq[Operand]): AndNode = DefaultAndNode(operands)
   }
-  implicit def OrNodeBuilder: OrNodeBuilder = new OrNodeBuilder {
+  implicit lazy val OrNodeBuilder: OrNodeBuilder = new OrNodeBuilder {
     def apply(operands: Seq[Operand]): OrNode = DefaultOrNode(operands)
   }
-  implicit def NotNodeBuilder: NotNodeBuilder = new NotNodeBuilder {
+  implicit lazy val NotNodeBuilder: NotNodeBuilder = new NotNodeBuilder {
     def apply(operand: Operand): NotNode = DefaultNotNode(operand)
   }
-  implicit def FunctionNodeBuilder: FunctionNodeBuilder = new FunctionNodeBuilder {
+  implicit lazy val FunctionNodeBuilder: FunctionNodeBuilder = new FunctionNodeBuilder {
     def apply(name: String, operands: Seq[Operand]): FunctionNode = DefaultFunctionNode(name, operands)
   }
-  implicit def QueryNodeBuilder: QueryNodeBuilder = new QueryNodeBuilder {
+  implicit lazy val QueryNodeBuilder: QueryNodeBuilder = new QueryNodeBuilder {
     def apply(operands: Seq[Operand]): QueryNode = DefaultQueryNode(operands)
   }
-  implicit def SelectNodeBuilder: SelectNodeBuilder = new SelectNodeBuilder {
+  implicit lazy val SelectNodeBuilder: SelectNodeBuilder = new SelectNodeBuilder {
     def apply(operands: Seq[Operand]): SelectNode = DefaultSelectNode(operands)
   }
-  implicit def FromNodeBuilder: FromNodeBuilder = new FromNodeBuilder {
+  implicit lazy val FromNodeBuilder: FromNodeBuilder = new FromNodeBuilder {
     def apply(operands: Seq[Operand]): FromNode = DefaultFromNode(operands)
   }
-  implicit def WhereNodeBuilder: WhereNodeBuilder = new WhereNodeBuilder {
+  implicit lazy val WhereNodeBuilder: WhereNodeBuilder = new WhereNodeBuilder {
     def apply(operand: Operand): WhereNode = DefaultWhereNode(operand)
   }
-  implicit def JoinNodeBuilder: JoinNodeBuilder = new JoinNodeBuilder {
+  implicit lazy val JoinNodeBuilder: JoinNodeBuilder = new JoinNodeBuilder {
     def apply(lhs: Operand, rhs: Operand, joinType: JoinType): JoinNode = DefaultJoinNode(lhs, rhs, joinType)
   }
-  implicit def UnionNodeBuilder: UnionNodeBuilder = new UnionNodeBuilder {
+  implicit lazy val UnionNodeBuilder: UnionNodeBuilder = new UnionNodeBuilder {
     def apply(operands: Seq[Operand], unionType: UnionType): UnionNode = DefaultUnionNode(operands, unionType)
   }
-  implicit def InsertNodeBuilder: InsertNodeBuilder = new InsertNodeBuilder {
+  implicit lazy val InsertNodeBuilder: InsertNodeBuilder = new InsertNodeBuilder {
     def apply(into: Operand, columns: Seq[Operand], values: Seq[Operand]): InsertNode =
       DefaultInsertNode(into, columns, values)
   }
-  implicit def DeleteFromNodeBuilder: DeleteFromNodeBuilder = new DeleteFromNodeBuilder {
+  implicit lazy val DeleteFromNodeBuilder: DeleteFromNodeBuilder = new DeleteFromNodeBuilder {
     def apply(table: Operand): DeleteFromNode = DefaultDeleteFromNode(table)
   }
-  implicit def DeleteNodeBuilder: DeleteNodeBuilder = new DeleteNodeBuilder {
+  implicit lazy val DeleteNodeBuilder: DeleteNodeBuilder = new DeleteNodeBuilder {
     def apply(table: Operand, where: WhereNode): DeleteNode = DefaultDeleteNode(table, where)
   }
-  implicit def UpdatePairNodeBuilder: UpdatePairNodeBuilder = new UpdatePairNodeBuilder {
+  implicit lazy val UpdatePairNodeBuilder: UpdatePairNodeBuilder = new UpdatePairNodeBuilder {
     def apply(lhs: Operand, rhs: Operand): UpdatePairNode = DefaultUpdatePairNode(lhs, rhs)
   }
-  implicit def UpdateNodeBuilder: UpdateNodeBuilder = new UpdateNodeBuilder {
+  implicit lazy val UpdateNodeBuilder: UpdateNodeBuilder = new UpdateNodeBuilder {
     def apply(table: Operand, pairs: Seq[UpdatePairNode]): UpdateNode = DefaultUpdateNode(table, pairs)
   }
-  implicit def UpdateWhereNodeBuilder: UpdateWhereNodeBuilder = new UpdateWhereNodeBuilder {
+  implicit lazy val UpdateWhereNodeBuilder: UpdateWhereNodeBuilder = new UpdateWhereNodeBuilder {
     def apply(node: UpdateNode, where: WhereNode): UpdateWhereNode = DefaultUpdateWhereNode(node, where)
   }
-  implicit def CreateSchemaNodeBuilder: CreateSchemaNodeBuilder = new CreateSchemaNodeBuilder {
+  implicit lazy val CreateSchemaNodeBuilder: CreateSchemaNodeBuilder = new CreateSchemaNodeBuilder {
     def apply(id: IdentifierNode): CreateSchemaNode = DefaultCreateSchemaNode(id)
   }
-  implicit def CreateTableNodeBuilder: CreateTableNodeBuilder = new CreateTableNodeBuilder {
+  implicit lazy val CreateTableNodeBuilder: CreateTableNodeBuilder = new CreateTableNodeBuilder {
     def apply[E](model: Model[E])(implicit dst: DefaultSqlType, tb: TableIdentifierNodeBuilder): CreateTableNode[E] =
       DefaultCreateTableNode(model)(dst, tb)
   }
-  implicit def PrimaryKeyNodeBuilder: PrimaryKeyNodeBuilder = new PrimaryKeyNodeBuilder {
+  implicit lazy val PrimaryKeyNodeBuilder: PrimaryKeyNodeBuilder = new PrimaryKeyNodeBuilder {
     def apply[E](model: Model[E], primaryKey: SqlPrimaryKey)(implicit tb: TableIdentifierNodeBuilder): PrimaryKeyNode[E] =
       DefaultPrimaryKeyNode(model, primaryKey)(tb)
   }
-  implicit def IndexNodeBuilder: IndexNodeBuilder = new IndexNodeBuilder {
+  implicit lazy val IndexNodeBuilder: IndexNodeBuilder = new IndexNodeBuilder {
     def apply[E](model: Model[E], index: SqlIndex)(implicit tb: TableIdentifierNodeBuilder): IndexNode[E] =
       DefaultIndexNode(model, index)(tb)
   }
-  implicit def ForeignKeyNodeBuilder: ForeignKeyNodeBuilder = new ForeignKeyNodeBuilder {
+  implicit lazy val ForeignKeyNodeBuilder: ForeignKeyNodeBuilder = new ForeignKeyNodeBuilder {
     def apply[E, R](model: Model[E], foreignKey: SqlForeignKey[R])(implicit tb: TableIdentifierNodeBuilder): ForeignKeyNode[E, R] =
       DefaultForeignKeyNode(model, foreignKey)(tb)
   }
