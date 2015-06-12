@@ -22,6 +22,7 @@ object TestModels {
     with    CanGenerate[PersonId]
     with    CanParse[PersonId]
     with    HasData[Person, PersonData]
+    with    CanCombine1[Person, PersonData]
     with    CanCombine2[Person, PersonId, PersonData]
     with    UUIDGenerator {
     val name = "person"
@@ -48,6 +49,7 @@ object TestModels {
       sql.schema("tmp")
     )
 
+    def combine(data: PersonData): Person = Person(generate, data)
     def combine(id: PersonId, data: PersonData): Person = Person(id, data)
 
   }

@@ -53,6 +53,12 @@ trait HasCompositeId[E, Id] extends HasProperties[E] { model: Model[E] =>
   def id: Composite[Id]
   abstract override def properties: Seq[Property[_]] = super.properties ++ id.properties
 }
+
+trait HasComposite[E] extends HasProperties[E] { model: Model[E] =>
+  def composite: Composite[_]
+  abstract override def properties: Seq[Property[_]] = super.properties ++ composite.properties
+}
+
 trait HasRef[E, R] extends HasProperties[E] { model: Model[E] =>
   def ref: RefModel[R]
   abstract override def properties: Seq[Property[_]] = super.properties ++ ref.properties

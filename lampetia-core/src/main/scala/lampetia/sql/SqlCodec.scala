@@ -12,6 +12,8 @@ import scala.language.{higherKinds, implicitConversions}
  * @author Hossam Karim
  */
 
+
+
 trait SqlCodec extends Codec with BackendIO {
 
   private val log = LoggerFactory.getLogger("sql-codec")
@@ -251,8 +253,6 @@ trait SqlCodec extends Codec with BackendIO {
     def sql[A1: Produce, A2: Produce](a1: A1, a2: A2): Sql =
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2)))
   }
-
-
 
 
   implicit val consumeString: Consume[String] = _.readString

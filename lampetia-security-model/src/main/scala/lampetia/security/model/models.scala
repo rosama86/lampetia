@@ -9,6 +9,8 @@ case class SubjectId(value: String) extends AnyVal
 case class UserId(value: String) extends AnyVal
 case class User(id: UserId)
 
+trait SecureModel[E] extends Model[E]
+
 sealed trait AuthenticationProvider extends Any {
   def value: String
 }
@@ -120,6 +122,7 @@ object SecurityModel {
   implicit object UserModel
     extends Model[User]
     with HasId[User, UserId]
+    with CanCombine0[User]
     with CanCombine1[User, UserId]
     with CanGenerate[UserId]
     with CanParse[UserId]
@@ -128,6 +131,7 @@ object SecurityModel {
     val name: String = "User"
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
+    def combine: User = User(generate)
     def combine(id: UserId): User = User(id)
 
     override val features: Seq[Feature] = Seq(
@@ -142,6 +146,7 @@ object SecurityModel {
     with HasId[Profile, ProfileId]
     with HasRef[Profile, ProfileRef]
     with HasData[Profile, ProfileData]
+    with CanCombine2[Profile, ProfileRef, ProfileData]
     with CanCombine3[Profile, ProfileId, ProfileRef, ProfileData]
     with CanGenerate[ProfileId]
     with CanParse[ProfileId]
@@ -162,7 +167,8 @@ object SecurityModel {
       val accountState = property[AccountState]("accountState")
       val properties = Seq(provider, providerUserId, providerResponse, accountDetails, accountState)
     }
-    def combine(a1: ProfileId, a2: ProfileRef, a3: ProfileData): Profile = Profile(a1,a2,a3)
+    def combine(ref: ProfileRef, data: ProfileData): Profile = Profile(generate, ref, data)
+    def combine(id: ProfileId, ref: ProfileRef, data: ProfileData): Profile = Profile(id, ref, data)
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -180,6 +186,7 @@ object SecurityModel {
     with HasId[Group, GroupId]
     with HasRef[Group, GroupRef]
     with HasData[Group, GroupData]
+    with CanCombine2[Group, GroupRef, GroupData]
     with CanCombine3[Group, GroupId, GroupRef, GroupData]
     with CanGenerate[GroupId]
     with CanParse[GroupId]
@@ -195,7 +202,8 @@ object SecurityModel {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    def combine(a1: GroupId, a2: GroupRef, a3: GroupData): Group = Group(a1,a2,a3)
+    def combine(id: GroupId, ref: GroupRef, data: GroupData): Group = Group(id, ref, data)
+    def combine(ref: GroupRef, data: GroupData): Group = Group(generate, ref, data)
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_group"),
@@ -213,7 +221,9 @@ object SecurityModel {
       val memberId = property[SubjectId]("memberId")
       val properties = Seq(groupId, memberId)
     }
-    def combine(a1: GroupMemberRef): GroupMember = GroupMember(a1)
+
+    def combine(ref: GroupMemberRef): GroupMember = GroupMember(ref)
+
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_group_member"),
@@ -361,6 +371,11 @@ object SecuritySqlFormat {
     (consume[GroupId] ~ consume[SubjectId])(GroupMemberRef)
   implicit lazy val produceGroupMemberRef: Produce[GroupMemberRef] =
     a => produce(a.groupId) andThen produce(a.memberId)
+
+  implicit lazy val consumeGroupMember: Consume[GroupMember] =
+    consume[GroupMemberRef].fmap(GroupMember)
+  implicit lazy val produceGroupMember: Produce[GroupMember] =
+    a => produce(a.ref)
 
   implicit lazy val consumeAclId: Consume[AclId] = consume[String].fmap(AclId)
   implicit lazy val produceAclId: Produce[AclId] = a => produce(a.value)

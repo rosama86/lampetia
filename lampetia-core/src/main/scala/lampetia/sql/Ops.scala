@@ -69,6 +69,39 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
   }
 
+
+  trait Insert[E] extends Any { ms: ModelSchema[E] =>
+
+    def insert(instance: E)(implicit p: Produce[E]): IO[E] = {
+      val ps = model.properties
+      val vs = ps.map(positionalParameter)
+      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(instance).write.flatMap {
+        case i if i > 0 => pureIO(instance)
+        case _          => failedIO[E](new Exception("No Instance"))
+      }
+    }
+
+    def insert(implicit cc: CanCombine0[E], p: Produce[E]): IO[E] =
+      insert(cc.combine)
+
+    def insert[A1](a1: A1)
+                  (implicit cc: CanCombine1[E, A1], p: Produce[E]): IO[E] =
+      insert(cc.combine(a1))
+
+    def insert[A1, A2](a1: A1, a2: A2)
+                      (implicit cc: CanCombine2[E, A1, A2], p: Produce[E]): IO[E] =
+      insert(cc.combine(a1, a2))
+
+    def insert[A1, A2, A3](a1: A1, a2: A2, a3: A3)
+                          (implicit cc: CanCombine3[E, A1, A2, A3], p: Produce[E]): IO[E] =
+      insert(cc.combine(a1, a2, a3))
+
+    def insert[A1, A2, A3, A4](a1: A1, a2: A2, a3: A3, a4: A4)
+                              (implicit cc: CanCombine4[E, A1, A2, A3, A4], p: Produce[E]): IO[E] =
+      insert(cc.combine(a1, a2, a3, a4))
+
+  }
+
   trait Delete[E] extends Any { ms: ModelSchema[E] =>
 
     def delete: IO[Int] =
@@ -122,10 +155,8 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
   }
 
-  implicit class Model0Ops[E](val model: Model[E])
-    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E]
 
-  implicit class Model01Ops[E, R](val model: Model[E] with HasRef[E, R] with CanCombine1[E, R])
+  /*implicit class Model01Ops[E, R](val model: Model[E] with HasRef[E, R] with CanCombine1[E, R])
     extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
     def insert(ref: R)(implicit pref: Produce[R]): IO[E] = {
       val ps = model.ref.properties
@@ -223,6 +254,6 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
     def insert(ref: R, data: D)(implicit cg: CanGenerate[Id], pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] =
       insert(cg.generate, ref, data)
-  }
+  }*/
 
 }
