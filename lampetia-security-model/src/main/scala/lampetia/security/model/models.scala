@@ -304,7 +304,7 @@ object SecurityModel {
 
 
 
-import lampetia.sql.dialect.h2._
+import lampetia.sql.dialect.h2.jdbc._
 
 object SecuritySqlFormat {
 

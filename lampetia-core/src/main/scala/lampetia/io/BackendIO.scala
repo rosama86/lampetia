@@ -25,8 +25,6 @@ trait BackendIO { self =>
   
   def resultM: ResultM
 
-  
-
   trait IO[A] {
     def execute(context: Context): Result[A]
     def run(implicit ec: ExecutionContext, context: Context): Future[A] = self.run(this)

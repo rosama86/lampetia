@@ -1,6 +1,6 @@
 package lampetia.test
 
-import lampetia.sql.dialect.postgres._
+import lampetia.sql.dialect.postgres.jdbc._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

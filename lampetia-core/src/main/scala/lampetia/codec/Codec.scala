@@ -1,6 +1,8 @@
 package lampetia.codec
 
-import scala.language.implicitConversions
+import lampetia.model.Property
+
+import scala.language.{higherKinds, implicitConversions}
 import play.api.libs.functional.syntax._
 import play.api.libs.functional._
 
@@ -15,6 +17,14 @@ trait Codec {
 
   type Consume[+A] = Reader => A
   type Produce[-A] = A => Writer => Writer
+
+  trait Producable[V] { property: Property[V] =>
+    def produces: Produce[V]
+  }
+
+  trait Consumable[V] { property: Property[V] =>
+    def consumes: Consume[V]
+  }
 
 
   implicit object ConsumeFunctor extends Functor[Consume] {

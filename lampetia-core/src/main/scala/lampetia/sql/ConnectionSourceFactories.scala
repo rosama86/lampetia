@@ -10,7 +10,7 @@ import com.zaxxer.hikari.HikariDataSource
  */
 
 
-trait ConnectionSourceFactories { self: JdbcCodec =>
+trait ConnectionSourceFactories { self: JdbcIO =>
 
   private class FromDataSource(dataSource: DataSource) extends ConnectionSource {
     def connection: sql.Connection = dataSource.getConnection

@@ -1,24 +1,24 @@
 package lampetia.sql.dialect
 
 import lampetia.model.Model
-import lampetia.sql.{ConnectionSourceFactories, JdbcCodec, Ops}
+import lampetia.sql._
 
 /**
  * @author Hossam Karim
  */
 
-package object postgres
-  extends PgDsl
-  with    JdbcCodec
-  with    ConnectionSourceFactories
-  with    Ops {
+package object postgres {
 
-  implicit class ModelOps[E](val model: Model[E])
-    extends AnyVal
-    with    ModelSchema[E]
-    with    DDL[E]
-    with    Find[E]
-    with    Insert[E]
-    with    Update[E]
-    with    Delete[E]
+  object jdbc extends Postgres with JdbcIO with JdbcCodec with ConnectionSourceFactories {
+
+    implicit class ModelOps[E](val model: Model[E])
+      extends AnyVal
+      with    ModelSchema[E]
+      with    DDL[E]
+      with    Find[E]
+      with    Insert[E]
+      with    Update[E]
+      with    Delete[E]
+  }
+
 }

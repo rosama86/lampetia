@@ -9,7 +9,7 @@ import lampetia.sql.dialect.Dialect
 /**
  * @author Hossam Karim
  */
-trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =>
+trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   implicit def defaultSqlType: DefaultSqlType
 
@@ -155,105 +155,5 @@ trait Ops { self: Dsl with Dialect with SqlCodec with JdbcCodec with BackendIO =
 
   }
 
-
-  /*implicit class Model01Ops[E, R](val model: Model[E] with HasRef[E, R] with CanCombine1[E, R])
-    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
-    def insert(ref: R)(implicit pref: Produce[R]): IO[E] = {
-      val ps = model.ref.properties
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(ref).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(ref))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-  }
-
-  implicit class Model02Ops[E, D](val model: Model[E] with HasData[E, D] with CanCombine1[E, D])
-    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
-    def insert(data: D)(implicit pref: Produce[D]): IO[E] = {
-      val ps = model.data.properties
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(data).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(data))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-  }
-
-  implicit class Model03Ops[E, R, D](val model: Model[E] with HasRef[E, R] with HasData[E, D] with CanCombine2[E, R, D])
-    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] with DDL[E] {
-    def insert(ref: R, data: D)(implicit pr: Produce[R], pd: Produce[D]): IO[E] = {
-      val ps = model.ref.properties ++ model.data.properties
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(ref).set(data).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(ref,data))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-  }
-
-  implicit class Model1Ops[E, Id](val model: Model[E] with HasId[E, Id] with CanCombine1[E, Id])
-    extends ModelSchema[E] with Find[E] with Update[E] with Delete[E] {
-
-    def insert(id: Id)(implicit pid: Produce[Id]): IO[E] =
-      insertInto(schemaPrefixed).values(id.bind).lifted.write.flatMap {
-        case i if i > 0 => pureIO(model.combine(id))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-
-    def insert(implicit cg: CanGenerate[Id], pid: Produce[Id]): IO[E] =
-      insert(cg.generate)
-
-  }
-
-  implicit class Model2ROps[E, Id, R](val model: Model[E] with HasId[E, Id] with HasRef[E, R] with CanCombine2[E, Id, R])
-    extends ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
-
-    def insert(id: Id, ref: R)(implicit pid: Produce[Id], pref: Produce[R]): IO[E] = {
-      val ps = model.id +: model.ref.properties
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(ref).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(id, ref))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-
-    def insert(ref: R)(implicit cg: CanGenerate[Id], pid: Produce[Id], pref: Produce[R]): IO[E] =
-      insert(cg.generate, ref)
-
-  }
-
-  implicit class Model2DOps[E, Id, D](val model: Model[E] with HasId[E, Id] with HasData[E, D] with CanCombine2[E, Id, D])
-    extends ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
-
-    def insert(id: Id, data: D)(implicit pid: Produce[Id], pdata: Produce[D]): IO[E] = {
-      val ps = model.id +: model.data.properties
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(data).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(id, data))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-
-    def insert(data: D)(implicit cg: CanGenerate[Id], pid: Produce[Id], pdata: Produce[D]): IO[E] =
-      insert(cg.generate, data)
-  }
-
-  implicit class Model3Ops[E, Id, D, R]
-    (val model: Model[E] with HasId[E, Id] with HasRef[E, R] with HasData[E, D] with CanCombine3[E, Id, R, D])
-    extends ModelSchema[E] with Find[E] with Delete[E] with Update[E] {
-
-    def insert(id: Id, ref: R, data: D)(implicit pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] = {
-      val ps = model.id +: (model.ref.properties ++ model.data.properties)
-      val vs = ps.map(positionalParameter)
-      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(id).set(ref).set(data).write.flatMap {
-        case i if i > 0 => pureIO(model.combine(id, ref, data))
-        case _          => failedIO[E](new Exception("No Instance"))
-      }
-    }
-
-    def insert(ref: R, data: D)(implicit cg: CanGenerate[Id], pid: Produce[Id], pref: Produce[R], pdata: Produce[D]): IO[E] =
-      insert(cg.generate, ref, data)
-  }*/
 
 }

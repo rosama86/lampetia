@@ -1,8 +1,7 @@
 package lampetia.test
 
-import java.util.UUID
-
 import lampetia.model._
+
 import scala.util.Success
 
 /**
@@ -30,13 +29,17 @@ object TestModels {
     def generate: PersonId = PersonId(generateStringId)
     object data extends DataModel[PersonData] {
 
-      val firstName =
+      val firstName: LensProperty[Person, String] =
         property[String]("firstName")
+          .getter[Person](_.data.firstName)
+          .setter( (person, v) => person.copy(data = person.data.copy(firstName = v)))
           .set(sql.name("first_name"))
           .set(json.name("first-name"))
 
-      val lastName =
+      val lastName: LensProperty[Person, String] =
         property[String]("lastName")
+          .getter[Person](_.data.lastName)
+          .setter( (person, v) => person.copy(data = person.data.copy(lastName = v)))
           .set(sql.name("last_name"))
           .set(sql.`type`("jsonb"))
           .set(json.name("last-name"))
