@@ -29,6 +29,11 @@ trait BackendIO { self =>
     def execute(context: Context): Result[A]
     def run(implicit ec: ExecutionContext, context: Context): Future[A] = self.run(this)
   }
+  object IO {
+    def pureIO[A](a: A): IO[A] = IOPure(a)
+    def failedIO[A](cause: Throwable): IO[A] = IOFailed[A](cause)
+    def seq[A](c: Seq[IO[A]]): IO[Seq[A]] = IOSeq(c)
+  }
 
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: Context): Future[R]
 
@@ -45,14 +50,20 @@ trait BackendIO { self =>
       resultM.flatMap(fa.execute(context))(a => f(a).execute(context))
   }
 
+  protected case class IOSeq[A](seq: Seq[IO[A]]) extends IO[Seq[A]] {
+    def execute(context: Context): Result[Seq[A]] =
+      seq.foldLeft(resultM.pure(Seq.empty[A])) { (rseq, io) =>
+        resultM.flatMap(rseq)(seq => resultM.map(io.execute(context))(a => seq :+ a))
+      }
+  }
+
   protected case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
     def execute(context: Context): Result[A] =
       resultM.withFilter(fa.execute(context))(f)
   }
 
 
-  def pureIO[A](a: A): IO[A] = IOPure(a)
-  def failedIO[A](cause: Throwable): IO[A] = IOFailed[A](cause)
+
 
   trait LiftIO[A] extends Any {
 

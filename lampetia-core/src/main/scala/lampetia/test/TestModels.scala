@@ -52,6 +52,7 @@ object TestModels {
 
     override def features = Seq(
       sql.name("person_t"),
+      sql.primaryKey("person_t_pk")(id),
       sql.schema("tmp")
     )
 

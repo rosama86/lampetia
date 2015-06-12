@@ -196,7 +196,15 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
     def parameters: Seq[Parameter[_]] = ps(node)
 
-    def sql: InterpretedSql = PlainSql(node.sqlString)
+    def sql(implicit debug: DebugLevel): InterpretedSql = debug match {
+      case NoDebug =>
+        PlainSql(node.sqlString)
+      case VerboseDebug =>
+        log.info("Plain SQL")
+        log.info(node.sqlString)
+        log.info("-----------------------------")
+        PlainSql(node.sqlString)
+    }
 
     // return Sql to prevent setting other parameters
     def lifted(implicit debug: DebugLevel): Sql = debug match {
@@ -206,6 +214,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
     def liftedDebug: Sql = {
       val result = ParameterizedSql(node.sqlString, parameters)
+      log.info("Lifted SQL")
       log.info(result.sqlString)
       if (result.parameters.nonEmpty)
         log.info("Parameters: ")

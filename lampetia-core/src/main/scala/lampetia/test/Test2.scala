@@ -43,6 +43,7 @@ object Test2 extends App {
     //_ <- "create table tmp.person_t(id text, first_name text, last_name text)".sql.write
     _ <- m.create
     _ <- m.insert(p)
+    //_ <- m.insert(p)
     e <- m.insert(p.data)
     _ <- m.insert(p.data)
     _ <- m.update(m.data.firstName := "another".bind)(m.id === e.id.bind)

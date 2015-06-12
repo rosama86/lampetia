@@ -2,6 +2,8 @@ package lampetia.sql
 
 import java.sql.{ResultSet, PreparedStatement}
 
+import org.slf4j.LoggerFactory
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.{Failure, Success, Try}
@@ -11,6 +13,8 @@ import scala.util.{Failure, Success, Try}
  */
 
 trait JdbcIO extends SqlIO { codec: JdbcCodec =>
+
+  private val log = LoggerFactory.getLogger("jdbc-io")
 
   type Connection = java.sql.Connection
   type Result[A] = Try[A]
@@ -182,16 +186,20 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
       if (connection.getAutoCommit)
         connection.setAutoCommit(false)
 
+      log.info("IN TRANSACTION")
+
       sqlIO.execute(proxy) match {
         case success@Success(_) =>
           connection.commit()
           // close through the real connection manager
           cm.done(connection)
+          log.info("COMMIT")
           success
         case failure@Failure(_) =>
           connection.rollback()
           // close through the real connection manager
           cm.done(connection)
+          log.info("ROLLBACK")
           failure
       }
     }
