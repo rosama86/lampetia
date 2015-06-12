@@ -122,8 +122,8 @@ object SecurityModel {
   implicit object UserModel
     extends Model[User]
     with HasId[User, UserId]
-    with CanCombine0[User]
-    with CanCombine1[User, UserId]
+    with CanBuild0[User]
+    with CanBuild1[User, UserId]
     with CanGenerate[UserId]
     with CanParse[UserId]
     with UUIDGenerator {
@@ -131,8 +131,8 @@ object SecurityModel {
     val name: String = "User"
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-    def combine: User = User(generate)
-    def combine(id: UserId): User = User(id)
+    def build: User = User(generate)
+    def build(id: UserId): User = User(id)
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -146,8 +146,8 @@ object SecurityModel {
     with HasId[Profile, ProfileId]
     with HasRef[Profile, ProfileRef]
     with HasData[Profile, ProfileData]
-    with CanCombine2[Profile, ProfileRef, ProfileData]
-    with CanCombine3[Profile, ProfileId, ProfileRef, ProfileData]
+    with CanBuild2[Profile, ProfileRef, ProfileData]
+    with CanBuild3[Profile, ProfileId, ProfileRef, ProfileData]
     with CanGenerate[ProfileId]
     with CanParse[ProfileId]
     with UUIDGenerator {
@@ -167,8 +167,8 @@ object SecurityModel {
       val accountState = property[AccountState]("accountState")
       val properties = Seq(provider, providerUserId, providerResponse, accountDetails, accountState)
     }
-    def combine(ref: ProfileRef, data: ProfileData): Profile = Profile(generate, ref, data)
-    def combine(id: ProfileId, ref: ProfileRef, data: ProfileData): Profile = Profile(id, ref, data)
+    def build(ref: ProfileRef, data: ProfileData): Profile = Profile(generate, ref, data)
+    def build(id: ProfileId, ref: ProfileRef, data: ProfileData): Profile = Profile(id, ref, data)
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -186,8 +186,8 @@ object SecurityModel {
     with HasId[Group, GroupId]
     with HasRef[Group, GroupRef]
     with HasData[Group, GroupData]
-    with CanCombine2[Group, GroupRef, GroupData]
-    with CanCombine3[Group, GroupId, GroupRef, GroupData]
+    with CanBuild2[Group, GroupRef, GroupData]
+    with CanBuild3[Group, GroupId, GroupRef, GroupData]
     with CanGenerate[GroupId]
     with CanParse[GroupId]
     with UUIDGenerator {
@@ -202,8 +202,8 @@ object SecurityModel {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    def combine(id: GroupId, ref: GroupRef, data: GroupData): Group = Group(id, ref, data)
-    def combine(ref: GroupRef, data: GroupData): Group = Group(generate, ref, data)
+    def build(id: GroupId, ref: GroupRef, data: GroupData): Group = Group(id, ref, data)
+    def build(ref: GroupRef, data: GroupData): Group = Group(generate, ref, data)
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_group"),
@@ -214,7 +214,7 @@ object SecurityModel {
   implicit object GroupMemberModel
     extends Model[GroupMember]
     with HasRef[GroupMember, GroupMemberRef]
-    with CanCombine1[GroupMember, GroupMemberRef] {
+    with CanBuild1[GroupMember, GroupMemberRef] {
     val name: String = "GroupMember"
     object ref extends RefModel[GroupMemberRef] {
       val groupId = property[GroupId]("groupId")
@@ -222,7 +222,7 @@ object SecurityModel {
       val properties = Seq(groupId, memberId)
     }
 
-    def combine(ref: GroupMemberRef): GroupMember = GroupMember(ref)
+    def build(ref: GroupMemberRef): GroupMember = GroupMember(ref)
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -236,7 +236,7 @@ object SecurityModel {
     extends Model[Role]
     with HasId[Role, RoleId]
     with HasData[Role, RoleData]
-    with CanCombine2[Role, RoleId, RoleData]
+    with CanBuild2[Role, RoleId, RoleData]
     with CanGenerate[RoleId]
     with CanParse[RoleId]
     with UUIDGenerator {
@@ -248,7 +248,7 @@ object SecurityModel {
       val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
       val properties = Seq(code, permission)
     }
-    def combine(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
+    def build(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_role")
@@ -259,7 +259,7 @@ object SecurityModel {
     extends Model[Acl]
     with HasId[Acl, AclId]
     with HasData[Acl, AclData]
-    with CanCombine2[Acl, AclId, AclData]
+    with CanBuild2[Acl, AclId, AclData]
     with CanGenerate[AclId]
     with CanParse[AclId]
     with UUIDGenerator {
@@ -292,7 +292,7 @@ object SecurityModel {
       val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
     }
 
-    def combine(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
+    def build(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),

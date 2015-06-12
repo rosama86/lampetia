@@ -1,7 +1,7 @@
 package lampetia.sql
 
 import lampetia.io.BackendIO
-import lampetia.sql.ast.{Operand, Operator}
+import lampetia.sql.ast.{TypedOperand, Operand, Operator}
 import org.slf4j.LoggerFactory
 
 /**
@@ -23,21 +23,21 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
   type Context = ConnectionSource
 
-  trait Parameter {
-    type A
+  trait Parameter[A] {
+    type T = A
     def name: String = "?"
-    def value: A
-    def producer: Produce[A]
+    def value: T
+    def producer: Produce[T]
   }
 
   object Parameter {
-    def apply[T](parameterValue: T, parameterProducer: Produce[T]): Parameter = new Parameter {
-      type A = T
+    def apply[A](parameterValue: A, parameterProducer: Produce[A]): Parameter[A] = new Parameter[A] {
+      //type A = T
       val value: A = parameterValue
       val producer: Produce[A] = parameterProducer
     }
-    def apply[T](paramterName: String, parameterValue: T, parameterProducer: Produce[T]): Parameter = new Parameter {
-      type A = T
+    def apply[A](paramterName: String, parameterValue: A, parameterProducer: Produce[A]): Parameter[A] = new Parameter[A] {
+      //type A = T
       override val name: String = paramterName
       val value: A = parameterValue
       val producer: Produce[A] = parameterProducer
@@ -77,7 +77,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def write: WritePlainSql = createWritePlainSql(this)
   }
 
-  case class ParameterizedSql(sqlString: String, parameters: Seq[Parameter]) extends PositionalParametersSql {
+  case class ParameterizedSql(sqlString: String, parameters: Seq[Parameter[_]]) extends PositionalParametersSql {
     def set[A](parameterValue: A)(implicit producer: Produce[A]): PositionalParametersSql =
       copy(parameters = parameters :+ Parameter(parameterValue, producer))
 
@@ -87,7 +87,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def write: WriteParameterizedSql = createWriteParameterizedSql(this)
   }
 
-  case class ReOrdering(sql: String, original: Seq[Parameter], reordered: Seq[Parameter])
+  case class ReOrdering(sql: String, original: Seq[Parameter[_]], reordered: Seq[Parameter[_]])
 
   def namedToPositional(named: NamedParameterizedSql): ParameterizedSql = {
     val query = named.sqlString
@@ -95,7 +95,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
     val stringParameters = r.findAllIn(query)
 
-    val reordering: ReOrdering = ReOrdering(query, named.parameters, Seq.empty[Parameter])
+    val reordering: ReOrdering = ReOrdering(query, named.parameters, Seq.empty[Parameter[_]])
 
     val reordered = stringParameters.foldLeft(reordering) { (acc, current) =>
       acc.original.find(x => s"#{${x.name}}" == current) match {
@@ -110,7 +110,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
   }
 
-  case class NamedParameterizedSql(sqlString: String, parameters: Seq[Parameter]) extends NamedParametersSql {
+  case class NamedParameterizedSql(sqlString: String, parameters: Seq[Parameter[_]]) extends NamedParametersSql {
 
     def set[A](parameterName: String, parameterValue: A)(implicit producer: Produce[A]): NamedParametersSql =
       copy(parameters = parameters :+ Parameter(parameterName, parameterValue, producer))
@@ -168,54 +168,62 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def transactionally: TransactionalIO[A] = createTransactionalIO(sqlIO)
   }
 
-  case class PresetParameterNode(parameter: Parameter) extends Operand {
+  case class PresetParameterNode[A](parameter: Parameter[A]) extends TypedOperand[A] {
+    val value = parameter.value
     val sqlString: String = "?"
+    def map[B](f: A => B)(implicit p: Produce[B]): PresetParameterNode[B] = PresetParameterNode[B](Parameter(f(value), p))
   }
 
   trait LiftParameter[A] extends Any {
     def instance: A
-    def bind(implicit p: Produce[A]): PresetParameterNode = PresetParameterNode(Parameter(instance, p))
+    def bind(implicit p: Produce[A]): PresetParameterNode[A] = PresetParameterNode[A](Parameter(instance, p))
   }
+
+  sealed trait DebugLevel
+  case object NoDebug extends DebugLevel
+  case object VerboseDebug extends DebugLevel
 
   trait LiftAstNode extends Any {
     def node: Operand
-    private def ps(op: Operand): Seq[Parameter] = op match {
+    private def ps(op: Operand): Seq[Parameter[_]] = op match {
       case x: Operator            =>
         x.operands.flatMap(ps)
-      case x: PresetParameterNode =>
+      case x: PresetParameterNode[_] =>
         Seq(x.parameter)
       case x                      =>
         Seq()
     }
 
-    def parameters: Seq[Parameter] = ps(node)
+    def parameters: Seq[Parameter[_]] = ps(node)
 
     def sql: InterpretedSql = PlainSql(node.sqlString)
 
     // return Sql to prevent setting other parameters
-    def lifted: Sql = ParameterizedSql(node.sqlString, parameters)
+    def lifted(implicit debug: DebugLevel): Sql = debug match {
+      case NoDebug => ParameterizedSql(node.sqlString, parameters)
+      case VerboseDebug => liftedDebug
+    }
 
     def liftedDebug: Sql = {
       val result = ParameterizedSql(node.sqlString, parameters)
-      log.info("ParameterizedSql: START")
-      log.info("SQL: START")
       log.info(result.sqlString)
-      log.info("SQL: END")
-      log.info("Parameters: START")
+      if (result.parameters.nonEmpty)
+        log.info("Parameters: ")
+      else
+        log.info("No Parameters")
       result.parameters.foreach { p =>
         log.info(s"${p.name} -> ${p.value}")
       }
-      log.info("Parameters: END")
-      log.info("ParameterizedSql: END")
+      log.info("-----------------------------")
       result
     }
   }
 
   trait LiftSqlString extends Any {
     def context: StringContext
-    private def p[A: Produce](a: A): Parameter = Parameter(a, implicitly[Produce[A]])
+    private def p[A: Produce](a: A): Parameter[A] = Parameter(a, implicitly[Produce[A]])
 
-    def sql(): Sql = ParameterizedSql(context.parts.mkString, Seq.empty[Parameter])
+    def sql(): Sql = ParameterizedSql(context.parts.mkString, Seq.empty[Parameter[_]])
     def sql[A1: Produce](a1: A1): Sql =
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1)))
     def sql[A1: Produce, A2: Produce](a1: A1, a2: A2): Sql =

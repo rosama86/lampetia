@@ -13,6 +13,8 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   implicit def defaultSqlType: DefaultSqlType
 
+  implicit def debug: DebugLevel
+
   implicit class Strings(val value: String) extends StringsDsl
 
   implicit class Integers(val value: Int) extends IntegersDsl
@@ -81,24 +83,24 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       }
     }
 
-    def insert(implicit cc: CanCombine0[E], p: Produce[E]): IO[E] =
-      insert(cc.combine)
+    def insert(implicit cc: CanBuild0[E], p: Produce[E]): IO[E] =
+      insert(cc.build)
 
     def insert[A1](a1: A1)
-                  (implicit cc: CanCombine1[E, A1], p: Produce[E]): IO[E] =
-      insert(cc.combine(a1))
+                  (implicit cc: CanBuild1[E, A1], p: Produce[E]): IO[E] =
+      insert(cc.build(a1))
 
     def insert[A1, A2](a1: A1, a2: A2)
-                      (implicit cc: CanCombine2[E, A1, A2], p: Produce[E]): IO[E] =
-      insert(cc.combine(a1, a2))
+                      (implicit cc: CanBuild2[E, A1, A2], p: Produce[E]): IO[E] =
+      insert(cc.build(a1, a2))
 
     def insert[A1, A2, A3](a1: A1, a2: A2, a3: A3)
-                          (implicit cc: CanCombine3[E, A1, A2, A3], p: Produce[E]): IO[E] =
-      insert(cc.combine(a1, a2, a3))
+                          (implicit cc: CanBuild3[E, A1, A2, A3], p: Produce[E]): IO[E] =
+      insert(cc.build(a1, a2, a3))
 
     def insert[A1, A2, A3, A4](a1: A1, a2: A2, a3: A3, a4: A4)
-                              (implicit cc: CanCombine4[E, A1, A2, A3, A4], p: Produce[E]): IO[E] =
-      insert(cc.combine(a1, a2, a3, a4))
+                              (implicit cc: CanBuild4[E, A1, A2, A3, A4], p: Produce[E]): IO[E] =
+      insert(cc.build(a1, a2, a3, a4))
 
   }
 
@@ -113,9 +115,9 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   trait Update[E] extends Any { ms: ModelSchema[E] =>
 
-    def update[F <: Operator](first: (Operand, Operand), next: (Operand, Operand)*)(filter: F): IO[Int] = {
-      val init = Q.update(ms.schemaPrefixed).set(first._1, first._2)
-      next.foldLeft(init)( (upd, c) => upd.set(c._1, c._2)).where(filter).lifted.write
+    def update[F <: Operator](first: Couple[_], next: Couple[_]*)(filter: F): IO[Int] = {
+      val init = Q.update(ms.schemaPrefixed).set(first.column, first.operand)
+      next.foldLeft(init)( (upd, c) => upd.set(c.column, c.operand)).where(filter).lifted.write
     }
 
   }

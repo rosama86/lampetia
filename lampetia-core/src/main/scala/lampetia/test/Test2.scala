@@ -1,6 +1,5 @@
 package lampetia.test
 
-import lampetia.sql.dialect.h2.jdbc._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -10,6 +9,7 @@ import scala.concurrent.duration.Duration
 
 object Test2 extends App {
 
+  import lampetia.sql.dialect.h2.jdbcd._
   import TestModels._
   implicit val cid: Consume[PersonId] = consume[String].fmap(PersonId)
   implicit val pid: Produce[PersonId] = a => produce(a.value)
@@ -35,21 +35,25 @@ object Test2 extends App {
 
   val m = PersonModel
 
-
   val p = Person(PersonId("1"), PersonData("a", "b"))
-  val s = 'tmp
+  val schema = "tmp"
+
   val q = for {
-    _ <- "create schema tmp".sql.write
-    _ <- "create table tmp.person_t(id text, first_name text, last_name text)".sql.write
-    e <- PersonModel.insert(p.data)
-    _ <- PersonModel.update(m.data.firstName := "another".bind)(m.id === e.id.bind)
-    r <- PersonModel.find
-    _ <- PersonModel.delete
+    _ <- s"create schema $schema".sql.write
+    //_ <- "create table tmp.person_t(id text, first_name text, last_name text)".sql.write
+    _ <- m.create
+    _ <- m.insert(p)
+    e <- m.insert(p.data)
+    _ <- m.insert(p.data)
+    _ <- m.update(m.data.firstName := "another".bind)(m.id === e.id.bind)
+    _ <- m.delete(m.id === PersonId("1").bind)
+    r <- m.find
     _ <- "drop schema tmp".sql.write
   } yield r
 
   run(q.transactionally)
 
   context.shutdown()
+
 
 }

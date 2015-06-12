@@ -99,28 +99,28 @@ trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
   abstract override def properties: Seq[Property[_]] = super.properties ++ data.properties
 }
 
-trait CanCombine0[E] {
-  def combine: E
+trait CanBuild0[E] {
+  def build: E
 }
 
-trait CanCombine1[E, A1] {
-  def combine(a1: A1): E
+trait CanBuild1[E, A1] {
+  def build(a1: A1): E
 }
 
-trait CanCombine2[E, A1, A2] {
-  def combine(a1: A1, a2: A2): E
+trait CanBuild2[E, A1, A2] {
+  def build(a1: A1, a2: A2): E
 }
 
-trait CanCombine3[E, A1, A2, A3] {
-  def combine(a1: A1, a2: A2, a3: A3): E
+trait CanBuild3[E, A1, A2, A3] {
+  def build(a1: A1, a2: A2, a3: A3): E
 }
 
-trait CanCombine4[E, A1, A2, A3, A4] {
-  def combine(a1: A1, a2: A2, a3: A3, a4: A4): E
+trait CanBuild4[E, A1, A2, A3, A4] {
+  def build(a1: A1, a2: A2, a3: A3, a4: A4): E
 }
 
-trait CanCombine5[E, A1, A2, A3, A4, A5] {
-  def combine(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): E
+trait CanBuild5[E, A1, A2, A3, A4, A5] {
+  def build(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): E
 }
 
 

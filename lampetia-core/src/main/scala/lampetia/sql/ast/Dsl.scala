@@ -2,7 +2,6 @@ package lampetia.sql.ast
 
 import lampetia.model.sql.{SqlIndex, SqlForeignKey, SqlPrimaryKey, DefaultSqlType}
 import lampetia.model.{Model, Property}
-
 import scala.language.implicitConversions
 
 
@@ -90,9 +89,12 @@ trait Dsl {
     def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
   }
 
+  case class Couple[A](column: ColumnIdentifierNode[A], operand: TypedOperand[A])
+
   trait UpdateCoupleDsl[A] extends Any {
     def property: Property[A]
-    def :=(operand: Operand)(implicit b: ColumnIdentifierNodeBuilder): (Operand, Operand) = liftProperty(property) -> operand
+    //def :=(operand: Operand)(implicit b: ColumnIdentifierNodeBuilder): (Operand, Operand) = liftProperty(property) -> operand
+    def :=(bound: TypedOperand[A])(implicit b: ColumnIdentifierNodeBuilder): Couple[A] = Couple(liftProperty(property), bound)
   }
 
   implicit def liftModel[A](model: Model[A])(implicit b: TableIdentifierNodeBuilder): TableIdentifierNode[A] =

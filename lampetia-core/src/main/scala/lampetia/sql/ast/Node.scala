@@ -15,6 +15,10 @@ trait Node {
 
 trait Operand extends Node
 
+trait TypedOperand[T] extends Operand {
+  def value: T
+}
+
 trait Operator extends Operand {
   def operands: Seq[Operand]
 }

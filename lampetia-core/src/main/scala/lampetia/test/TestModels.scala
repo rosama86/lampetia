@@ -1,5 +1,6 @@
 package lampetia.test
 
+import lampetia.codec.Codec
 import lampetia.model._
 
 import scala.util.Success
@@ -21,29 +22,31 @@ object TestModels {
     with    CanGenerate[PersonId]
     with    CanParse[PersonId]
     with    HasData[Person, PersonData]
-    with    CanCombine1[Person, PersonData]
-    with    CanCombine2[Person, PersonId, PersonData]
+    with    CanBuild1[Person, PersonData]
+    with    CanBuild2[Person, PersonId, PersonData]
     with    UUIDGenerator {
     val name = "person"
     def parse(stringId: String) = Success(PersonId(stringId))
     def generate: PersonId = PersonId(generateStringId)
-    object data extends DataModel[PersonData] {
+    object data extends DataModel[PersonData] with Lens[Person, PersonData] {
 
-      val firstName: LensProperty[Person, String] =
+      val firstName: LensProperty[PersonData, String] =
         property[String]("firstName")
-          .getter[Person](_.data.firstName)
-          .setter( (person, v) => person.copy(data = person.data.copy(firstName = v)))
+          .getter[PersonData](_.firstName)
+          .setter( (data, v) => data.copy(firstName = v))
           .set(sql.name("first_name"))
           .set(json.name("first-name"))
 
-      val lastName: LensProperty[Person, String] =
+      val lastName: LensProperty[PersonData, String] =
         property[String]("lastName")
-          .getter[Person](_.data.lastName)
-          .setter( (person, v) => person.copy(data = person.data.copy(lastName = v)))
+          .getter[PersonData](_.lastName)
+          .setter( (data, v) => data.copy(lastName = v))
           .set(sql.name("last_name"))
-          .set(sql.`type`("jsonb"))
+          .set(sql.`type`("text"))
           .set(json.name("last-name"))
 
+      def get(instance: Person): PersonData = instance.data
+      def set(instance: Person, value: PersonData): Person = instance.copy(data = value)
       val properties = Seq(firstName, lastName)
     }
 
@@ -52,13 +55,9 @@ object TestModels {
       sql.schema("tmp")
     )
 
-    def combine(data: PersonData): Person = Person(generate, data)
-    def combine(id: PersonId, data: PersonData): Person = Person(id, data)
+    def build(data: PersonData): Person = Person(generate, data)
+    def build(id: PersonId, data: PersonData): Person = Person(id, data)
 
   }
-
-
-
-
 
 }
