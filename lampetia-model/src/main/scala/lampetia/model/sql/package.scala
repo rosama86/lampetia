@@ -63,7 +63,7 @@ package object sql {
 
     def sqlName: String = model.features.collectFirst {
       case SqlName(value) => value
-    }.getOrElse(model.name.snakeCase)
+    }.getOrElse(model.modelName.snakeCase)
 
     def sqlSchema: Option[String] = model.features.collectFirst {
       case SqlSchema(value) => value
@@ -86,7 +86,7 @@ package object sql {
 
     def sqlName: String = p.features.collectFirst {
       case SqlName(value) => value
-    }.getOrElse(p.name.snakeCase)
+    }.getOrElse(p.propertyName.snakeCase)
 
     def sqlType(implicit dst: DefaultSqlType): String = p.features.collectFirst {
       case SqlType(value) => value

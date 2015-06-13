@@ -14,6 +14,7 @@ trait SqlReader {
   def readBoolean: Boolean
   def readInt: Int
   def readLong: Long
+  def readDouble: Double
   def readDate: DateTime
   def readTimestamp: DateTime
 }
@@ -24,6 +25,7 @@ trait SqlWriter {
   def writeBoolean(value: Boolean): SqlWriter
   def writeInt(value: Int): SqlWriter
   def writeLong(value: Long): SqlWriter
+  def writeDouble(value: Double): SqlWriter
   def writeDate(value: DateTime): SqlWriter
   def writeTimestamp(value: DateTime): SqlWriter
 }
@@ -44,6 +46,9 @@ trait SqlCodec extends Codec {
 
   implicit val consumeLong: Consume[Long] = _.readLong
   implicit val produceLong: Produce[Long] = a => p => p.writeLong(a)
+
+  implicit val consumeDouble: Consume[Double] = _.readDouble
+  implicit val produceDouble: Produce[Double] = a => p => p.writeDouble(a)
 
 }
 

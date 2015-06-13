@@ -9,7 +9,7 @@ import scala.util.Try
 trait Feature extends Any
 
 trait Property[V] {
-  def name: String
+  def propertyName: String
   def set(feature: Feature): Property[V]
   def features: Seq[Feature]
 }
@@ -28,24 +28,24 @@ trait HasProperties[A] {
   def properties: Seq[Property[_]]
 }
 
-case class SimpleProperty[A](name: String, features: Seq[Feature]) extends Property[A] {
+case class SimpleProperty[A](propertyName: String, features: Seq[Feature]) extends Property[A] {
   def set(feature: Feature): SimpleProperty[A] = copy(features = this.features :+ feature)
-  def getter[E](f: E => A): ReadableProperty[E, A] = ReadableProperty[E, A](name, features, f)
-  def setter[E](f: (E, A) => E): WriteableProperty[E, A] = WriteableProperty[E, A](name, features, f)
+  def getter[E](f: E => A): ReadableProperty[E, A] = ReadableProperty[E, A](propertyName, features, f)
+  def setter[E](f: (E, A) => E): WriteableProperty[E, A] = WriteableProperty[E, A](propertyName, features, f)
 }
-case class ReadableProperty[E, A](name: String, features: Seq[Feature], reads: E => A) 
+case class ReadableProperty[E, A](propertyName: String, features: Seq[Feature], reads: E => A)
   extends Property[A] with Readable[E, A] {
   def set(feature: Feature): ReadableProperty[E, A] = copy(features = this.features :+ feature)
   def get(instance: E): A = reads(instance)
-  def setter(f: (E, A) => E): LensProperty[E, A] = LensProperty[E, A](name, features, reads, f)
+  def setter(f: (E, A) => E): LensProperty[E, A] = LensProperty[E, A](propertyName, features, reads, f)
 }
-case class WriteableProperty[E, A](name: String, features: Seq[Feature], writes: (E, A) => E)
+case class WriteableProperty[E, A](propertyName: String, features: Seq[Feature], writes: (E, A) => E)
   extends Property[A] with Writeable[E, A] {
   def set(feature: Feature): WriteableProperty[E, A] = copy(features = this.features :+ feature)
   def set(instance: E, value: A): E = writes(instance, value)
-  def getter(f: E => A): LensProperty[E, A] = LensProperty[E, A](name, features, f, writes)
+  def getter(f: E => A): LensProperty[E, A] = LensProperty[E, A](propertyName, features, f, writes)
 }
-case class LensProperty[E, A](name: String, features: Seq[Feature], reads: E => A, writes: (E, A) => E)
+case class LensProperty[E, A](propertyName: String, features: Seq[Feature], reads: E => A, writes: (E, A) => E)
   extends Property[A] with Lens[E, A] {
   def set(feature: Feature): LensProperty[E, A] = copy(features = this.features :+ feature)
   def get(instance: E): A = reads(instance)
@@ -125,7 +125,7 @@ trait CanBuild5[E, A1, A2, A3, A4, A5] {
 
 
 trait Model[E] extends HasProperties[E] {
-  def name: String
+  def modelName: String
   def property[A](name: String): SimpleProperty[A] = SimpleProperty[A](name, Seq.empty[Feature])
   def properties: Seq[Property[_]] = Seq.empty[Property[_]]
   def features: Seq[Feature] = Seq.empty[Feature]

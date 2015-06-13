@@ -56,6 +56,12 @@ trait JdbcCodec extends SqlCodec { self =>
       result
     }
 
+    def readDouble: Double = {
+      val result = rs.getDouble(index)
+      index += 1
+      result
+    }
+
     def readDate: DateTime = {
       val result = rs.getDate(index)
       index += 1
@@ -99,6 +105,12 @@ trait JdbcCodec extends SqlCodec { self =>
 
     def writeLong(value: Long): SqlWriter = {
       ps.setLong(index, value)
+      index += 1
+      this
+    }
+
+    def writeDouble(value: Double): SqlWriter = {
+      ps.setDouble(index, value)
       index += 1
       this
     }

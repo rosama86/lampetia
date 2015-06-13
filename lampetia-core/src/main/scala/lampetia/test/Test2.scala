@@ -54,6 +54,21 @@ object Test2 extends App {
 
   run(q.transactionally)
 
+
+  val c = CoffeeModel
+  implicit val consumeCoffee: Consume[Coffee] =
+    (consume[String] ~ consume[String] ~ consume[Int])(Coffee)
+  implicit val produceCoffee: Produce[Coffee] =
+    a => produce(a.name) andThen produce(a.country) andThen produce(a.rating)
+
+  val cq = for {
+    _ <- c.create
+    _ <- c.insert(Coffee("a", "b", 12))
+    r <- c.find
+  } yield r
+
+  run(cq.transactionally)
+
   context.shutdown()
 
 

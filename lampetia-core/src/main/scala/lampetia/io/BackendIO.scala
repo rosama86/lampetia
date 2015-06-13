@@ -33,6 +33,7 @@ trait BackendIO { self =>
     def pureIO[A](a: A): IO[A] = IOPure(a)
     def failedIO[A](cause: Throwable): IO[A] = IOFailed[A](cause)
     def seq[A](c: Seq[IO[A]]): IO[Seq[A]] = IOSeq(c)
+    def sequence[A](c: IO[A]*): IO[Seq[A]] = IOSeq(c)
   }
 
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: Context): Future[R]

@@ -83,6 +83,17 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       }
     }
 
+    def +=(instance: E)(implicit p: Produce[E]): IO[Int] = {
+      val ps = model.properties
+      val vs = ps.map(positionalParameter)
+      insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(instance).write
+    }
+
+    def ++=(instances: E*)(implicit p: Produce[E]): IO[Int] = {
+      val ios: Seq[IO[Int]] = instances.map(+=)
+      IO.seq(ios).map(_.sum)
+    }
+
     def insert(implicit cc: CanBuild0[E], p: Produce[E]): IO[E] =
       insert(cc.build)
 

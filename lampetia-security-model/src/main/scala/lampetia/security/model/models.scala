@@ -128,7 +128,7 @@ object SecurityModel {
     with CanParse[UserId]
     with UUIDGenerator {
 
-    val name: String = "User"
+    val modelName: String = "User"
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
     def build: User = User(generate)
@@ -151,7 +151,7 @@ object SecurityModel {
     with CanGenerate[ProfileId]
     with CanParse[ProfileId]
     with UUIDGenerator {
-    val name: String = "Profile"
+    val modelName: String = "Profile"
     def generate: ProfileId = ProfileId(generateStringId)
     def parse(stringId: String): Try[ProfileId] = Success(ProfileId(stringId))
     object ref extends RefModel[ProfileRef] {
@@ -191,7 +191,7 @@ object SecurityModel {
     with CanGenerate[GroupId]
     with CanParse[GroupId]
     with UUIDGenerator {
-    val name: String = "Group"
+    val modelName: String = "Group"
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
@@ -215,7 +215,7 @@ object SecurityModel {
     extends Model[GroupMember]
     with HasRef[GroupMember, GroupMemberRef]
     with CanBuild1[GroupMember, GroupMemberRef] {
-    val name: String = "GroupMember"
+    val modelName: String = "GroupMember"
     object ref extends RefModel[GroupMemberRef] {
       val groupId = property[GroupId]("groupId")
       val memberId = property[SubjectId]("memberId")
@@ -240,7 +240,7 @@ object SecurityModel {
     with CanGenerate[RoleId]
     with CanParse[RoleId]
     with UUIDGenerator {
-    val name: String = "Role"
+    val modelName: String = "Role"
     def generate: RoleId = RoleId(generateStringId)
     def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
     object data extends DataModel[RoleData] {
@@ -263,7 +263,7 @@ object SecurityModel {
     with CanGenerate[AclId]
     with CanParse[AclId]
     with UUIDGenerator {
-    val name = "Acl"
+    val modelName = "Acl"
     def generate: AclId = AclId(generateStringId)
     def parse(stringId: String): Try[AclId] = Success(AclId(stringId))
     object data extends DataModel[AclData] {

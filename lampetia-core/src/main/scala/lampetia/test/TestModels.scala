@@ -25,7 +25,7 @@ object TestModels {
     with    CanBuild1[Person, PersonData]
     with    CanBuild2[Person, PersonId, PersonData]
     with    UUIDGenerator {
-    val name = "person"
+    val modelName = "person"
     def parse(stringId: String) = Success(PersonId(stringId))
     def generate: PersonId = PersonId(generateStringId)
     object data extends DataModel[PersonData] with Lens[Person, PersonData] {
@@ -59,6 +59,15 @@ object TestModels {
     def build(data: PersonData): Person = Person(generate, data)
     def build(id: PersonId, data: PersonData): Person = Person(id, data)
 
+  }
+
+  case class Coffee(name: String, country: String, rating: Int)
+  implicit object CoffeeModel extends Model[Coffee] {
+    val modelName: String = "Coffee"
+    val name = property[String]("name")
+    val country = property[String]("country")
+    val rating = property[Int]("rating")
+    override val properties = Seq(name, country, rating)
   }
 
 }

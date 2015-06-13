@@ -16,7 +16,7 @@ package object json {
 
     def jsonName: String = p.features.collectFirst {
       case JsonName(value) => value
-    }.getOrElse(p.name)
+    }.getOrElse(p.propertyName)
 
 
   }
