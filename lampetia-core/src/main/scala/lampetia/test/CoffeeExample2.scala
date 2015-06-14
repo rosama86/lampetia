@@ -2,7 +2,7 @@ package lampetia.test
 
 import lampetia.codec.{Codec, PrimitiveCodecs}
 import lampetia.model.{Model, sql}
-import lampetia.sql.dialect.h2.jdbcd
+import lampetia.sql.dialect.h2.jdbc
 import play.api.libs.json.{Json, Format}
 
 import scala.concurrent.Await
@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
  */
 object CoffeeExample2 extends App {
 
-  import lampetia.sql.dialect.h2.jdbcd._
+  import jdbc._
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -99,7 +99,7 @@ object CoffeeExample2 extends App {
 
   val suppliers = SupplierModel
   val coffees = CoffeeModel
-  val codec = new Codecs(jdbcd)
+  val codec = new Codecs(jdbc)
   import codec._
 
   val setup = IO.sequence(

@@ -99,44 +99,44 @@ trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
   abstract override def properties: Seq[Property[_]] = super.properties ++ data.properties
 }
 
-sealed trait Build[+A] extends Any {
-  def map[B](f: A => B): Build[B]
-  def flatMap[B](f: A => Build[B]): Build[B]
+sealed trait BuildResult[+A] extends Any {
+  def map[B](f: A => B): BuildResult[B]
+  def flatMap[B](f: A => BuildResult[B]): BuildResult[B]
 }
 
-case class BuildSuccess[+A](value: A) extends AnyVal with Build[A] {
-  def map[B](f: A => B): Build[B] = BuildSuccess(f(value))
-  def flatMap[B](f: A => Build[B]): Build[B] = f(value)
+case class BuildSuccess[+A](value: A) extends AnyVal with BuildResult[A] {
+  def map[B](f: A => B): BuildResult[B] = BuildSuccess(f(value))
+  def flatMap[B](f: A => BuildResult[B]): BuildResult[B] = f(value)
 }
 
-case class BuildFailure[+A](cause: Throwable) extends AnyVal with Build[A] {
-  def map[B](f: A => B): Build[B] = BuildFailure[B](cause)
-  def flatMap[B](f: A => Build[B]): Build[B] = BuildFailure[B](cause)
+case class BuildFailure[+A](cause: Throwable) extends AnyVal with BuildResult[A] {
+  def map[B](f: A => B): BuildResult[B] = BuildFailure[B](cause)
+  def flatMap[B](f: A => BuildResult[B]): BuildResult[B] = BuildFailure[B](cause)
 }
 
 
 trait CanBuild0[E] {
-  def build: E
+  def build: BuildResult[E]
 }
 
 trait CanBuild1[E, A1] {
-  def build(a1: A1): E
+  def build(a1: A1): BuildResult[E]
 }
 
 trait CanBuild2[E, A1, A2] {
-  def build(a1: A1, a2: A2): E
+  def build(a1: A1, a2: A2): BuildResult[E]
 }
 
 trait CanBuild3[E, A1, A2, A3] {
-  def build(a1: A1, a2: A2, a3: A3): E
+  def build(a1: A1, a2: A2, a3: A3): BuildResult[E]
 }
 
 trait CanBuild4[E, A1, A2, A3, A4] {
-  def build(a1: A1, a2: A2, a3: A3, a4: A4): E
+  def build(a1: A1, a2: A2, a3: A3, a4: A4): BuildResult[E]
 }
 
 trait CanBuild5[E, A1, A2, A3, A4, A5] {
-  def build(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): E
+  def build(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): BuildResult[E]
 }
 
 

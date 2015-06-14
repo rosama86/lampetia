@@ -1,6 +1,5 @@
 package lampetia.test
 
-import lampetia.codec.Codec
 import lampetia.model._
 
 import scala.util.Success
@@ -56,8 +55,8 @@ object TestModels {
       sql.schema("tmp")
     )
 
-    def build(data: PersonData): Person = Person(generate, data)
-    def build(id: PersonId, data: PersonData): Person = Person(id, data)
+    def build(data: PersonData): BuildResult[Person] = BuildSuccess(Person(generate, data))
+    def build(id: PersonId, data: PersonData): BuildResult[Person] = BuildSuccess(Person(id, data))
 
   }
 

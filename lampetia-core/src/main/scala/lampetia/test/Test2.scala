@@ -9,7 +9,7 @@ import scala.concurrent.duration.Duration
 
 object Test2 extends App {
 
-  import lampetia.sql.dialect.h2.jdbcd._
+  import lampetia.sql.dialect.h2.jdbc._
   import TestModels._
   implicit val cid: Consume[PersonId] = consume[String].fmap(PersonId)
   implicit val pid: Produce[PersonId] = a => produce(a.value)

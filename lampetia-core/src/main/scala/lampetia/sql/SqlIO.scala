@@ -179,10 +179,6 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def bind(implicit p: Produce[A]): PresetParameterNode[A] = PresetParameterNode[A](Parameter(instance, p))
   }
 
-  sealed trait DebugLevel
-  case object NoDebug extends DebugLevel
-  case object VerboseDebug extends DebugLevel
-
   trait LiftAstNode extends Any {
     def node: Operand
     private def ps(op: Operand): Seq[Parameter[_]] = op match {
@@ -196,34 +192,30 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
     def parameters: Seq[Parameter[_]] = ps(node)
 
-    def sql(implicit debug: DebugLevel): InterpretedSql = debug match {
-      case NoDebug =>
-        PlainSql(node.sqlString)
-      case VerboseDebug =>
-        log.info("Plain SQL")
-        log.info(node.sqlString)
-        log.info("-----------------------------")
-        PlainSql(node.sqlString)
+    def sql: InterpretedSql = {
+    if (log.isDebugEnabled) {
+      log.debug("Plain SQL")
+      log.debug("%s", node.sqlString)
+      log.debug("-----------------------------")
+    }
+      PlainSql(node.sqlString)
     }
 
     // return Sql to prevent setting other parameters
-    def lifted(implicit debug: DebugLevel): Sql = debug match {
-      case NoDebug => ParameterizedSql(node.sqlString, parameters)
-      case VerboseDebug => liftedDebug
-    }
-
-    def liftedDebug: Sql = {
+    def lifted: Sql = {
       val result = ParameterizedSql(node.sqlString, parameters)
-      log.info("Lifted SQL")
-      log.info(result.sqlString)
-      if (result.parameters.nonEmpty)
-        log.info("Parameters: ")
-      else
-        log.info("No Parameters")
-      result.parameters.foreach { p =>
-        log.info(s"${p.name} -> ${p.value}")
+      if (log.isDebugEnabled) {
+        log.debug("Lifted SQL")
+        log.debug("%s", result.sqlString)
+        if (result.parameters.nonEmpty)
+          log.debug("Parameters: ")
+        else
+          log.debug("No Parameters")
+        result.parameters.foreach { p =>
+          log.debug(s"${p.name} -> ${p.value}")
+        }
+        log.debug("-----------------------------")
       }
-      log.info("-----------------------------")
       result
     }
   }

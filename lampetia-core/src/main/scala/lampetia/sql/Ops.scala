@@ -13,8 +13,6 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   implicit def defaultSqlType: DefaultSqlType
 
-  implicit def debug: DebugLevel
-
   implicit class Strings(val value: String) extends StringsDsl
 
   implicit class Integers(val value: Int) extends IntegersDsl
@@ -93,6 +91,12 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       val ios: Seq[IO[Int]] = instances.map(+=)
       IO.seq(ios).map(_.sum)
     }
+
+    protected def insert(result: BuildResult[E])(implicit p: Produce[E]): IO[E] =
+      result match {
+        case BuildSuccess(instance) => insert(instance)
+        case BuildFailure(e)        => IO.failedIO[E](e)
+      }
 
     def insert(implicit cc: CanBuild0[E], p: Produce[E]): IO[E] =
       insert(cc.build)

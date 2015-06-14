@@ -131,8 +131,8 @@ object SecurityModel {
     val modelName: String = "User"
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-    def build: User = User(generate)
-    def build(id: UserId): User = User(id)
+    def build: BuildResult[User] = BuildSuccess(User(generate))
+    def build(id: UserId): BuildResult[User] = BuildSuccess(User(id))
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -167,8 +167,10 @@ object SecurityModel {
       val accountState = property[AccountState]("accountState")
       val properties = Seq(provider, providerUserId, providerResponse, accountDetails, accountState)
     }
-    def build(ref: ProfileRef, data: ProfileData): Profile = Profile(generate, ref, data)
-    def build(id: ProfileId, ref: ProfileRef, data: ProfileData): Profile = Profile(id, ref, data)
+    def build(ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
+      BuildSuccess(Profile(generate, ref, data))
+    def build(id: ProfileId, ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
+      BuildSuccess(Profile(id, ref, data))
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -202,8 +204,8 @@ object SecurityModel {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    def build(id: GroupId, ref: GroupRef, data: GroupData): Group = Group(id, ref, data)
-    def build(ref: GroupRef, data: GroupData): Group = Group(generate, ref, data)
+    def build(id: GroupId, ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(id, ref, data))
+    def build(ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(generate, ref, data))
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_group"),
@@ -222,7 +224,7 @@ object SecurityModel {
       val properties = Seq(groupId, memberId)
     }
 
-    def build(ref: GroupMemberRef): GroupMember = GroupMember(ref)
+    def build(ref: GroupMemberRef): BuildResult[GroupMember] = BuildSuccess(GroupMember(ref))
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
@@ -248,7 +250,7 @@ object SecurityModel {
       val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
       val properties = Seq(code, permission)
     }
-    def build(a1: RoleId, a2: RoleData): Role = Role(a1, a2)
+    def build(a1: RoleId, a2: RoleData): BuildResult[Role] = BuildSuccess(Role(a1, a2))
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
       sql.name("security_role")
@@ -292,7 +294,7 @@ object SecurityModel {
       val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
     }
 
-    def build(a1: AclId, a2: AclData): Acl = Acl(a1,a2)
+    def build(a1: AclId, a2: AclData): BuildResult[Acl] = BuildSuccess(Acl(a1,a2))
 
     override val features: Seq[Feature] = Seq(
       sql.schema("sec"),
