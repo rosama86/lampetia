@@ -186,20 +186,20 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
       if (connection.getAutoCommit)
         connection.setAutoCommit(false)
 
-      log.info("IN TRANSACTION")
+      //log.info("IN TRANSACTION")
 
       sqlIO.execute(proxy) match {
         case success@Success(_) =>
           connection.commit()
           // close through the real connection manager
           cm.done(connection)
-          log.info("COMMIT")
+          //log.info("COMMIT")
           success
         case failure@Failure(_) =>
           connection.rollback()
           // close through the real connection manager
           cm.done(connection)
-          log.info("ROLLBACK")
+          //log.info("ROLLBACK")
           failure
       }
     }

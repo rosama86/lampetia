@@ -37,3 +37,21 @@ trait Codec {
   def produce[A](a: A)(implicit produce: Produce[A]): Writer => Writer = p => produce(a)(p)
 
 }
+
+trait PrimitiveCodecs { self: Codec =>
+  
+  implicit def consumeString: Consume[String]
+  implicit def produceString: Produce[String]
+
+  implicit def consumeBoolean: Consume[Boolean]
+  implicit def produceBoolean: Produce[Boolean]
+
+  implicit def consumeInt: Consume[Int]
+  implicit def produceInt: Produce[Int]
+
+  implicit def consumeLong: Consume[Long]
+  implicit def produceLong: Produce[Long]
+
+  implicit def consumeDouble: Consume[Double]
+  implicit def produceDouble: Produce[Double]
+}

@@ -99,6 +99,22 @@ trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
   abstract override def properties: Seq[Property[_]] = super.properties ++ data.properties
 }
 
+sealed trait Build[+A] extends Any {
+  def map[B](f: A => B): Build[B]
+  def flatMap[B](f: A => Build[B]): Build[B]
+}
+
+case class BuildSuccess[+A](value: A) extends AnyVal with Build[A] {
+  def map[B](f: A => B): Build[B] = BuildSuccess(f(value))
+  def flatMap[B](f: A => Build[B]): Build[B] = f(value)
+}
+
+case class BuildFailure[+A](cause: Throwable) extends AnyVal with Build[A] {
+  def map[B](f: A => B): Build[B] = BuildFailure[B](cause)
+  def flatMap[B](f: A => Build[B]): Build[B] = BuildFailure[B](cause)
+}
+
+
 trait CanBuild0[E] {
   def build: E
 }

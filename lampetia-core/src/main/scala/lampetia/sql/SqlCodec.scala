@@ -1,6 +1,6 @@
 package lampetia.sql
 
-import lampetia.codec.Codec
+import lampetia.codec.{PrimitiveCodecs, Codec}
 import org.joda.time.DateTime
 
 //import scala.language.{higherKinds, implicitConversions}
@@ -30,7 +30,7 @@ trait SqlWriter {
   def writeTimestamp(value: DateTime): SqlWriter
 }
 
-trait SqlCodec extends Codec {
+trait SqlCodec extends Codec with PrimitiveCodecs {
 
   type Reader = SqlReader
   type Writer = SqlWriter

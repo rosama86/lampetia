@@ -1,9 +1,9 @@
 package lampetia.test
 
-import lampetia.codec.{PrimitiveCodecs, Codec}
-import lampetia.model.{sql, Model}
-import lampetia.sql.{SqlCodec, JdbcCodec}
+import lampetia.codec.{Codec, PrimitiveCodecs}
+import lampetia.model.{Model, sql}
 import lampetia.sql.dialect.h2.jdbcd
+import play.api.libs.json.{Json, Format}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -12,9 +12,10 @@ import scala.concurrent.duration.Duration
  * A port of Slick Coffees example to lampetia
  * @author Hossam Karim
  */
-object CoffeeExample extends App {
+object CoffeeExample2 extends App {
 
   import lampetia.sql.dialect.h2.jdbcd._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit lazy val context: ConnectionSource = {
@@ -57,6 +58,8 @@ object CoffeeExample extends App {
 
   class Codecs[C <: Codec with PrimitiveCodecs](val codec: C) {
     import codec._
+
+    implicit val coffeeFormat: Format[Coffee] = Json.format[Coffee]
 
     implicit val consumeSupplier: Consume[Supplier] =
       (consume[Int] and
