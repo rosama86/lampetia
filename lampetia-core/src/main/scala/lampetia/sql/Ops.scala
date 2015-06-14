@@ -70,7 +70,15 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
   }
 
 
+
   trait Insert[E] extends Any { ms: ModelSchema[E] =>
+
+    def insert(couples: Couple[_]*): IO[Int] =
+      insertInto(schemaPrefixed, couples.map(_.column.property):_*)
+      .values(couples.map(_.operand):_*)
+      .lifted
+      .write
+
 
     def insert(instance: E)(implicit p: Produce[E]): IO[E] = {
       val ps = model.properties

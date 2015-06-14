@@ -200,7 +200,7 @@ object SecurityModel {
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
-      val parent = property[GroupId]("parent").set(sql.optional)
+      val parent = property[Option[GroupId]]("parent").set(sql.optional)
       val properties = Seq(parent)
     }
     object data extends DataModel[GroupData] {

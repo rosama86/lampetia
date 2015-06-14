@@ -135,6 +135,9 @@ object CoffeeExample2 extends App {
 
   run(custom)
 
+
+  //coffees.insert(coffees.id := "c".bind, coffees.supplierId := 213.bind)
+
   context.shutdown()
 
 
