@@ -1,6 +1,6 @@
 package lampetia.sql.ast
 
-import lampetia.model.sql.{SqlIndex, SqlForeignKey, SqlPrimaryKey, DefaultSqlType}
+import lampetia.model.sql.{SqlIndex, SqlForeignKey, SqlPrimaryKey, SqlTypes}
 import lampetia.model.{Model, Property}
 import scala.language.implicitConversions
 
@@ -20,7 +20,7 @@ trait Dsl {
   def deleteFrom(operand: Operand)(implicit b: DeleteFromNodeBuilder): DeleteFromNode = b(operand)
   def update(operand: Operand): Update = Update(operand)
   def function(name: String, operands: Operand*)(implicit b: FunctionNodeBuilder): FunctionNode = b(name, operands)
-  def createTable[E](model: Model[E])(implicit b: CreateTableNodeBuilder, dst: DefaultSqlType, tb: TableIdentifierNodeBuilder) = b(model)
+  def createTable[E](model: Model[E])(implicit b: CreateTableNodeBuilder, dst: SqlTypes, tb: TableIdentifierNodeBuilder) = b(model)
   def primaryKey[E](model: Model[E], pk: SqlPrimaryKey)(implicit b: PrimaryKeyNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, pk)
   def foreignKey[E, R](model: Model[E], fk: SqlForeignKey[R])(implicit b: ForeignKeyNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, fk)
   def index[E](model: Model[E], index: SqlIndex)(implicit b: IndexNodeBuilder, tb: TableIdentifierNodeBuilder) = b(model, index)

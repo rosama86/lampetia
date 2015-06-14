@@ -11,7 +11,7 @@ import lampetia.sql.dialect.Dialect
  */
 trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
-  implicit def defaultSqlType: DefaultSqlType
+  implicit def sqlTypes: SqlTypes
 
   implicit class Strings(val value: String) extends StringsDsl
 

@@ -11,15 +11,19 @@ import scala.concurrent.duration.Duration
  */
 object CoffeeExample extends App {
 
+  // import the dialect
   import lampetia.sql.dialect.h2.jdbc._
+  // provide an execution context for futures
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  // provide a way for actions to get a connection
   implicit lazy val context: ConnectionSource = {
     val ds = new org.h2.jdbcx.JdbcDataSource
     ds.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
     connectionSource(ds)
   }
 
+  // runs an IO action and reports the result or failure if any
   def run[A](io: IO[A]): Unit = {
     val f = io.run
     f.onSuccess { case v => println(v) }
@@ -29,28 +33,34 @@ object CoffeeExample extends App {
 
   case class Supplier(id: Int, name: String, street: String, city: String, state: String, zip: String)
 
+  // a meta model for Supplier
   object SupplierModel extends Model[Supplier] {
     val modelName = "Suppliers"
-    val id = property[Int]("id").set(sql.name("SUP_ID")).set(sql.`type`("integer"))
+    val id = property[Int]("id").set(sql.name("SUP_ID"))
     val name = property[String]("name")
     val street = property[String]("street")
     val city = property[String]("city")
     val state = property[String]("state")
     val zip = property[String]("zip")
     override val properties = Seq(id, name, street, city, state, zip)
+    override val features = Seq(
+      sql.primaryKey("SUP_PK")(id)
+    )
   }
 
   case class Coffee(id: String, supplierId: Int, price: Double, sales: Int, total: Int)
 
+  // a meta model for Coffee
   object CoffeeModel extends Model[Coffee] {
     val modelName = "Coffees"
     val id = property[String]("id")
     val supplierId = property[Int]("supplierId").set(sql.name("SUP_ID"))
-    val price = property[Double]("price").set(sql.`type`("double"))
-    val sales = property[Int]("sales").set(sql.`type`("integer"))
-    val total = property[Int]("total").set(sql.`type`("integer"))
+    val price = property[Double]("price")
+    val sales = property[Int]("sales")
+    val total = property[Int]("total").set(sql.`type`("long"))  // override default Int type mapping
     override val properties = Seq(id, supplierId, price, sales, total)
     override val features = Seq(
+      sql.primaryKey("COFFEE_PK")(id),
       sql.foreignKey(supplierId)(SupplierModel, SupplierModel.id)
     )
   }

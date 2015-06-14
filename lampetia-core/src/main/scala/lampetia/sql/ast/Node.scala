@@ -500,7 +500,7 @@ case class DefaultCreateSchemaNode(id: IdentifierNode) extends CreateSchemaNode 
 }
 
 trait CreateTableNodeBuilder {
-  def apply[E](model: Model[E])(implicit dst: DefaultSqlType, tb: TableIdentifierNodeBuilder): CreateTableNode[E]
+  def apply[E](model: Model[E])(implicit dst: SqlTypes, tb: TableIdentifierNodeBuilder): CreateTableNode[E]
 }
 trait CreateTableNode[E] extends DDLNode {
   def model: Model[E]
@@ -508,7 +508,7 @@ trait CreateTableNode[E] extends DDLNode {
 
 
 case class DefaultCreateTableNode[E](model: Model[E])
-                                    (implicit dst: DefaultSqlType,
+                                    (implicit dst: SqlTypes,
                                      tb: TableIdentifierNodeBuilder) extends CreateTableNode[E] {
   val operands: Seq[Operand] = Seq(tb(model))
   private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")

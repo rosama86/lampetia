@@ -14,7 +14,9 @@ package object json {
 
   implicit class PropertyFeatures[A](val p: Property[A]) extends AnyVal {
 
-    def jsonName: String = p.features.collectFirst {
+    def features = p.features.reverse
+
+    def jsonName: String = features.collectFirst {
       case JsonName(value) => value
     }.getOrElse(p.propertyName)
 

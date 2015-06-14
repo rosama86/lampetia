@@ -61,42 +61,46 @@ package object sql {
 
   implicit class ModelFeatures[A](val model: Model[A]) extends AnyVal {
 
-    def sqlName: String = model.features.collectFirst {
+    def features = model.features.reverse
+
+    def sqlName: String = features.collectFirst {
       case SqlName(value) => value
     }.getOrElse(model.modelName.snakeCase)
 
-    def sqlSchema: Option[String] = model.features.collectFirst {
+    def sqlSchema: Option[String] = features.collectFirst {
       case SqlSchema(value) => value
     }
 
-    def sqlPrimaryKey: Option[SqlPrimaryKey] = model.features.collectFirst {
+    def sqlPrimaryKey: Option[SqlPrimaryKey] = features.collectFirst {
       case pk: SqlPrimaryKey => Some(pk)
     }.getOrElse(None)
 
-    def sqlForeignKeys: Seq[SqlForeignKey[_]] = model.features.collect {
+    def sqlForeignKeys: Seq[SqlForeignKey[_]] = features.collect {
       case fk: SqlForeignKey[_] => fk
     }
 
-    def sqlIndexes: Seq[SqlIndex] = model.features.collect {
+    def sqlIndexes: Seq[SqlIndex] = features.collect {
       case i: SqlIndex => i
     }
   }
 
   implicit class PropertyFeatures[A](val p: Property[A]) {
 
-    def sqlName: String = p.features.collectFirst {
+    def features = p.features.reverse
+
+    def sqlName: String = features.collectFirst {
       case SqlName(value) => value
     }.getOrElse(p.propertyName.snakeCase)
 
-    def sqlType(implicit dst: DefaultSqlType): String = p.features.collectFirst {
+    def sqlType(implicit dst: SqlTypes): String = features.collectFirst {
       case SqlType(value) => value
-    }.getOrElse(dst.name)
+    }.getOrElse(dst.name(p.propertyType))
 
-    def optional: Boolean = p.features.collectFirst {
+    def optional: Boolean = features.collectFirst {
       case Optional => true
     }.getOrElse(false)
 
-    def sqlCast: Option[String] = p.features.collectFirst {
+    def sqlCast: Option[String] = features.collectFirst {
       case SqlCast(v) => Some(v)
     }.getOrElse(None)
 

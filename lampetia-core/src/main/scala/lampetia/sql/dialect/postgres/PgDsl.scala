@@ -1,6 +1,7 @@
 package lampetia.sql.dialect.postgres
 
-import lampetia.model.sql.DefaultSqlType
+import lampetia.model._
+import lampetia.model.sql.SqlTypes
 import lampetia.sql.ast._
 import lampetia.sql.dialect.Dialect
 
@@ -10,9 +11,7 @@ import lampetia.sql.dialect.Dialect
 
 trait PgDsl extends Dsl with Dialect {
 
-  implicit val defaultSqlType: DefaultSqlType = new DefaultSqlType {
-    def name: String = "text"
-  }
+
 
   trait PgQueryNodeBuilder extends QueryNodeBuilder {
     type N = PgQueryNode

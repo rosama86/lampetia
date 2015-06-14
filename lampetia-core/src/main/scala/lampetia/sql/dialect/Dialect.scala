@@ -1,6 +1,6 @@
 package lampetia.sql.dialect
 
-import lampetia.model.sql.{DefaultSqlType, SqlForeignKey, SqlIndex, SqlPrimaryKey}
+import lampetia.model.sql.{SqlTypes, SqlForeignKey, SqlIndex, SqlPrimaryKey}
 import lampetia.model.{Model, Property}
 import lampetia.sql.ast._
 
@@ -102,7 +102,7 @@ trait Dialect {
     def apply(id: IdentifierNode): CreateSchemaNode = DefaultCreateSchemaNode(id)
   }
   implicit lazy val CreateTableNodeBuilder: CreateTableNodeBuilder = new CreateTableNodeBuilder {
-    def apply[E](model: Model[E])(implicit dst: DefaultSqlType, tb: TableIdentifierNodeBuilder): CreateTableNode[E] =
+    def apply[E](model: Model[E])(implicit dst: SqlTypes, tb: TableIdentifierNodeBuilder): CreateTableNode[E] =
       DefaultCreateTableNode(model)(dst, tb)
   }
   implicit lazy val PrimaryKeyNodeBuilder: PrimaryKeyNodeBuilder = new PrimaryKeyNodeBuilder {

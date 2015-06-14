@@ -25,6 +25,7 @@ object TestModels {
     with    CanBuild2[Person, PersonId, PersonData]
     with    UUIDGenerator {
     val modelName = "person"
+    val id = property[PersonId]("id")(anyProperty)
     def parse(stringId: String) = Success(PersonId(stringId))
     def generate: PersonId = PersonId(generateStringId)
     object data extends DataModel[PersonData] with Lens[Person, PersonData] {

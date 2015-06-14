@@ -195,7 +195,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def sql: InterpretedSql = {
     if (log.isDebugEnabled) {
       log.debug("Plain SQL")
-      log.debug("%s", node.sqlString)
+      log.debug(node.sqlString)
       log.debug("-----------------------------")
     }
       PlainSql(node.sqlString)
@@ -206,7 +206,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
       val result = ParameterizedSql(node.sqlString, parameters)
       if (log.isDebugEnabled) {
         log.debug("Lifted SQL")
-        log.debug("%s", result.sqlString)
+        log.debug(result.sqlString)
         if (result.parameters.nonEmpty)
           log.debug("Parameters: ")
         else

@@ -129,6 +129,7 @@ object SecurityModel {
     with UUIDGenerator {
 
     val modelName: String = "User"
+    val id = property[UserId]("id")
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
     def build: BuildResult[User] = BuildSuccess(User(generate))
@@ -152,6 +153,7 @@ object SecurityModel {
     with CanParse[ProfileId]
     with UUIDGenerator {
     val modelName: String = "Profile"
+    val id = property[ProfileId]("id")
     def generate: ProfileId = ProfileId(generateStringId)
     def parse(stringId: String): Try[ProfileId] = Success(ProfileId(stringId))
     object ref extends RefModel[ProfileRef] {
@@ -194,6 +196,7 @@ object SecurityModel {
     with CanParse[GroupId]
     with UUIDGenerator {
     val modelName: String = "Group"
+    val id = property[GroupId]("id")
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
@@ -243,6 +246,7 @@ object SecurityModel {
     with CanParse[RoleId]
     with UUIDGenerator {
     val modelName: String = "Role"
+    val id = property[RoleId]("id")
     def generate: RoleId = RoleId(generateStringId)
     def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
     object data extends DataModel[RoleData] {
@@ -266,6 +270,7 @@ object SecurityModel {
     with CanParse[AclId]
     with UUIDGenerator {
     val modelName = "Acl"
+    val id = property[AclId]("id")
     def generate: AclId = AclId(generateStringId)
     def parse(stringId: String): Try[AclId] = Success(AclId(stringId))
     object data extends DataModel[AclData] {
