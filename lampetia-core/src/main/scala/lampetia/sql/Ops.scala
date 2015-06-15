@@ -84,8 +84,8 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       val ps = model.properties
       val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(instance).write.flatMap {
-        case i if i > 0 => IO.pureIO(instance)
-        case _          => IO.failedIO[E](new Exception("No Instance"))
+        case i if i > 0 => IO.pure(instance)
+        case _          => IO.failed[E](new Exception("No Instance"))
       }
     }
 
@@ -103,7 +103,7 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
     protected def insert(result: BuildResult[E])(implicit p: Produce[E]): IO[E] =
       result match {
         case BuildSuccess(instance) => insert(instance)
-        case BuildFailure(e)        => IO.failedIO[E](e)
+        case BuildFailure(e)        => IO.failed[E](e)
       }
 
     def insert(implicit cc: CanBuild0[E], p: Produce[E]): IO[E] =
@@ -151,7 +151,7 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       val c: IO[Int] = createTable(model).sql.write
       val pk: IO[Int] =
         model.sqlPrimaryKey.map(pk => primaryKey(model, pk).sql.write)
-          .fold(IO.pureIO(0))(identity)
+          .fold(IO.pure(0))(identity)
       val fks: Seq[IO[Int]] =
         model.sqlForeignKeys.map(fk => foreignKey(model, fk).sql.write)
           //.foldLeft(IO.pureIO(0))( (l,r) => l.flatMap(_ => r))
