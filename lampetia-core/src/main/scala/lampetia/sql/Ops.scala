@@ -25,7 +25,7 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
     def value: Operand = asIdentifier
   }
 
-  implicit class UpdateCouple[A](val property: Property[A]) extends UpdateCoupleDsl[A]
+  implicit class CoupleEx[A](val property: Property[A]) extends CoupleDsl[A]
 
   implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
     def value: Operand = asColumnIdentifier

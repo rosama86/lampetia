@@ -2,6 +2,8 @@ package lampetia.model
 
 import java.util.UUID
 
+import play.api.libs.json.{Json, JsValue}
+
 trait IdGenerator {
 
   def generateStringId: String
@@ -14,6 +16,10 @@ trait UUIDGenerator extends IdGenerator {
 
 trait JSON extends Any {
   def stringify: String
+}
+
+case class PlayJson(json: JsValue) extends AnyVal with JSON {
+  def stringify: String = Json.stringify(json)
 }
 
 trait JSONParser[T] {

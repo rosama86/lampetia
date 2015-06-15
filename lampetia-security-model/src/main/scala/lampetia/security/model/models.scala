@@ -1,6 +1,7 @@
 package lampetia.security.model
 
 import lampetia.model._
+import play.api.libs.json.Json
 import scala.util.{Success, Try}
 
 
@@ -8,6 +9,7 @@ case class SubjectId(value: String) extends AnyVal
 
 case class UserId(value: String) extends AnyVal
 case class User(id: UserId)
+
 
 trait SecureModel[E] extends Model[E]
 
@@ -54,12 +56,14 @@ case class ProviderUserId(value: String) extends AnyVal
 case class ProviderResponse(value: JSON) extends AnyVal
 case class AccountDetails(value: JSON) extends AnyVal
 case class ProfileId(value: String) extends AnyVal
+case class Password(value: String) extends AnyVal
 case class ProfileRef(userId: UserId)
 case class ProfileData(
    provider: AuthenticationProvider,
    providerUserId: ProviderUserId,
    providerResponse: ProviderResponse,
    email: Email,
+   password: Password,
    accountDetails: AccountDetails,
    accountState: AccountState)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
@@ -165,9 +169,10 @@ object SecurityModel {
       val providerUserId = property[ProviderUserId]("providerUserId")
       val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
       val email = property[Email]("email")
+      val password = property[Password]("password")
       val accountDetails = property[AccountDetails]("accountDetails").set(sql.`type`("jsonb"))
       val accountState = property[AccountState]("accountState")
-      val properties = Seq(provider, providerUserId, providerResponse, accountDetails, accountState)
+      val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails, accountState)
     }
     def build(ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
       BuildSuccess(Profile(generate, ref, data))
@@ -308,9 +313,6 @@ object SecurityModel {
   }
 }
 
-
-
-
 import lampetia.sql.dialect.h2.jdbc._
 
 object SecuritySqlFormat {
@@ -329,6 +331,58 @@ object SecuritySqlFormat {
 
   implicit lazy val consumeUser: Consume[User] = consume[UserId].fmap(User)
   implicit lazy val produceUser: Produce[User] = a => produce(a.id)
+
+  implicit lazy val consumeAuthenticationProvider: Consume[AuthenticationProvider] = consume[String].fmap(AuthenticationProvider.apply)
+  implicit lazy val produceAuthenticationProvider: Produce[AuthenticationProvider] = a => produce(a.value)
+
+  implicit lazy val consumeProfileId: Consume[ProfileId] = consume[String].fmap(ProfileId)
+  implicit lazy val produceProfileId: Produce[ProfileId] = a => produce(a.value)
+
+  implicit lazy val consumeProviderUserId: Consume[ProviderUserId] = consume[String].fmap(ProviderUserId)
+  implicit lazy val produceProviderUserId: Produce[ProviderUserId] = a => produce(a.value)
+
+  implicit lazy val consumeEmail: Consume[Email] = consume[String].fmap(Email)
+  implicit lazy val produceEmail: Produce[Email] = a => produce(a.value)
+
+  implicit lazy val consumePassword: Consume[Password] = consume[String].fmap(Password)
+  implicit lazy val producePassword: Produce[Password] = a => produce(a.value)
+
+  implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
+  implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
+
+  implicit lazy val consumeProviderResponse: Consume[ProviderResponse] =
+    consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(ProviderResponse)
+  implicit lazy val produceProviderResponse: Produce[ProviderResponse] =
+    a => produce(a.value.stringify)
+
+  implicit lazy val consumeAccountDetails: Consume[AccountDetails] =
+    consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(AccountDetails)
+  implicit lazy val produceAccountDetails: Produce[AccountDetails] =
+    a => produce(a.value.stringify)
+
+  implicit lazy val consumeProfileRef: Consume[ProfileRef] = consume[UserId].fmap(ProfileRef)
+  implicit lazy val produceProfileRef: Produce[ProfileRef] = a => produce(a.userId)
+
+  implicit lazy val consumeProfileData: Consume[ProfileData] =
+    (consume[AuthenticationProvider] and
+     consume[ProviderUserId] and
+     consume[ProviderResponse] and
+     consume[Email] and
+     consume[Password] and
+     consume[AccountDetails] and
+     consume[AccountState])(ProfileData)
+  implicit lazy val produceProfileData: Produce[ProfileData] =
+    a => produce(a.provider) andThen
+         produce(a.providerUserId) andThen
+         produce(a.email) andThen
+         produce(a.password) andThen
+         produce(a.accountDetails) andThen
+         produce(a.accountState)
+
+  implicit lazy val consumeProfile: Consume[Profile] =
+    (consume[ProfileId] and consume[ProfileRef] and consume[ProfileData])(Profile)
+  implicit lazy val produceProfile: Produce[Profile] =
+   a => produce(a.id) andThen produce(a.ref) andThen produce(a.data)
 
   implicit lazy val consumeResourceId: Consume[ResourceId] = consume[String].fmap(ResourceId)
   implicit lazy val consumeresourceIdOption: Consume[Option[ResourceId]] = consume[Option[String]].fmap(_.map(ResourceId))

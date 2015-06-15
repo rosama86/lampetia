@@ -91,7 +91,7 @@ trait Dsl {
 
   case class Couple[A](column: ColumnIdentifierNode[A], operand: TypedOperand[A])
 
-  trait UpdateCoupleDsl[A] extends Any {
+  trait CoupleDsl[A] extends Any {
     def property: Property[A]
     //def :=(operand: Operand)(implicit b: ColumnIdentifierNodeBuilder): (Operand, Operand) = liftProperty(property) -> operand
     def :=(bound: TypedOperand[A])(implicit b: ColumnIdentifierNodeBuilder): Couple[A] = Couple(liftProperty(property), bound)

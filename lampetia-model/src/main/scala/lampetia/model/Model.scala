@@ -68,7 +68,7 @@ case class LensProperty[E, A](propertyName: String, propertyType: PropertyType[A
   def set(instance: E, value: A): E = writes(instance, value)
 }
 
-case class PropertyValue[A](property: Property[A], value: A)
+//case class PropertyValue[A](property: Property[A], value: A)
 
 trait Composite[V] {
   def features: Seq[Feature] = Seq.empty[Feature]
