@@ -169,7 +169,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
     WriteParameterizedSqlQ(parameterizedSql)
 
   // this proxy will always return the same connection
-  private class ConnectionSourceProxy(cm: ConnectionSource) extends ConnectionSource {
+  private case class ConnectionSourceProxy(cm: ConnectionSource) extends ConnectionSource {
     // always return the same connection
     lazy val connection: Connection = cm.connection
     // we are not closing the connection here
@@ -180,34 +180,46 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   case class TransactionalSqlIOQ[A](sqlIO: IO[A]) extends TransactionalIO[A] {
     def execute(cm: ConnectionSource): Try[A] = {
-      val proxy = new ConnectionSourceProxy(cm)
+
+      // check if there has been another transaction opened
+      val (proxy, transactionEntryPoint) = cm match {
+        case p@ConnectionSourceProxy(_) => (p, false)
+        case _                          => (ConnectionSourceProxy(cm), true)
+      }
+
       val connection = proxy.connection
 
       if (connection.getAutoCommit)
         connection.setAutoCommit(false)
 
-      log.debug("IN TRANSACTION")
+      if (transactionEntryPoint && log.isDebugEnabled)
+        log.debug("IN TRANSACTION")
 
+      // start the chain reaction
       sqlIO.execute(proxy) match {
         case success@Success(_) =>
-          connection.commit()
-          // close through the real connection manager
-          cm.done(connection)
-          log.debug("COMMIT")
+          // do not commit unless this call is the transaction entry point
+          if (transactionEntryPoint) {
+            connection.commit()
+            log.debug("COMMIT")
+            // close through the real connection manager
+            cm.done(connection)
+          }
+          // no need to close the connection, since this is really a proxy
           success
         case failure@Failure(_) =>
-          connection.rollback()
-          // close through the real connection manager
-          cm.done(connection)
-          log.debug("ROLLBACK")
+          if(transactionEntryPoint) {
+            connection.rollback()
+            log.debug("ROLLBACK")
+            // close through the real connection manager
+            cm.done(connection)
+          }
           failure
       }
     }
   }
 
-  def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R] =
-    TransactionalSqlIOQ(sqlIO)
-
+  def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R] = TransactionalSqlIOQ(sqlIO)
 
   def run[A](io: IO[A])(implicit ec: ExecutionContext, source: ConnectionSource): Future[A] = {
     //val source = connectionSource
