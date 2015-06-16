@@ -1,7 +1,5 @@
 package lampetia.sql.dialect.postgres
 
-import lampetia.model._
-import lampetia.model.sql.SqlTypes
 import lampetia.sql.ast._
 import lampetia.sql.dialect.Dialect
 
@@ -38,6 +36,15 @@ trait PgDsl extends Dsl with Dialect {
     def apply(operands: Seq[Operand]): N = DefaultPgQueryNode(operands)
   }
 
+  implicit lazy val CastNodeBuilder: CastNodeBuilder = new CastNodeBuilder {
+    def apply(operand: Operand, typeNode: TypeNode): CastNode = DefaultPgCastNode(operand, typeNode)
+  }
+
+  case class DefaultPgCastNode(operand: Operand, typeNode: TypeNode) extends CastNode {
+    val operands: Seq[Operand] = Seq(operand, typeNode)
+    val sqlString: String = s"${operand.sqlString}::${typeNode.sqlString}"
+  }
+
   case class WithNode(alias: IdentifierNode, body: Operand, selection: Operand, recursive: Boolean = false) extends DQLNode {
 
     def operands: Seq[Operand] = Seq(alias, body, selection)
@@ -53,10 +60,13 @@ trait PgDsl extends Dsl with Dialect {
   def withRecursive(alias: IdentifierNode, body: Operand, selection: Operand) = WithNode(alias, body, selection, recursive = true)
 
 
-  val date = DefaultTypeNode("date")
-  val timestamp = DefaultTypeNode("timestamp")
-  val json = DefaultTypeNode("json")
-  val jsonb = DefaultTypeNode("jsonb")
-  def bit(i: Int) = DefaultTypeNode(s"bit($i)")
+  object Types {
+    val date = DefaultTypeNode("date")
+    val timestamp = DefaultTypeNode("timestamp")
+    val json = DefaultTypeNode("json")
+    val jsonb = DefaultTypeNode("jsonb")
+    def bit(i: Int) = DefaultTypeNode(s"bit($i)")
+  }
+
 
 }

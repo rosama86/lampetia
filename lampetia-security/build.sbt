@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   playFunctional,
   postgresql,
   h2,
-  hikari)
+  hikari,
+  scalaTest)
 
 

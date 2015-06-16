@@ -11,8 +11,6 @@ case class UserId(value: String) extends AnyVal
 case class User(id: UserId)
 
 
-trait SecureModel[E] extends Model[E]
-
 sealed trait AuthenticationProvider extends Any {
   def value: String
 }
@@ -121,7 +119,9 @@ case class Acl(id: AclId, data: AclData)
 case class AclRoleRef(aclId: AclId, roleId: RoleId)
 case class AclRole(ref: AclRoleRef) extends AnyVal
 
-object SecurityModel {
+trait SecurityModel {
+
+  def schema: String
 
   implicit object UserModel
     extends Model[User]
@@ -140,7 +140,7 @@ object SecurityModel {
     def build(id: UserId): BuildResult[User] = BuildSuccess(User(id))
 
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
+      sql.schema(schema),
       sql.name("security_user"),
       sql.primaryKey(id)
     )
@@ -180,7 +180,7 @@ object SecurityModel {
       BuildSuccess(Profile(id, ref, data))
 
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
+      sql.schema(schema),
       sql.name("security_profile"),
       sql.primaryKey("security_profile_pk")(id),
       sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
@@ -215,7 +215,7 @@ object SecurityModel {
     def build(id: GroupId, ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(id, ref, data))
     def build(ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(generate, ref, data))
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
+      sql.schema(schema),
       sql.name("security_group"),
       sql.primaryKey("security_group_pk")(id)
     )
@@ -235,7 +235,7 @@ object SecurityModel {
     def build(ref: GroupMemberRef): BuildResult[GroupMember] = BuildSuccess(GroupMember(ref))
 
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
+      sql.schema(schema),
       sql.name("security_group_member"),
       sql.foreignKey("sgm_ref_group_id")(ref.groupId)(GroupModel, GroupModel.id),
       sql.foreignKey("sgm_ref_user_id")(ref.memberId)(UserModel, UserModel.id)
@@ -256,12 +256,12 @@ object SecurityModel {
     def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
     object data extends DataModel[RoleData] {
       val code = property[Code]("code")
-      val permission = property[Permission]("permission").set(sql.`type`("bit(32"))
+      val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
       val properties = Seq(code, permission)
     }
     def build(a1: RoleId, a2: RoleData): BuildResult[Role] = BuildSuccess(Role(a1, a2))
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
+      sql.schema(schema),
       sql.name("security_role")
     )
   }
@@ -307,15 +307,15 @@ object SecurityModel {
     def build(a1: AclId, a2: AclData): BuildResult[Acl] = BuildSuccess(Acl(a1,a2))
 
     override val features: Seq[Feature] = Seq(
-      sql.schema("sec"),
-      sql.name("security_subject_grant")
+      sql.schema(schema),
+      sql.name("security_acl")
     )
   }
 }
 
 import lampetia.sql.dialect.h2.jdbc._
 
-object SecuritySqlFormat {
+trait SecuritySqlFormat {
 
   implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)
@@ -449,76 +449,3 @@ object SecuritySqlFormat {
   implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
   implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)
 }
-
-
-object SecurityModelTest extends App {
-  import scala.concurrent.Await
-  import scala.concurrent.duration.Duration
-  import SecurityModel._
-  import SecuritySqlFormat._
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  def run[A](io: IO[A]): Unit = {
-    val f = io.run
-    f.onSuccess { case v => println(v) }
-    f.onFailure { case e => e.printStackTrace() }
-    Await.ready(f, Duration.Inf)
-  }
-
-  implicit lazy val context: ConnectionSource = {
-    val ds = new org.h2.jdbcx.JdbcDataSource
-    ds.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
-    connectionSource(ds)
-  }
-
-
-  val u = UserModel
-  val acl = AclModel
-  val g = GroupModel
-  val gm = GroupMemberModel
-  val s = 'jeelona
-
-  val q = for {
-    _ <- "create schema sec".sql.write
-    _ <- u.create
-    _ <- g.create
-    _ <- gm.create
-    i <- g.insert(GroupRef(None), GroupData(Code("abc")))
-    _ <- g.insert(GroupRef(None), GroupData(Code("xyz")))
-    _ <- g.update(g.data.code := Code("123").bind)(g.id === i.id.bind)
-    x <- g.find//(g.id === i.id.bind)
-  } yield x
-
-  run(q.transactionally)
-
-  gm.insert(GroupMemberRef(GroupId(""), SubjectId("")))
-
-  /*u.createSql.foreach(println)
-  println("------------")
-  g.createSql.foreach(println)
-  println("------------")
-  gm.createSql.foreach(println)
-  println("------------")*/
-
-
-  context.shutdown()
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

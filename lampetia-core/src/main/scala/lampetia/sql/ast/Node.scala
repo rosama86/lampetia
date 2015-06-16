@@ -19,6 +19,13 @@ trait TypedOperand[T] extends Operand {
   def value: T
 }
 
+/*
+case class TypedOperandAdapter[T](typedOperand: TypedOperand[T], adaptee: Operand) extends TypedOperand[T] {
+  val value = typedOperand.value
+  val sqlString = adaptee.sqlString
+}
+*/
+
 trait Operator extends Operand {
   def operands: Seq[Operand]
 }
@@ -143,6 +150,15 @@ case class DefaultInfixNode(symbol: String, first: Operand, second: Operand, gro
       s"${first.sqlString}$symbol(${second.sqlString})"
     else
       s"${first.sqlString}$symbol${second.sqlString}"
+}
+
+trait CastNode extends Operator {
+  def operand: Operand
+  def typeNode: TypeNode
+}
+
+trait CastNodeBuilder {
+  def apply(operand: Operand, typeNode: TypeNode): CastNode
 }
 
 trait PrefixNodeBuilder {
@@ -551,10 +567,10 @@ trait IndexNode[E] extends DDLNode {
 case class DefaultIndexNode[E](model: Model[E], index: SqlIndex)
                               (implicit tb: TableIdentifierNodeBuilder) extends IndexNode[E] {
   val operands: Seq[Operand] = Seq(tb(model))
-  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  //private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
   private val named = index.name.fold("index")(n => s"index $n")
   private val unique = if(index.unique) " unique" else ""
-  val sqlString: String =  s"create$unique $named on $prefixed (${index.properties.map(_.sqlName).mkString(",")})"
+  val sqlString: String =  s"create$unique $named on ${model.sqlQualifiedName} (${index.properties.map(_.sqlName).mkString(",")})"
 }
 
 trait ForeignKeyNodeBuilder {
@@ -568,11 +584,11 @@ trait ForeignKeyNode[E, R] extends DDLNode {
 case class DefaultForeignKeyNode[E, R](model: Model[E], foreignKey: SqlForeignKey[R])
                                    (implicit tb: TableIdentifierNodeBuilder) extends ForeignKeyNode[E, R] {
   val operands: Seq[Operand] = Seq(tb(model))
-  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  //private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
   private val named = foreignKey.name.fold("foreign key")(n => s"constraint $n foreign key")
   private val keys = s"(${foreignKey.keys.map(_.sqlName).mkString(",")})"
   private val references = s"(${foreignKey.references.map(_.sqlName).mkString(",")}) "
-  val sqlString: String =  s"alter table $prefixed add $named $keys references ${foreignKey.refModel.sqlName}$references"
+  val sqlString: String =  s"alter table ${model.sqlQualifiedName} add $named $keys references ${foreignKey.refModel.sqlQualifiedName}$references"
 }
 
 

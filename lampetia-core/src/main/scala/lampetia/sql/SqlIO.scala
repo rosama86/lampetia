@@ -1,7 +1,8 @@
 package lampetia.sql
 
 import lampetia.io.BackendIO
-import lampetia.sql.ast.{TypedOperand, Operand, Operator}
+import lampetia.model.Property
+import lampetia.sql.ast._
 import org.slf4j.LoggerFactory
 
 /**
@@ -42,6 +43,11 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
       val value: A = parameterValue
       val producer: Produce[A] = parameterProducer
     }
+  }
+
+  case class PresetParameterNode[A](parameter: Parameter[A]) extends TypedParameterNode[A] {
+    val sqlString: String = "?"
+    def map[B](f: A => B)(implicit p: Produce[B]): PresetParameterNode[B] = PresetParameterNode[B](Parameter(f(value), p))
   }
 
   sealed trait Sql {
@@ -168,11 +174,18 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def transactionally: TransactionalIO[A] = createTransactionalIO(sqlIO)
   }
 
-  case class PresetParameterNode[A](parameter: Parameter[A]) extends TypedOperand[A] {
-    val value = parameter.value
-    val sqlString: String = "?"
-    def map[B](f: A => B)(implicit p: Produce[B]): PresetParameterNode[B] = PresetParameterNode[B](Parameter(f(value), p))
+  trait TypedParameterNode[A] extends TypedOperand[A] {
+    def parameter: Parameter[A]
+    def value: A = parameter.value
+    def cast(other: TypeNode)(implicit b: CastNodeBuilder): TypedParameterNode[A] =
+      TypedParameterNodeAdapter[A](this, b(this, other))
   }
+
+  case class TypedParameterNodeAdapter[A](tpn: TypedParameterNode[A], adaptee: Operand) extends TypedParameterNode[A] {
+    def parameter: Parameter[A] = tpn.parameter
+    def sqlString: String = adaptee.sqlString
+  }
+
 
   trait LiftParameter[A] extends Any {
     def instance: A
@@ -184,7 +197,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     private def ps(op: Operand): Seq[Parameter[_]] = op match {
       case x: Operator            =>
         x.operands.flatMap(ps)
-      case x: PresetParameterNode[_] =>
+      case x: TypedParameterNode[_] =>
         Seq(x.parameter)
       case x                      =>
         Seq()
@@ -229,6 +242,15 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1)))
     def sql[A1: Produce, A2: Produce](a1: A1, a2: A2): Sql =
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2)))
+  }
+
+  case class Couple[A](column: ColumnIdentifierNode[A], operand: TypedParameterNode[A])
+
+
+  trait CoupleDsl[A] extends Any {
+    def property: Property[A]
+    def lift(property: Property[A])(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] = b(property)
+    def :=(bound: TypedParameterNode[A])(implicit b: ColumnIdentifierNodeBuilder): Couple[A] = Couple(lift(property), bound)
   }
 
 

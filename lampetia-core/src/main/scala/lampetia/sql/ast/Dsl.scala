@@ -38,12 +38,13 @@ trait Dsl {
     def literal(implicit b: IntegerLiteralNodeBuilder): IntegerLiteralNode = b(value)
   }
 
+
   trait OperandOps extends Any {
     def value: Operand
     def surround(implicit b: SurroundNodeBuilder): SurroundNode = b(value)
     def dot[B](other: B)(implicit c: B => Operand, b: InfixNodeBuilder): InfixNode = b(".", value, other)
     def as[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" as ", value, other)
-    def cast(other: TypeNode)(implicit b: InfixNodeBuilder): InfixNode = b("::", value, other)
+    def cast(other: TypeNode)(implicit b: CastNodeBuilder): CastNode = b(value, other)
     def asc(implicit b: PostfixNodeBuilder): PostfixNode = b("asc", Seq(value))
     def desc(implicit b: PostfixNodeBuilder): PostfixNode = b("desc", Seq(value))
     def concat[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" || ", value, other)
@@ -89,13 +90,7 @@ trait Dsl {
     def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
   }
 
-  case class Couple[A](column: ColumnIdentifierNode[A], operand: TypedOperand[A])
 
-  trait CoupleDsl[A] extends Any {
-    def property: Property[A]
-    //def :=(operand: Operand)(implicit b: ColumnIdentifierNodeBuilder): (Operand, Operand) = liftProperty(property) -> operand
-    def :=(bound: TypedOperand[A])(implicit b: ColumnIdentifierNodeBuilder): Couple[A] = Couple(liftProperty(property), bound)
-  }
 
   implicit def liftModel[A](model: Model[A])(implicit b: TableIdentifierNodeBuilder): TableIdentifierNode[A] =
     b(model)

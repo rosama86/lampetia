@@ -43,17 +43,14 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   implicit class LiftSqlIO[A](val io: IO[A]) extends LiftIO[A]
 
-  def positionalParameter(p: Property[_]) = p.sqlCast match {
+  /*def positionalParameter(p: Property[_]) = p.sqlCast match {
     case Some(tn) => ?.cast(tn.typeName)
     case None     => ?
-  }
+  }*/
 
   trait ModelSchema[E] extends Any {
     def model: Model[E]
-    def schemaPrefixed: Operand = model.sqlSchema match {
-      case Some(v) => v.identifier dot model
-      case None    => model
-    }
+    def schemaPrefixed: Operand = model.sqlQualifiedName.identifier
   }
 
   trait Find[E] extends Any { ms: ModelSchema[E] =>
@@ -80,7 +77,7 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
       .write
 
 
-    def insert(instance: E)(implicit p: Produce[E]): IO[E] = {
+    /*def insert(instance: E)(implicit p: Produce[E]): IO[E] = {
       val ps = model.properties
       val vs = ps.map(positionalParameter)
       insertInto(schemaPrefixed, ps:_*).values(vs:_*).sql.set(instance).write.flatMap {
@@ -123,7 +120,7 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
     def insert[A1, A2, A3, A4](a1: A1, a2: A2, a3: A3, a4: A4)
                               (implicit cc: CanBuild4[E, A1, A2, A3, A4], p: Produce[E]): IO[E] =
-      insert(cc.build(a1, a2, a3, a4))
+      insert(cc.build(a1, a2, a3, a4))*/
 
   }
 

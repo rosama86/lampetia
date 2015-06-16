@@ -71,6 +71,11 @@ package object sql {
       case SqlSchema(value) => value
     }
 
+    def sqlQualifiedName: String = sqlSchema match {
+      case Some(schema) => s"$schema.$sqlName"
+      case None         => sqlName
+    }
+
     def sqlPrimaryKey: Option[SqlPrimaryKey] = features.collectFirst {
       case pk: SqlPrimaryKey => Some(pk)
     }.getOrElse(None)

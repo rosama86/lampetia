@@ -19,6 +19,7 @@ object Common {
     val postgresqlJdbcVersion = "9.4-1201-jdbc41"
     val h2Version = "1.4.187"
     val hikariVersion = "2.3.7"
+    val scalaTestVersion = "2.2.4"
   }
 
   object Resolvers {
@@ -46,6 +47,7 @@ object Common {
     val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion
     val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
+    val scalaTest = "org.scalatest" % "scalatest_2.11" % scalaTestVersion % "test"
 
     /*val lampetiaDependencies =
       Seq(
