@@ -119,6 +119,8 @@ case class Acl(id: AclId, data: AclData)
 case class AclRoleRef(aclId: AclId, roleId: RoleId)
 case class AclRole(ref: AclRoleRef) extends AnyVal
 
+case object NotAuthorized extends Exception("Principle not authorized to perform this action")
+
 trait SecurityModel {
 
   def schema: String
@@ -205,7 +207,7 @@ trait SecurityModel {
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
-      val parent = property[Option[GroupId]]("parent").set(sql.optional)
+      val parent = property[Option[GroupId]]("group_owner_id").set(sql.optional)
       val properties = Seq(parent)
     }
     object data extends DataModel[GroupData] {
@@ -228,7 +230,7 @@ trait SecurityModel {
     val modelName: String = "GroupMember"
     object ref extends RefModel[GroupMemberRef] {
       val groupId = property[GroupId]("groupId")
-      val memberId = property[SubjectId]("memberId")
+      val memberId = property[UserId]("memberId")
       val properties = Seq(groupId, memberId)
     }
 
