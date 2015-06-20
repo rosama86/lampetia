@@ -23,62 +23,75 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   final val EMPTY = ""
 
   it should "create group" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val group = service.createGroup(groupData).run
-    whenReady(group, oneMinute) { result =>
-      result.id.value shouldNot be(EMPTY)
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val group = service.createGroup(groupData, owner.id).run
+      whenReady(group, oneMinute) { result =>
+        result.id.value shouldNot be(EMPTY)
+      }
     }
   }
 
   it should "create group with parent group" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val p = service.createGroup(groupData).run
-    whenReady(p, oneMinute) { parent =>
-      parent.id.value shouldNot be(EMPTY)
-
-      // Add child group
-      def childGroupData =
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val childGroup = service.createGroup(childGroupData, Some(parent.id)).run
-      whenReady(childGroup, oneMinute) { child =>
-        child.id.value shouldNot be(EMPTY)
+      val p = service.createGroup(groupData, owner.id).run
+      whenReady(p, oneMinute) { parent =>
+        parent.id.value shouldNot be(EMPTY)
+
+        // Add child group
+        def childGroupData =
+          GroupData(code = Code(UUID.randomUUID.toString))
+        val childGroup = service.createGroup(childGroupData, owner.id, Some(parent.id)).run
+        whenReady(childGroup, oneMinute) { child =>
+          child.id.value shouldNot be(EMPTY)
+        }
       }
     }
   }
 
   it should "find group By group Id" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val group = service.createGroup(groupData).run
-    whenReady(group, oneMinute) { result =>
-      result.id.value shouldNot be(EMPTY)
-      val selectedGroup = service.findGroupByGroupId(result.id).run
-      whenReady(selectedGroup, oneMinute) { selection =>
-        selection shouldNot be(None)
-        selection.get.id should be(result.id)
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val group = service.createGroup(groupData, owner.id).run
+      whenReady(group, oneMinute) { result =>
+        result.id.value shouldNot be(EMPTY)
+        val selectedGroup = service.findGroupByGroupId(result.id).run
+        whenReady(selectedGroup, oneMinute) { selection =>
+          selection shouldNot be(None)
+          selection.get.id should be(result.id)
+        }
       }
     }
   }
 
   it should "find group By parent group Id" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val pf = service.createGroup(groupData).run
-    whenReady(pf, oneMinute) { parent =>
-      parent.id.value shouldNot be(EMPTY)
-      def childGroupData =
-        GroupData(Code(UUID.randomUUID.toString))
-      val childGroup = service.createGroup(childGroupData, Some(parent.id)).run
-      whenReady(childGroup, oneMinute) { child =>
-        child.id.value shouldNot be(EMPTY)
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val pf = service.createGroup(groupData, owner.id).run
+      whenReady(pf, oneMinute) { parent =>
+        parent.id.value shouldNot be(EMPTY)
+        def childGroupData =
+          GroupData(Code(UUID.randomUUID.toString))
+        val childGroup = service.createGroup(childGroupData, owner.id, Some(parent.id)).run
+        whenReady(childGroup, oneMinute) { child =>
+          child.id.value shouldNot be(EMPTY)
 
-        val selectedChild = service.findGroupByParentGroupId(parent.id).run
-        whenReady(selectedChild, oneMinute) { result =>
-          result shouldNot be(None)
-          result.get.id.value shouldNot be(None)
-          result.get.id.value should be(child.id.value)
+          val selectedChild = service.findGroupByParentGroupId(parent.id).run
+          whenReady(selectedChild, oneMinute) { result =>
+            result shouldNot be(Nil)
+            result.size should be(1)
+            result.head.id.value shouldNot be(None)
+            result.head.id.value should be(child.id.value)
+          }
         }
       }
     }
@@ -92,46 +105,51 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "add group member" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val g = service.createGroup(groupData).run
-    whenReady(g, oneMinute) { group =>
-      group.id.value shouldNot be(EMPTY)
-      // add new user
-      val u = userService.createUser(profileData).run
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = service.createGroup(groupData, owner.id).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+        // add new user
+        val u = userService.createUser(profileData).run
 
-      whenReady(u, oneMinute) { user =>
+        whenReady(u, oneMinute) { user =>
 
-        user.id.value shouldNot be(EMPTY)
+          user.id.value shouldNot be(EMPTY)
 
-        val um = service.addMember(group.id, user.id).run
+          val um = service.addMember(group.id, user.id).run
 
-        whenReady(um, oneMinute) { result =>
-          result should be(1)
+          whenReady(um, oneMinute) { result =>
+            result should be(1)
+          }
+
         }
-
       }
-
     }
   }
 
   it should "remove group member" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val g = service.createGroup(groupData).run
-    whenReady(g, oneMinute) { group =>
-      group.id.value shouldNot be(EMPTY)
-      // add new user
-      val u = userService.createUser(profileData).run
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = service.createGroup(groupData, owner.id).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+        // add new user
+        val u = userService.createUser(profileData).run
 
-      whenReady(u, oneMinute) { user =>
-        user.id.value shouldNot be(EMPTY)
-        val am = service.addMember(group.id, user.id).run
-        whenReady(am, oneMinute) { amr =>
-          amr should be(1)
-          val rm = service.removeMember(group.id, user.id).run
-          whenReady(rm, oneMinute) { rmr =>
-            rmr should be(1)
+        whenReady(u, oneMinute) { user =>
+          user.id.value shouldNot be(EMPTY)
+          val am = service.addMember(group.id, user.id).run
+          whenReady(am, oneMinute) { amr =>
+            amr should be(1)
+            val rm = service.removeMember(group.id, user.id).run
+            whenReady(rm, oneMinute) { rmr =>
+              rmr should be(1)
+            }
           }
         }
       }
@@ -146,14 +164,17 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "remove group" in {
-    def groupData =
-      GroupData(code = Code(UUID.randomUUID.toString))
-    val g = service.createGroup(groupData).run
-    whenReady(g, oneMinute) { group =>
-      group.id.value shouldNot be(EMPTY)
-      val rg = service.removeGroup(group.id).run
-      whenReady(rg, oneMinute) { result =>
-        result should be(1)
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = service.createGroup(groupData, owner.id).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+        val rg = service.removeGroup(group.id).run
+        whenReady(rg, oneMinute) { result =>
+          result should be(1)
+        }
       }
     }
   }

@@ -95,7 +95,7 @@ object SubjectType {
 case class Subject(subjectId: SubjectId, subjectType: SubjectType)
 
 case class GroupId(value: String) extends AnyVal
-case class GroupRef(parent: Option[GroupId]) extends AnyVal
+case class GroupRef(owner: UserId, parent: Option[GroupId])
 case class GroupData(code: Code)
 case class Group(id: GroupId, ref: GroupRef, data: GroupData)
 
@@ -208,7 +208,8 @@ trait SecurityModel {
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
       val parent = property[Option[GroupId]]("group_owner_id").set(sql.optional)
-      val properties = Seq(parent)
+      val owner = property[UserId]("owner_id")
+      val properties = Seq(parent, owner)
     }
     object data extends DataModel[GroupData] {
       val code = property[Code]("code")
@@ -416,7 +417,7 @@ trait SecuritySqlFormat {
   implicit lazy val produceGroupId: Produce[GroupId] = a => produce(a.value)
   implicit lazy val produceGroupIdOption: Produce[Option[GroupId]] = a => produce(a.map(_.value))
 
-  implicit lazy val consumeGroupRef: Consume[GroupRef] = consume[Option[GroupId]].fmap(GroupRef)
+  implicit lazy val consumeGroupRef: Consume[GroupRef] = (consume[UserId] ~ consume[Option[GroupId]])(GroupRef)
   implicit lazy val produceGroupRef: Produce[GroupRef] = a => produce(a.parent)
 
   implicit lazy val consumeCode: Consume[Code] = consume[String].fmap(Code)

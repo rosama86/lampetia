@@ -14,6 +14,7 @@ trait GroupService {
     val m = GroupModel
     m.insert(m.id := group.id.bind,
       m.data.code := group.data.code.bind,
+      m.ref.owner := group.ref.owner.bind,
       m.ref.parent := group.ref.parent.bind)
   }
 
@@ -23,9 +24,9 @@ trait GroupService {
       gm.ref.memberId := memberId.bind)
   }
 
-  def createGroup(data: GroupData, parent: Option[GroupId] = None): IO[Group] = {
+  def createGroup(data: GroupData, owner: UserId, parent: Option[GroupId] = None): IO[Group] = {
     val g = GroupModel
-    val group = Group(g.generate, GroupRef(parent), data)
+    val group = Group(g.generate, GroupRef(owner, parent), data)
     insertGroup(group)
       .transactionally
       .map(_ => group)
@@ -41,14 +42,13 @@ trait GroupService {
       .map(_.headOption)
   }
 
-  def findGroupByParentGroupId(id: GroupId): IO[Option[Group]] = {
+  def findGroupByParentGroupId(id: GroupId): IO[Seq[Group]] = {
     val g = GroupModel
     select(g.properties: _*)
       .from(g.schemaPrefixed)
       .where(g.ref.parent === id.bind)
       .lifted
       .read[Group]
-      .map(_.headOption)
   }
 
   def findAll(max: Int): IO[Seq[Group]] = {
@@ -71,22 +71,33 @@ trait GroupService {
       .where((gm.ref.groupId === groupId.bind) and (gm.ref.memberId === memberId.bind))
       .lifted
       .write
+      .transactionally
   }
 
   def removeGroup(groupId: GroupId): IO[Int] = {
     // remove all members
     val gm = GroupMemberModel
-    deleteFrom(gm.schemaPrefixed)
-      .where(gm.ref.groupId === groupId.bind)
-      .lifted
-      .write
+    val dgm =
+      deleteFrom(gm.schemaPrefixed)
+        .where(gm.ref.groupId === groupId.bind)
+        .lifted
+        .write
 
     // remove group
     val g = GroupModel
-    deleteFrom(g.schemaPrefixed)
-      .where(g.id === groupId.bind)
-      .lifted
-      .write
+    val dg =
+      deleteFrom(g.schemaPrefixed)
+        .where(g.id === groupId.bind)
+        .lifted
+        .write
+
+    val q =
+      for {
+        _ <- dgm
+        c <- dg
+      } yield c
+
+    q.transactionally
   }
 
 }
