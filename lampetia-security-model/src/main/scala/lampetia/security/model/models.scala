@@ -61,7 +61,7 @@ case class ProfileData(
    providerUserId: ProviderUserId,
    providerResponse: ProviderResponse,
    email: Email,
-   password: Password,
+   password: Option[Password],
    accountDetails: AccountDetails,
    accountState: AccountState)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
@@ -169,7 +169,7 @@ trait SecurityModel {
       val providerUserId = property[ProviderUserId]("providerUserId")
       val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
       val email = property[Email]("email")
-      val password = property[Password]("password")
+      val password = property[Option[Password]]("password").set(sql.optional)
       val accountDetails = property[AccountDetails]("accountDetails").set(sql.`type`("jsonb"))
       val accountState = property[AccountState]("accountState")
       val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails, accountState)
@@ -345,7 +345,9 @@ trait SecuritySqlFormat {
   implicit lazy val produceEmail: Produce[Email] = a => produce(a.value)
 
   implicit lazy val consumePassword: Consume[Password] = consume[String].fmap(Password)
+  implicit lazy val consumePasswordOption: Consume[Option[Password]] = consume[Option[String]].fmap(_.map(Password))
   implicit lazy val producePassword: Produce[Password] = a => produce(a.value)
+  implicit lazy val producePasswordOption: Produce[Option[Password]] = a => produce(a.map(_.value))
 
   implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
   implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
@@ -368,7 +370,7 @@ trait SecuritySqlFormat {
      consume[ProviderUserId] and
      consume[ProviderResponse] and
      consume[Email] and
-     consume[Password] and
+     consume[Option[Password]] and
      consume[AccountDetails] and
      consume[AccountState])(ProfileData)
   implicit lazy val produceProfileData: Produce[ProfileData] =

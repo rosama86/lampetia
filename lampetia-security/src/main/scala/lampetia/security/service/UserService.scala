@@ -18,6 +18,7 @@ trait UserService {
     val m = UserModel
     m.insert(m.id := user.id.bind)
   }
+
   protected def insertProfile(profile: Profile): IO[Int] = {
     val p = ProfileModel
     p.insert(
@@ -66,7 +67,6 @@ trait UserService {
   def findUserByProviderAndUserId(provider: AuthenticationProvider, providerUserId: ProviderUserId): IO[Option[User]] = {
     val u = UserModel
     val p = ProfileModel
-
     select(u.properties:_*)
     .from(u innerJoin p on (u.id === p.ref.userId))
     .where( (p.data.provider === provider.bind) and (p.data.providerUserId === providerUserId.bind) )
@@ -77,7 +77,6 @@ trait UserService {
 
   def findProfileByProviderAndEmail(provider: AuthenticationProvider, email: Email): IO[Option[Profile]] = {
     val p = ProfileModel
-
     select(p.properties:_*)
       .from(p)
       .where( (p.data.provider === provider.bind) and (p.data.email === email.bind) )
@@ -88,7 +87,6 @@ trait UserService {
 
   def findProfilesByEmail(email: Email): IO[Seq[Profile]] = {
     val p = ProfileModel
-
     select(p.properties:_*)
       .from(p)
       .where( p.data.email === email.bind)
@@ -117,52 +115,12 @@ trait UserService {
 
   def updatePassword(userId: UserId, password: Password): IO[Int] = {
     val p = ProfileModel
-    Q.update(p)
-      .set(p.data.password, password.bind)
-      .where((p.ref.userId === userId.bind) and (p.data.provider === UsernamePasswordProvider.bind))
-      .lifted
-      .write
+    p.update(p.data.password := Some(password).bind)(
+      (p.ref.userId === userId.bind) and (p.data.provider === UsernamePasswordProvider.bind)
+    )
   }
 
 
 
 }
 
-/*
-object UserServiceTest extends App {
-
-  import SecurityModule._
-
-  implicit lazy val context: ConnectionSource = {
-    val ds = new org.h2.jdbcx.JdbcDataSource
-    ds.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
-    connectionSource(ds)
-  }
-
-  val service = new UserService {}
-
-  val data = ProfileData(
-    UsernamePasswordProvider,
-    ProviderUserId(""),
-    ProviderResponse(PlayJson(Json.parse("[]"))),
-    Email("user@acme.org"),
-    Password("unsafe"),
-    AccountDetails(PlayJson(Json.parse("[]"))),
-    AccountActive)
-
-  val f =
-    UserModel.create
-    .flatMap(_ => ProfileModel.create)
-    .flatMap(_ => service.createUser(data))
-    .transactionally
-    .run
-
-  f.onComplete {
-    case Success(v) => println(v)
-    case Failure(e) => println(e)
-  }
-
-  Await.ready(f, Duration.Inf)
-  context.shutdown()
-}
-*/
