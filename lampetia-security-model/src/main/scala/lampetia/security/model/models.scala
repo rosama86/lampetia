@@ -128,8 +128,6 @@ trait SecurityModel {
   implicit object UserModel
     extends Model[User]
     with HasId[User, UserId]
-    with CanBuild0[User]
-    with CanBuild1[User, UserId]
     with CanGenerate[UserId]
     with CanParse[UserId]
     with UUIDGenerator {
@@ -138,8 +136,6 @@ trait SecurityModel {
     val id = property[UserId]("id")
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-    def build: BuildResult[User] = BuildSuccess(User(generate))
-    def build(id: UserId): BuildResult[User] = BuildSuccess(User(id))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -153,8 +149,6 @@ trait SecurityModel {
     with HasId[Profile, ProfileId]
     with HasRef[Profile, ProfileRef]
     with HasData[Profile, ProfileData]
-    with CanBuild2[Profile, ProfileRef, ProfileData]
-    with CanBuild3[Profile, ProfileId, ProfileRef, ProfileData]
     with CanGenerate[ProfileId]
     with CanParse[ProfileId]
     with UUIDGenerator {
@@ -176,10 +170,6 @@ trait SecurityModel {
       val accountState = property[AccountState]("accountState")
       val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails, accountState)
     }
-    def build(ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
-      BuildSuccess(Profile(generate, ref, data))
-    def build(id: ProfileId, ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
-      BuildSuccess(Profile(id, ref, data))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -197,8 +187,6 @@ trait SecurityModel {
     with HasId[Group, GroupId]
     with HasRef[Group, GroupRef]
     with HasData[Group, GroupData]
-    with CanBuild2[Group, GroupRef, GroupData]
-    with CanBuild3[Group, GroupId, GroupRef, GroupData]
     with CanGenerate[GroupId]
     with CanParse[GroupId]
     with UUIDGenerator {
@@ -215,8 +203,6 @@ trait SecurityModel {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    def build(id: GroupId, ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(id, ref, data))
-    def build(ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(generate, ref, data))
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_group"),
@@ -226,16 +212,13 @@ trait SecurityModel {
 
   implicit object GroupMemberModel
     extends Model[GroupMember]
-    with HasRef[GroupMember, GroupMemberRef]
-    with CanBuild1[GroupMember, GroupMemberRef] {
+    with HasRef[GroupMember, GroupMemberRef] {
     val modelName: String = "GroupMember"
     object ref extends RefModel[GroupMemberRef] {
       val groupId = property[GroupId]("groupId")
       val memberId = property[UserId]("memberId")
       val properties = Seq(groupId, memberId)
     }
-
-    def build(ref: GroupMemberRef): BuildResult[GroupMember] = BuildSuccess(GroupMember(ref))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -249,7 +232,6 @@ trait SecurityModel {
     extends Model[Role]
     with HasId[Role, RoleId]
     with HasData[Role, RoleData]
-    with CanBuild2[Role, RoleId, RoleData]
     with CanGenerate[RoleId]
     with CanParse[RoleId]
     with UUIDGenerator {
@@ -262,7 +244,6 @@ trait SecurityModel {
       val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
       val properties = Seq(code, permission)
     }
-    def build(a1: RoleId, a2: RoleData): BuildResult[Role] = BuildSuccess(Role(a1, a2))
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_role")
@@ -273,7 +254,6 @@ trait SecurityModel {
     extends Model[Acl]
     with HasId[Acl, AclId]
     with HasData[Acl, AclData]
-    with CanBuild2[Acl, AclId, AclData]
     with CanGenerate[AclId]
     with CanParse[AclId]
     with UUIDGenerator {
@@ -306,8 +286,6 @@ trait SecurityModel {
       val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
       val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
     }
-
-    def build(a1: AclId, a2: AclData): BuildResult[Acl] = BuildSuccess(Acl(a1,a2))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),

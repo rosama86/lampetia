@@ -186,7 +186,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       ProviderUserId(EMPTY),
       ProviderResponse(PlayJson(Json.parse("[]"))),
       Email(email),
-      Password("unsafe"),
+      Some(Password("unsafe")),
       AccountDetails(PlayJson(Json.parse("[]"))),
       AccountActive)
   }

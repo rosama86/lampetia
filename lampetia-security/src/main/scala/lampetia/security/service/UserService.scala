@@ -115,7 +115,7 @@ trait UserService {
 
   def updatePassword(userId: UserId, password: Password): IO[Int] = {
     val p = ProfileModel
-    p.update(p.data.password := Some(password).bind)(
+    p.update(p.data.password := Option(password).bind)(
       (p.ref.userId === userId.bind) and (p.data.provider === UsernamePasswordProvider.bind)
     )
   }

@@ -174,7 +174,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def transactionally: TransactionalIO[A] = createTransactionalIO(sqlIO)
   }
 
-  trait TypedParameterNode[-A] extends TypedOperand[A] {
+  trait TypedParameterNode[A] extends TypedOperand[A] {
     def parameter: Parameter[A]
     def value: A = parameter.value
     def cast(other: TypeNode)(implicit b: CastNodeBuilder): TypedParameterNode[A] =
