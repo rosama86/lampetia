@@ -7,8 +7,29 @@ import scala.util.{Success, Try}
 
 case class SubjectId(value: String) extends AnyVal
 
+sealed trait AccountState extends Any {
+  def value: String
+}
+
+case object AccountActive extends AccountState {
+  val value = "ACTIVE"
+}
+
+case object AccountSuspended extends AccountState {
+  val value = "SUSPENDED"
+}
+
+object AccountState {
+  def apply(value: String): AccountState = value match {
+    case s if s == AccountActive.value => AccountActive
+    case s if s == AccountSuspended.value => AccountSuspended
+  }
+}
+
 case class UserId(value: String) extends AnyVal
-case class User(id: UserId)
+case class User(id: UserId, accountState: AccountState) {
+  def isActive = accountState == AccountActive
+}
 
 
 sealed trait AuthenticationProvider extends Any {
@@ -31,24 +52,7 @@ object AuthenticationProvider {
     case s if s == Twitter.value                  => Twitter
   }
 }
-sealed trait AccountState extends Any {
-  def value: String
-}
 
-case object AccountActive extends AccountState {
-  val value = "ACTIVE"
-}
-
-case object AccountSuspended extends AccountState {
-  val value = "SUSPENDED"
-}
-
-object AccountState {
-  def apply(value: String): AccountState = value match {
-    case s if s == AccountActive.value => AccountActive
-    case s if s == AccountSuspended.value => AccountSuspended
-  }
-}
 
 case class ProviderUserId(value: String) extends AnyVal
 case class ProviderResponse(value: JSON) extends AnyVal
@@ -62,8 +66,7 @@ case class ProfileData(
    providerResponse: ProviderResponse,
    email: Email,
    password: Option[Password],
-   accountDetails: AccountDetails,
-   accountState: AccountState)
+   accountDetails: AccountDetails)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
 
 sealed trait SubjectType {
@@ -134,8 +137,11 @@ trait SecurityModel {
 
     val modelName: String = "User"
     val id = property[UserId]("id")
+    val accountState = property[AccountState]("accountState")
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
+
+    override val properties: Seq[Property[_]] = Seq(id, accountState)
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -167,8 +173,7 @@ trait SecurityModel {
       val email = property[Email]("email")
       val password = property[Option[Password]]("password").set(sql.optional)
       val accountDetails = property[AccountDetails]("accountDetails").set(sql.`type`("jsonb"))
-      val accountState = property[AccountState]("accountState")
-      val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails, accountState)
+      val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails)
     }
 
     override val features: Seq[Feature] = Seq(
@@ -177,7 +182,6 @@ trait SecurityModel {
       sql.primaryKey("security_profile_pk")(id),
       sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
       sql.index("security_profile_user_id_idx")(ref.userId),
-      sql.index("security_profile_state_idx")(data.accountState),
       sql.uniqueIndex("security_profile_provider_email_uidx")(data.provider, data.email)
     )
   }
@@ -195,18 +199,19 @@ trait SecurityModel {
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
-      val parent = property[Option[GroupId]]("group_owner_id").set(sql.optional)
-      val owner = property[UserId]("owner_id")
-      val properties = Seq(parent, owner)
+      val owner = property[UserId]("owner_user_id")
+      val parent = property[Option[GroupId]]("parent_group_id").set(sql.optional)
+      val properties = Seq(owner, parent)
     }
     object data extends DataModel[GroupData] {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    override val features: Seq[Feature] = Seq(
+    override lazy val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_group"),
-      sql.primaryKey("security_group_pk")(id)
+      sql.primaryKey("security_group_pk")(id),
+      sql.foreignKey("security_group_parent_ref_security_group_id")(ref.parent)(GroupModel, id)
     )
   }
 
@@ -307,11 +312,14 @@ trait SecuritySqlFormat {
   implicit lazy val consumeSubject: Consume[Subject] = (consume[SubjectId] ~ consume[SubjectType])(Subject)
   implicit lazy val produceSubject: Produce[Subject] = a => produce(a.subjectId) andThen produce(a.subjectType)
 
+  implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
+  implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
+
   implicit lazy val consumeUserId: Consume[UserId] = consume[String].fmap(UserId)
   implicit lazy val produceUserId: Produce[UserId] = a => produce(a.value)
 
-  implicit lazy val consumeUser: Consume[User] = consume[UserId].fmap(User)
-  implicit lazy val produceUser: Produce[User] = a => produce(a.id)
+  implicit lazy val consumeUser: Consume[User] = (consume[UserId] and consume[AccountState])(User)
+  implicit lazy val produceUser: Produce[User] = a => produce(a.id) andThen produce(a.accountState)
 
   implicit lazy val consumeAuthenticationProvider: Consume[AuthenticationProvider] = consume[String].fmap(AuthenticationProvider.apply)
   implicit lazy val produceAuthenticationProvider: Produce[AuthenticationProvider] = a => produce(a.value)
@@ -329,9 +337,6 @@ trait SecuritySqlFormat {
   implicit lazy val consumePasswordOption: Consume[Option[Password]] = consume[Option[String]].fmap(_.map(Password))
   implicit lazy val producePassword: Produce[Password] = a => produce(a.value)
   implicit lazy val producePasswordOption: Produce[Option[Password]] = a => produce(a.map(_.value))
-
-  implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
-  implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
 
   implicit lazy val consumeProviderResponse: Consume[ProviderResponse] =
     consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(ProviderResponse)
@@ -352,15 +357,14 @@ trait SecuritySqlFormat {
      consume[ProviderResponse] and
      consume[Email] and
      consume[Option[Password]] and
-     consume[AccountDetails] and
-     consume[AccountState])(ProfileData)
+     consume[AccountDetails])(ProfileData)
+
   implicit lazy val produceProfileData: Produce[ProfileData] =
     a => produce(a.provider) andThen
          produce(a.providerUserId) andThen
          produce(a.email) andThen
          produce(a.password) andThen
-         produce(a.accountDetails) andThen
-         produce(a.accountState)
+         produce(a.accountDetails)
 
   implicit lazy val consumeProfile: Consume[Profile] =
     (consume[ProfileId] and consume[ProfileRef] and consume[ProfileData])(Profile)

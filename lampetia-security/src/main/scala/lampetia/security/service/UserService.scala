@@ -16,7 +16,7 @@ trait UserService {
 
   protected def insertUser(user: User): IO[Int] = {
     val m = UserModel
-    m.insert(m.id := user.id.bind)
+    m.insert(m.id := user.id.bind, m.accountState := user.accountState.bind)
   }
 
   protected def insertProfile(profile: Profile): IO[Int] = {
@@ -29,14 +29,13 @@ trait UserService {
       p.data.providerResponse := profile.data.providerResponse.bind.cast(Types.jsonb),
       p.data.email := profile.data.email.bind,
       p.data.password := profile.data.password.bind,
-      p.data.accountDetails := profile.data.accountDetails.bind.cast(Types.jsonb),
-      p.data.accountState := profile.data.accountState.bind)
+      p.data.accountDetails := profile.data.accountDetails.bind.cast(Types.jsonb))
   }
 
   def createUser(data: ProfileData): IO[User] = {
     val u = UserModel
     val p = ProfileModel
-    val user = User(u.generate)
+    val user = User(u.generate, AccountActive)
     val profile = Profile(p.generate, ProfileRef(user.id), data)
      insertUser(user)
      .flatMap(_ => insertProfile(profile))
@@ -115,9 +114,14 @@ trait UserService {
 
   def updatePassword(userId: UserId, password: Password): IO[Int] = {
     val p = ProfileModel
-    p.update(p.data.password := Option(password).bind)(
+    p.update(p.data.password := Some(password).bind)(
       (p.ref.userId === userId.bind) and (p.data.provider === UsernamePasswordProvider.bind)
     )
+  }
+
+  def suspendAccount(userId: UserId): IO[Int] = {
+    val u = UserModel
+    u.update(u.accountState := AccountSuspended.bind)(u.id === userId.bind)
   }
 
 

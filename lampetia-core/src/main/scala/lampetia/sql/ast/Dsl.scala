@@ -11,6 +11,7 @@ trait Dsl {
   def Q = this
 
   def ?(implicit b: ParameterNodeBuilder): ParameterNode = b.apply
+  def *(implicit b: IdentifierNodeBuilder): IdentifierNode = b("*")
   def surround(operand: Operand)(implicit b: SurroundNodeBuilder): SurroundNode = b(operand)
   def typeName(typeName: String)(implicit b: TypeNodeBuilder) = b(typeName)
   def select(operands: Operand*)(implicit qb: QueryNodeBuilder, sb: SelectNodeBuilder): qb.N = qb(Seq(sb(operands)))
