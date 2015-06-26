@@ -24,8 +24,8 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
   type Context = ConnectionSource
 
-  trait Parameter[A] {
-    type T = A
+  trait Parameter[+A] {
+    type T <: A
     def name: String = "?"
     def value: T
     def producer: Produce[T]
@@ -33,19 +33,19 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
 
   object Parameter {
     def apply[A](parameterValue: A, parameterProducer: Produce[A]): Parameter[A] = new Parameter[A] {
-      //type A = T
-      val value: A = parameterValue
-      val producer: Produce[A] = parameterProducer
+      type T = A
+      val value: T = parameterValue
+      val producer: Produce[T] = parameterProducer
     }
     def apply[A](paramterName: String, parameterValue: A, parameterProducer: Produce[A]): Parameter[A] = new Parameter[A] {
-      //type A = T
+      type T = A
       override val name: String = paramterName
-      val value: A = parameterValue
-      val producer: Produce[A] = parameterProducer
+      val value: T = parameterValue
+      val producer: Produce[T] = parameterProducer
     }
   }
 
-  case class PresetParameterNode[A](parameter: Parameter[A]) extends TypedParameterNode[A] {
+  case class PresetParameterNode[+A](parameter: Parameter[A]) extends TypedParameterNode[A] {
     val sqlString: String = "?"
     def map[B](f: A => B)(implicit p: Produce[B]): PresetParameterNode[B] = PresetParameterNode[B](Parameter(f(value), p))
   }
@@ -174,7 +174,7 @@ trait SqlIO extends BackendIO { codec: SqlCodec =>
     def transactionally: TransactionalIO[A] = createTransactionalIO(sqlIO)
   }
 
-  trait TypedParameterNode[A] extends TypedOperand[A] {
+  trait TypedParameterNode[+A] extends TypedOperand[A] {
     def parameter: Parameter[A]
     def value: A = parameter.value
     def cast(other: TypeNode)(implicit b: CastNodeBuilder): TypedParameterNode[A] =

@@ -7,8 +7,29 @@ import scala.util.{Success, Try}
 
 case class SubjectId(value: String) extends AnyVal
 
+sealed trait AccountState extends Any {
+  def value: String
+}
+
+case object AccountActive extends AccountState {
+  val value = "ACTIVE"
+}
+
+case object AccountSuspended extends AccountState {
+  val value = "SUSPENDED"
+}
+
+object AccountState {
+  def apply(value: String): AccountState = value match {
+    case s if s == AccountActive.value => AccountActive
+    case s if s == AccountSuspended.value => AccountSuspended
+  }
+}
+
 case class UserId(value: String) extends AnyVal
-case class User(id: UserId)
+case class User(id: UserId, accountState: AccountState) {
+  def isActive = accountState == AccountActive
+}
 
 
 sealed trait AuthenticationProvider extends Any {
@@ -31,24 +52,7 @@ object AuthenticationProvider {
     case s if s == Twitter.value                  => Twitter
   }
 }
-sealed trait AccountState extends Any {
-  def value: String
-}
 
-case object AccountActive extends AccountState {
-  val value = "ACTIVE"
-}
-
-case object AccountSuspended extends AccountState {
-  val value = "SUSPENDED"
-}
-
-object AccountState {
-  def apply(value: String): AccountState = value match {
-    case s if s == AccountActive.value => AccountActive
-    case s if s == AccountSuspended.value => AccountSuspended
-  }
-}
 
 case class ProviderUserId(value: String) extends AnyVal
 case class ProviderResponse(value: JSON) extends AnyVal
@@ -61,9 +65,8 @@ case class ProfileData(
    providerUserId: ProviderUserId,
    providerResponse: ProviderResponse,
    email: Email,
-   password: Password,
-   accountDetails: AccountDetails,
-   accountState: AccountState)
+   password: Option[Password],
+   accountDetails: AccountDetails)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
 
 sealed trait SubjectType {
@@ -128,18 +131,17 @@ trait SecurityModel {
   implicit object UserModel
     extends Model[User]
     with HasId[User, UserId]
-    with CanBuild0[User]
-    with CanBuild1[User, UserId]
     with CanGenerate[UserId]
     with CanParse[UserId]
     with UUIDGenerator {
 
     val modelName: String = "User"
     val id = property[UserId]("id")
+    val accountState = property[AccountState]("accountState")
     def generate: UserId = UserId(generateStringId)
     def parse(stringId: String): Try[UserId] = Success(UserId(stringId))
-    def build: BuildResult[User] = BuildSuccess(User(generate))
-    def build(id: UserId): BuildResult[User] = BuildSuccess(User(id))
+
+    override val properties: Seq[Property[_]] = Seq(id, accountState)
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -153,8 +155,6 @@ trait SecurityModel {
     with HasId[Profile, ProfileId]
     with HasRef[Profile, ProfileRef]
     with HasData[Profile, ProfileData]
-    with CanBuild2[Profile, ProfileRef, ProfileData]
-    with CanBuild3[Profile, ProfileId, ProfileRef, ProfileData]
     with CanGenerate[ProfileId]
     with CanParse[ProfileId]
     with UUIDGenerator {
@@ -171,15 +171,10 @@ trait SecurityModel {
       val providerUserId = property[ProviderUserId]("providerUserId")
       val providerResponse = property[ProviderResponse]("providerResponse").set(sql.`type`("jsonb"))
       val email = property[Email]("email")
-      val password = property[Password]("password")
+      val password = property[Option[Password]]("password").set(sql.optional)
       val accountDetails = property[AccountDetails]("accountDetails").set(sql.`type`("jsonb"))
-      val accountState = property[AccountState]("accountState")
-      val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails, accountState)
+      val properties = Seq(provider, providerUserId, providerResponse, email, password, accountDetails)
     }
-    def build(ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
-      BuildSuccess(Profile(generate, ref, data))
-    def build(id: ProfileId, ref: ProfileRef, data: ProfileData): BuildResult[Profile] =
-      BuildSuccess(Profile(id, ref, data))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -187,7 +182,6 @@ trait SecurityModel {
       sql.primaryKey("security_profile_pk")(id),
       sql.foreignKey("security_profile_user_id_ref_user")(ref.userId)(UserModel, UserModel.id),
       sql.index("security_profile_user_id_idx")(ref.userId),
-      sql.index("security_profile_state_idx")(data.accountState),
       sql.uniqueIndex("security_profile_provider_email_uidx")(data.provider, data.email)
     )
   }
@@ -197,8 +191,6 @@ trait SecurityModel {
     with HasId[Group, GroupId]
     with HasRef[Group, GroupRef]
     with HasData[Group, GroupData]
-    with CanBuild2[Group, GroupRef, GroupData]
-    with CanBuild3[Group, GroupId, GroupRef, GroupData]
     with CanGenerate[GroupId]
     with CanParse[GroupId]
     with UUIDGenerator {
@@ -207,35 +199,31 @@ trait SecurityModel {
     def generate: GroupId = GroupId(generateStringId)
     def parse(stringId: String): Try[GroupId] = Success(GroupId(stringId))
     object ref extends RefModel[GroupRef] {
-      val parent = property[Option[GroupId]]("group_owner_id").set(sql.optional)
-      val owner = property[UserId]("owner_id")
-      val properties = Seq(parent, owner)
+      val owner = property[UserId]("owner_user_id")
+      val parent = property[Option[GroupId]]("parent_group_id").set(sql.optional)
+      val properties = Seq(owner, parent)
     }
     object data extends DataModel[GroupData] {
       val code = property[Code]("code")
       val properties = Seq(code)
     }
-    def build(id: GroupId, ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(id, ref, data))
-    def build(ref: GroupRef, data: GroupData): BuildResult[Group] = BuildSuccess(Group(generate, ref, data))
-    override val features: Seq[Feature] = Seq(
+    override lazy val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_group"),
-      sql.primaryKey("security_group_pk")(id)
+      sql.primaryKey("security_group_pk")(id),
+      sql.foreignKey("security_group_parent_ref_security_group_id")(ref.parent)(GroupModel, id)
     )
   }
 
   implicit object GroupMemberModel
     extends Model[GroupMember]
-    with HasRef[GroupMember, GroupMemberRef]
-    with CanBuild1[GroupMember, GroupMemberRef] {
+    with HasRef[GroupMember, GroupMemberRef] {
     val modelName: String = "GroupMember"
     object ref extends RefModel[GroupMemberRef] {
       val groupId = property[GroupId]("groupId")
       val memberId = property[UserId]("memberId")
       val properties = Seq(groupId, memberId)
     }
-
-    def build(ref: GroupMemberRef): BuildResult[GroupMember] = BuildSuccess(GroupMember(ref))
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
@@ -249,7 +237,6 @@ trait SecurityModel {
     extends Model[Role]
     with HasId[Role, RoleId]
     with HasData[Role, RoleData]
-    with CanBuild2[Role, RoleId, RoleData]
     with CanGenerate[RoleId]
     with CanParse[RoleId]
     with UUIDGenerator {
@@ -262,7 +249,6 @@ trait SecurityModel {
       val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
       val properties = Seq(code, permission)
     }
-    def build(a1: RoleId, a2: RoleData): BuildResult[Role] = BuildSuccess(Role(a1, a2))
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_role")
@@ -273,7 +259,6 @@ trait SecurityModel {
     extends Model[Acl]
     with HasId[Acl, AclId]
     with HasData[Acl, AclData]
-    with CanBuild2[Acl, AclId, AclData]
     with CanGenerate[AclId]
     with CanParse[AclId]
     with UUIDGenerator {
@@ -307,8 +292,6 @@ trait SecurityModel {
       val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
     }
 
-    def build(a1: AclId, a2: AclData): BuildResult[Acl] = BuildSuccess(Acl(a1,a2))
-
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
       sql.name("security_acl")
@@ -329,11 +312,14 @@ trait SecuritySqlFormat {
   implicit lazy val consumeSubject: Consume[Subject] = (consume[SubjectId] ~ consume[SubjectType])(Subject)
   implicit lazy val produceSubject: Produce[Subject] = a => produce(a.subjectId) andThen produce(a.subjectType)
 
+  implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
+  implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
+
   implicit lazy val consumeUserId: Consume[UserId] = consume[String].fmap(UserId)
   implicit lazy val produceUserId: Produce[UserId] = a => produce(a.value)
 
-  implicit lazy val consumeUser: Consume[User] = consume[UserId].fmap(User)
-  implicit lazy val produceUser: Produce[User] = a => produce(a.id)
+  implicit lazy val consumeUser: Consume[User] = (consume[UserId] and consume[AccountState])(User)
+  implicit lazy val produceUser: Produce[User] = a => produce(a.id) andThen produce(a.accountState)
 
   implicit lazy val consumeAuthenticationProvider: Consume[AuthenticationProvider] = consume[String].fmap(AuthenticationProvider.apply)
   implicit lazy val produceAuthenticationProvider: Produce[AuthenticationProvider] = a => produce(a.value)
@@ -348,10 +334,9 @@ trait SecuritySqlFormat {
   implicit lazy val produceEmail: Produce[Email] = a => produce(a.value)
 
   implicit lazy val consumePassword: Consume[Password] = consume[String].fmap(Password)
+  implicit lazy val consumePasswordOption: Consume[Option[Password]] = consume[Option[String]].fmap(_.map(Password))
   implicit lazy val producePassword: Produce[Password] = a => produce(a.value)
-
-  implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
-  implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
+  implicit lazy val producePasswordOption: Produce[Option[Password]] = a => produce(a.map(_.value))
 
   implicit lazy val consumeProviderResponse: Consume[ProviderResponse] =
     consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(ProviderResponse)
@@ -371,16 +356,15 @@ trait SecuritySqlFormat {
      consume[ProviderUserId] and
      consume[ProviderResponse] and
      consume[Email] and
-     consume[Password] and
-     consume[AccountDetails] and
-     consume[AccountState])(ProfileData)
+     consume[Option[Password]] and
+     consume[AccountDetails])(ProfileData)
+
   implicit lazy val produceProfileData: Produce[ProfileData] =
     a => produce(a.provider) andThen
          produce(a.providerUserId) andThen
          produce(a.email) andThen
          produce(a.password) andThen
-         produce(a.accountDetails) andThen
-         produce(a.accountState)
+         produce(a.accountDetails)
 
   implicit lazy val consumeProfile: Consume[Profile] =
     (consume[ProfileId] and consume[ProfileRef] and consume[ProfileData])(Profile)
