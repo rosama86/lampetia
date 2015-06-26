@@ -279,7 +279,7 @@ trait SecurityModel {
       }
       object parentResource extends Composite[Option[Resource]] {
         val resourceId =
-          property[Option[ResourceId]]("resourceId")
+          property[ResourceId]("resourceId")
             .set(sql.optional)
             .set(sql.name("parent_resource_id"))
         val resourceType =
@@ -297,6 +297,15 @@ trait SecurityModel {
       sql.name("security_acl")
     )
   }
+
+  final val noPermission         = Permission( 0 )
+  final val readPermission       = noPermission      | Permission( 1 << 0 )
+  final val writePermission      = readPermission    | Permission( 1 << 1 )
+  final val deletePermission     = writePermission   | Permission( 1 << 2 )
+  final val adminPermission      = deletePermission  | Permission( 1 << 3 )
+
+  final val rootPermission       = Permission( 1 << 31) // most significant bit
+
 }
 
 import lampetia.sql.dialect.h2.jdbc._
