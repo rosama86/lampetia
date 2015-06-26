@@ -193,7 +193,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
         connection.setAutoCommit(false)
 
       if (transactionEntryPoint && log.isDebugEnabled)
-        log.debug("IN TRANSACTION")
+        log.debug(s"IN TRANSACTION: $connection")
 
       // start the chain reaction
       sqlIO.execute(proxy) match {
@@ -201,7 +201,8 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
           // do not commit unless this call is the transaction entry point
           if (transactionEntryPoint) {
             connection.commit()
-            log.debug("COMMIT")
+            if (log.isDebugEnabled)
+              log.debug(s"COMMIT: $connection")
             // close through the real connection manager
             cm.done(connection)
           }
@@ -210,7 +211,8 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
         case failure@Failure(_) =>
           if(transactionEntryPoint) {
             connection.rollback()
-            log.debug("ROLLBACK")
+            if (log.isDebugEnabled)
+              log.debug(s"ROLLBACK: $connection")
             // close through the real connection manager
             cm.done(connection)
           }

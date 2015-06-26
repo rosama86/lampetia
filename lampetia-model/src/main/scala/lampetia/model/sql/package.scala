@@ -37,7 +37,11 @@ package object sql {
   def primaryKey(property: Property[_], properties: Property[_]*): SqlPrimaryKey =
     SqlPrimaryKey(None, property +: properties)
 
-  case class SqlForeignKey[R](name: Option[String], keys: Seq[Property[_]], refModel: Model[R], references: Seq[Property[_]]) extends SqlFeature
+  case class SqlForeignKey[R](
+    name: Option[String],
+    keys: Seq[Property[_]],
+    refModel: Model[R],
+    references: Seq[Property[_]]) extends SqlFeature
 
   def foreignKey[R](name: String)(key: Property[_], keys: Property[_]*)
                    (refModel: Model[R], ref: Property[_], references: Property[_]*): SqlForeignKey[R] =

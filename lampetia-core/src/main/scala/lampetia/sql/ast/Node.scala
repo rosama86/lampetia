@@ -15,7 +15,7 @@ trait Node {
 
 trait Operand extends Node
 
-trait TypedOperand[T] extends Operand {
+trait TypedOperand[+T] extends Operand {
   def value: T
 }
 

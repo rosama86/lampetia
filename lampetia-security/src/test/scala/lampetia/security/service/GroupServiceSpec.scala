@@ -2,7 +2,6 @@ package lampetia.security.service
 
 import java.util.UUID
 
-import akka.japi.Option.Some
 import lampetia.model.{Code, Email, PlayJson}
 import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule._
@@ -22,12 +21,14 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
 
   final val EMPTY = ""
 
+  def groupRef(ownerId: UserId, parentGroupId: Option[GroupId] = None): GroupRef = GroupRef(ownerId, parentGroupId)
+
   it should "create group" in {
     val u = userService.createUser(profileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val group = service.createGroup(groupData, owner.id).run
+      val group = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(group, oneMinute) { result =>
         result.id.value shouldNot be(EMPTY)
       }
@@ -39,14 +40,14 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val p = service.createGroup(groupData, owner.id).run
+      val p = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(p, oneMinute) { parent =>
         parent.id.value shouldNot be(EMPTY)
 
         // Add child group
         def childGroupData =
           GroupData(code = Code(UUID.randomUUID.toString))
-        val childGroup = service.createGroup(childGroupData, owner.id, Some(parent.id)).run
+        val childGroup = service.createGroup(groupRef(owner.id, Some(parent.id)), childGroupData).run
         whenReady(childGroup, oneMinute) { child =>
           child.id.value shouldNot be(EMPTY)
         }
@@ -59,7 +60,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val group = service.createGroup(groupData, owner.id).run
+      val group = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(group, oneMinute) { result =>
         result.id.value shouldNot be(EMPTY)
         val selectedGroup = service.findGroupByGroupId(result.id).run
@@ -71,17 +72,17 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     }
   }
 
-  it should "find group By parent group Id" in {
+  /*it should "find group By parent group Id" in {
     val u = userService.createUser(profileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val pf = service.createGroup(groupData, owner.id).run
+      val pf = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(pf, oneMinute) { parent =>
         parent.id.value shouldNot be(EMPTY)
         def childGroupData =
           GroupData(Code(UUID.randomUUID.toString))
-        val childGroup = service.createGroup(childGroupData, owner.id, Some(parent.id)).run
+        val childGroup = service.createGroup(groupRef(owner.id, Some(parent.id)), childGroupData).run
         whenReady(childGroup, oneMinute) { child =>
           child.id.value shouldNot be(EMPTY)
 
@@ -95,7 +96,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
         }
       }
     }
-  }
+  }*/
 
   it should "try to find non-existing group By group Id" in {
     val selectedGroup = service.findGroupByGroupId(GroupId("none")).run
@@ -109,7 +110,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val g = service.createGroup(groupData, owner.id).run
+      val g = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(g, oneMinute) { group =>
         group.id.value shouldNot be(EMPTY)
         // add new user
@@ -135,7 +136,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val g = service.createGroup(groupData, owner.id).run
+      val g = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(g, oneMinute) { group =>
         group.id.value shouldNot be(EMPTY)
         // add new user
@@ -168,7 +169,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
-      val g = service.createGroup(groupData, owner.id).run
+      val g = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(g, oneMinute) { group =>
         group.id.value shouldNot be(EMPTY)
         val rg = service.removeGroup(group.id).run
@@ -179,6 +180,40 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     }
   }
 
+  it should "find child groups by parent" in {
+
+    def groupData = GroupData(Code(UUID.randomUUID.toString))
+
+
+    val p = for {
+      u <- userService.createUser(profileData)
+      parent <- service.createGroup(GroupRef(u.id, None), groupData)
+      a1 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      a11 <- service.createGroup(GroupRef(u.id, Some(a1.id)), groupData)
+      a12 <- service.createGroup(GroupRef(u.id, Some(a1.id)), groupData)
+      a2 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      a21 <- service.createGroup(GroupRef(u.id, Some(a2.id)), groupData)
+      a22 <- service.createGroup(GroupRef(u.id, Some(a2.id)), groupData)
+      a3 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      children <- service.findChildGroupsByParentGroupId(parent.id)
+      _ <- service.removeGroup(a11.id)
+      _ <- service.removeGroup(a12.id)
+      _ <- service.removeGroup(a1.id)
+      _ <- service.removeGroup(a21.id)
+      _ <- service.removeGroup(a22.id)
+      _ <- service.removeGroup(a2.id)
+      _ <- service.removeGroup(a3.id)
+      _ <- service.removeGroup(parent.id)
+    } yield children
+
+    val f = p.transactionally.run
+    whenReady(f, oneMinute) { groups =>
+      //groups.foreach(println)
+      //groups shouldNot be(Seq.empty[Group])
+      groups.length should be(8)
+    }
+  }
+
   def profileData = {
     val email = s"${UUID.randomUUID.toString}@test.org"
     ProfileData(
@@ -186,9 +221,8 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       ProviderUserId(EMPTY),
       ProviderResponse(PlayJson(Json.parse("[]"))),
       Email(email),
-      Password("unsafe"),
-      AccountDetails(PlayJson(Json.parse("[]"))),
-      AccountActive)
+      Some(Password("unsafe")),
+      AccountDetails(PlayJson(Json.parse("[]"))))
   }
 
 }

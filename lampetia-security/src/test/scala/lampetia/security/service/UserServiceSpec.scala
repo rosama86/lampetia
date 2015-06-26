@@ -6,12 +6,9 @@ import lampetia.model._
 import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule._
 import lampetia.test.LampetiaFutures
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
 import play.api.libs.json.Json
-
-import scala.util.Random
 
 /**
  * @author Hossam Karim
@@ -31,9 +28,8 @@ class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
         ProviderUserId(""),
         ProviderResponse(PlayJson(Json.parse("[]"))),
         Email(email),
-        Password("unsafe"),
-        AccountDetails(PlayJson(Json.parse("[]"))),
-        AccountActive)
+        Some(Password("unsafe")),
+        AccountDetails(PlayJson(Json.parse("[]"))))
     val user = service.createUser(profileData).run
     whenReady(user, oneMinute) { result =>
       result.id.value shouldNot be('empty)
@@ -48,9 +44,8 @@ class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
         ProviderUserId(""),
         ProviderResponse(PlayJson(Json.parse("[]"))),
         Email(email),
-        Password("unsafe"),
-        AccountDetails(PlayJson(Json.parse("[]"))),
-        AccountActive)
+        Some(Password("unsafe")),
+        AccountDetails(PlayJson(Json.parse("[]"))))
     val actions = for {
       u <- service.createUser(profileData)
       p <- service.createUserProfile(u.id, profileData)

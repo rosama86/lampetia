@@ -24,9 +24,9 @@ trait GroupService {
       gm.ref.memberId := memberId.bind)
   }
 
-  def createGroup(data: GroupData, owner: UserId, parent: Option[GroupId] = None): IO[Group] = {
+  def createGroup(ref: GroupRef, data: GroupData): IO[Group] = {
     val g = GroupModel
-    val group = Group(g.generate, GroupRef(owner, parent), data)
+    val group = Group(g.generate, ref, data)
     insertGroup(group)
       .transactionally
       .map(_ => group)
@@ -42,14 +42,14 @@ trait GroupService {
       .map(_.headOption)
   }
 
-  def findGroupByParentGroupId(id: GroupId): IO[Seq[Group]] = {
+  /*def findGroupByParentGroupId(id: GroupId): IO[Seq[Group]] = {
     val g = GroupModel
     select(g.properties: _*)
       .from(g.schemaPrefixed)
       .where(g.ref.parent === id.bind)
       .lifted
       .read[Group]
-  }
+  }*/
 
   def findAll(max: Int): IO[Seq[Group]] = {
     val g = GroupModel
@@ -98,6 +98,30 @@ trait GroupService {
       } yield c
 
     q.transactionally
+  }
+
+  def findChildGroupsByParentGroupId(parentGroupId: GroupId): IO[Seq[Group]] = {
+    val g = GroupModel
+    val recursiveGroup = 'rec_group
+
+    val columns = g.properties.map('g dot _)
+
+    val withQuery =
+      select(columns:_*)
+        .from(g.schemaPrefixed as 'g)
+        .where('g dot g.id === parentGroupId.bind)
+      .union(
+        select(columns:_*)
+        .from(g.schemaPrefixed as 'g, recursiveGroup)
+        .where(recursiveGroup dot 'id === 'g dot g.ref.parent))
+
+    val selection =
+      select(g.properties:_*)
+      .from(recursiveGroup)
+
+    withRecursive(recursiveGroup, withQuery, selection)
+    .lifted
+    .read[Group]
   }
 
 }
