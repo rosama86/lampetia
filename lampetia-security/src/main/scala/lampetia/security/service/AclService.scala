@@ -1,6 +1,9 @@
 package lampetia.security.service
 
+import lampetia.model.ResourceId
+import lampetia.model.sql.ModelFeatures
 import lampetia.security.model._
+import lampetia.security.module.SecurityModule
 import lampetia.sql.dialect.postgres.jdbc._
 
 
@@ -61,14 +64,20 @@ trait AclService {
       .lifted
       .read[Acl]
   }
-/*
-  def hasPermission(permission: Permission): Boolean = {
-    val bp = permission.bind.cast(Types.bit(32))
-    val aclm = AclModel
-    select(aclm.properties: _*)
-      .from(aclm.schemaPrefixed)
-      .where((bp & aclm.data.permission.cast(Types.bit(32))) === bp)
+
+  def hasPermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Boolean] = {
+    select(
+      function(hasPermissionFunctionName,
+        subjectId.bind,
+        resourceId.bind,
+        permission.bind.cast(Types.bit(32))))
       .lifted
-      .read[Acl]
-  }*/
+      .read[Boolean]
+      .map(_.head)
+  }
+
+  val hasPermissionFunctionName = AclModel.sqlSchema match {
+    case Some(prefix) => prefix + "." + "has_permission"
+    case None => "has_permission"
+  }
 }

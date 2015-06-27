@@ -143,6 +143,47 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
     }
   }
 
+  it should "check permission" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, writePermission)
+
+        val acl = service.grantAcl(aclData).run
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val hrp = service.hasPermission(subject.subjectId, resource.resourceId, readPermission).run
+          whenReady(hrp, oneMinute) { pr =>
+            pr should be(true)
+          }
+
+          val hwp = service.hasPermission(subject.subjectId, resource.resourceId, writePermission).run
+          whenReady(hwp, oneMinute) { pr =>
+            pr should be(true)
+          }
+
+          val hdp = service.hasPermission(subject.subjectId, resource.resourceId, deletePermission).run
+          whenReady(hdp, oneMinute) { pr =>
+            pr should be(false)
+          }
+
+        }
+
+      }
+    }
+
+   }
+
   def groupRef(ownerId: UserId, parentGroupId: Option[GroupId] = None): GroupRef = GroupRef(ownerId, parentGroupId)
 
   def profileData = {
