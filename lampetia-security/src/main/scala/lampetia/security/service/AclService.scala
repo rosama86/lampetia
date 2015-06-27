@@ -3,7 +3,6 @@ package lampetia.security.service
 import lampetia.model.ResourceId
 import lampetia.model.sql.ModelFeatures
 import lampetia.security.model._
-import lampetia.security.module.SecurityModule
 import lampetia.sql.dialect.postgres.jdbc._
 
 
@@ -74,6 +73,45 @@ trait AclService {
       .lifted
       .read[Boolean]
       .map(_.head)
+  }
+
+  def revokePermission(aclId: AclId): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where(aclm.id === aclId.bind)
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def rvokePermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where((aclm.data.subject.subjectId === subjectId.bind) and
+      (aclm.data.resource.resourceId === resourceId.bind) and
+      (aclm.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32))))
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def revokePermission(subjectId: SubjectId, resourceId: ResourceId): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where((aclm.data.subject.subjectId === subjectId.bind) and
+      (aclm.data.resource.resourceId === resourceId.bind))
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def revokeAllPermissions(subjectId: SubjectId): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where(aclm.data.subject.subjectId === subjectId.bind)
+      .lifted
+      .write
+      .transactionally
   }
 
   val hasPermissionFunctionName = AclModel.sqlSchema match {

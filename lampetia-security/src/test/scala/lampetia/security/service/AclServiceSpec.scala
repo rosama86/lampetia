@@ -46,7 +46,6 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
     }
   }
 
-
   it should "create group with parent group" in {
     val u = userService.createUser(profileData).run
     whenReady(u, oneMinute) { owner =>
@@ -78,7 +77,6 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
     }
   }
-
 
   it should "find acl by id" in {
 
@@ -182,18 +180,134 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
       }
     }
 
-   }
+  }
+
+  it should "revoke permission by Id" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val acl = service.grantAcl(aclData).run
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val rp = service.revokePermission(result.id).run
+
+          whenReady(rp, oneMinute) { rpr =>
+            rpr should be(1)
+          }
+        }
+      }
+    }
+  }
+
+  it should "revoke specific permission for a subject on a resource" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val acl = service.grantAcl(aclData).run
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val rp = service.rvokePermission(subject.subjectId, resource.resourceId, readPermission).run
+
+          whenReady(rp, oneMinute) { rpr =>
+            rpr should be(1)
+          }
+        }
+      }
+    }
+  }
+
+  it should "revoke all permissions for a subject on a resource" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val acl = service.grantAcl(aclData).run
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val rp = service.revokePermission(subject.subjectId, resource.resourceId).run
+
+          whenReady(rp, oneMinute) { rpr =>
+            rpr should be(1)
+          }
+        }
+      }
+    }
+  }
+
+  it should "revoke all permissions for a subject" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val acl = service.grantAcl(aclData).run
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val rp = service.revokeAllPermissions(subject.subjectId).run
+
+          whenReady(rp, oneMinute) { rpr =>
+            rpr should be(1)
+          }
+        }
+      }
+    }
+  }
 
   def groupRef(ownerId: UserId, parentGroupId: Option[GroupId] = None): GroupRef = GroupRef(ownerId, parentGroupId)
 
   def profileData = {
     val email = s"${UUID.randomUUID.toString}@test.org"
     ProfileData(
-        UsernamePasswordProvider,
-        ProviderUserId(""),
-        ProviderResponse(PlayJson(Json.parse("[]"))),
-        Email(email),
-        Some(Password("unsafe")),
-        AccountDetails(PlayJson(Json.parse("[]"))))
+      UsernamePasswordProvider,
+      ProviderUserId(""),
+      ProviderResponse(PlayJson(Json.parse("[]"))),
+      Email(email),
+      Some(Password("unsafe")),
+      AccountDetails(PlayJson(Json.parse("[]"))))
   }
 }
