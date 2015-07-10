@@ -298,6 +298,11 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
     }
   }
 
+  it should "succeed if subject has any of the input permissions" in {
+
+
+  }
+
   def groupRef(ownerId: UserId, parentGroupId: Option[GroupId] = None): GroupRef = GroupRef(ownerId, parentGroupId)
 
   def profileData = {

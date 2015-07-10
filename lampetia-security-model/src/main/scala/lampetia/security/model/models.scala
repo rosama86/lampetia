@@ -251,7 +251,26 @@ trait SecurityModel {
     }
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
-      sql.name("security_role")
+      sql.name("security_role"),
+      sql.primaryKey(id)
+    )
+  }
+
+  implicit object AclRoleModel
+    extends Model[AclRole]
+    with HasRef[AclRole, AclRoleRef] {
+    val modelName: String = "AclRole"
+    object ref extends RefModel[AclRoleRef] {
+      val aclId = property[AclId]("aclId")
+      val roleId = property[RoleId]("roleId")
+      val properties = Seq(aclId, roleId)
+    }
+
+    override val features: Seq[Feature] = Seq(
+      sql.schema(schema),
+      sql.name("security_acl_role"),
+      sql.foreignKey("sal_ref_acl_id")(ref.aclId)(AclModel, AclModel.id),
+      sql.foreignKey("sal_ref_role_id")(ref.roleId)(RoleModel, RoleModel.id)
     )
   }
 
@@ -294,7 +313,8 @@ trait SecurityModel {
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
-      sql.name("security_acl")
+      sql.name("security_acl"),
+      sql.primaryKey(id)
     )
   }
 
@@ -444,4 +464,13 @@ trait SecuritySqlFormat {
 
   implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
   implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)
+
+  implicit lazy val consumeRoleId: Consume[RoleId] = consume[String].fmap(RoleId)
+  implicit lazy val produceRoleId: Produce[RoleId] = a => produce(a.value)
+
+  implicit lazy val consumeRoleData: Consume[RoleData] = (consume[Code] ~ consume[Permission])(RoleData)
+  implicit lazy val produceRoleData: Produce[RoleData] = a => produce(a.code) andThen produce(a.permission)
+
+  implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
+  implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
 }
