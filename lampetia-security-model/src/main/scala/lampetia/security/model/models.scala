@@ -424,7 +424,7 @@ trait SecuritySqlFormat {
   implicit lazy val produceResourceOption: Produce[Option[Resource]] =
     a => produce(a.map(_.resourceId)) andThen produce(a.map(_.resourceType))
 
-  implicit lazy val consumePermission: Consume[Permission] = consume[Int].fmap(Permission)
+  implicit lazy val consumePermission: Consume[Permission] = consume[Int].fmap(a => Permission(Bit32Converter.fromString(a+"")))
   implicit lazy val producePermission: Produce[Permission] = a => produce(a.code)
 
   implicit lazy val consumeGroupId: Consume[GroupId] = consume[String].fmap(GroupId)
@@ -501,6 +501,8 @@ trait SecuritySqlFormat {
       else
         string
     }
+
+    def fromString(bitString: String): Int = Integer.parseUnsignedInt(bitString, 2)
   }
 
 }

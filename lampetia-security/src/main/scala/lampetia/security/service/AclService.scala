@@ -93,16 +93,41 @@ trait AclService {
            (r ->> 'permission')::bit(32) as "permission"
          from json_array_elements($pgJson::json) r)
 
-	     input inner join nxt.security_acl ssg
+	     input inner join nxt.security_acl sacl
                on (
-                   ssg.subject_id = input.subject_id
-               and ssg.resource_id = input.resource_id
-               and ssg.resource_type = input.resource_type
+                   sacl.subject_id = input.subject_id
+               and sacl.resource_id = input.resource_id
+               and sacl.resource_type = input.resource_type
                )
-             left outer join nxt.security_acl_role sgr on ssg.id = sgr.acl_id
-             left outer join nxt.security_role sr on sgr.role_id = sr.id
+             left outer join nxt.security_acl_role sar on sacl.id = sar.acl_id
+             left outer join nxt.security_role sr on sar.role_id = sr.id
     where
-            (ssg.permission | coalesce(sr.permission, 0::bit(32))) & (input.permission::bit(32)) = input.permission::bit(32)
+            (sacl.permission | coalesce(sr.permission, 0::bit(32))) & (input.permission::bit(32)) = input.permission::bit(32)
+
+    union
+
+    select 1
+    from     nxt.security_group_member sgm
+             inner join (
+    select r ->>  'subject_id' as "subject_id",
+           r ->>   'resource_id' as "resource_id",
+           r ->>   'resource_type' as "resource_type",
+           (r ->> 'permission')::bit(32) as "permission"
+           from json_array_elements($pgJson::json) r) input
+               on (sgm.member_id = input.subject_id)
+             inner join nxt.security_acl sacl
+               on (
+                   sacl.subject_id = sgm.group_id
+               and sacl.resource_id = input.resource_id
+               and sacl.resource_type = input.resource_type
+               )
+             left outer join nxt.security_acl_role sar
+               on (sacl.id = sar.acl_id)
+             left outer join nxt.security_role sr
+               on (sr.id = sar.role_id)
+    where
+           (sacl.permission | coalesce(sr.permission, 0::bit(32))) & (input.permission::bit(32)) = input.permission::bit(32)
+
     """.read[Boolean]
 
     q.map{ r =>
