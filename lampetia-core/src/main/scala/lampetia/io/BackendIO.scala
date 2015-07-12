@@ -63,9 +63,6 @@ trait BackendIO { self =>
       resultM.withFilter(fa.execute(context))(f)
   }
 
-
-
-
   trait LiftIO[A] extends Any {
 
     protected def io: IO[A]

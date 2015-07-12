@@ -1,9 +1,11 @@
 package lampetia.security.model
 
 import lampetia.model._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Writes, Json}
 import scala.util.{Success, Try}
 
+case class JsonData(value: JsValue) extends AnyVal
+case class PgJson(value: JsonData)
 
 case class SubjectId(value: String) extends AnyVal
 
@@ -473,4 +475,32 @@ trait SecuritySqlFormat {
 
   implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
   implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
+
+  implicit val AclDataWrites =
+    new Writes[AclData] {
+      def writes(o: AclData): JsValue =
+        Json.obj(
+          "subject_id" -> o.subject.subjectId.value,
+          "resource_id" -> o.resource.resourceId.value,
+          "resource_type" -> o.resource.resourceType.value,
+          "permission" -> Bit32Converter.bit32StringFromInt(o.permission.code)
+        )
+    }
+
+  implicit lazy val consumePgJson: Consume[PgJson] = consume[String].fmap(r => PgJson(JsonData(Json.parse(r))))
+  implicit lazy val producePgJson: Produce[PgJson] = a => produce(Json.stringify(a.value.value))
+
+
+  object Bit32Converter {
+    val zero = Array.fill(32)("0").mkString
+
+    def bit32StringFromInt(bits: Int): String = {
+      val string = Integer.toUnsignedString(bits, 2)
+      if(string.length < 32)
+        zero.take(32 - string.length) + string
+      else
+        string
+    }
+  }
+
 }

@@ -1,9 +1,10 @@
 package lampetia.security.service
 
-import lampetia.model.ResourceId
 import lampetia.model.sql.ModelFeatures
+import lampetia.model.{Resource, ResourceId}
 import lampetia.security.model._
 import lampetia.sql.dialect.postgres.jdbc._
+import play.api.libs.json.Writes
 
 
 /**
@@ -34,15 +35,82 @@ trait AclService {
           aclm.data.parentResource.resourceType := acl.data.parentResource.get.resourceType.bind
         )
     }
-
   }
 
-  def grantAcl(data: AclData): IO[Acl] = {
+  protected def insertAclRole(aclRole: AclRole): IO[Int] = {
+    val aclrm = AclRoleModel
+    aclrm.insert(aclrm.ref.aclId := aclRole.ref.aclId.bind,
+      aclrm.ref.roleId := aclRole.ref.roleId.bind)
+  }
+
+  def grant(data: AclData): IO[Acl] = {
     val aclm = AclModel
     val acl = Acl(aclm.generate, data)
     insertAcl(acl)
       .transactionally
       .map(_ => acl)
+  }
+
+  def hasAcl(subjectId: SubjectId, resource: Resource): IO[Option[AclId]] = {
+    val aclm = AclModel
+    select(aclm.id)
+      .from(aclm.schemaPrefixed)
+      .where(
+        aclm.data.subject.subjectId === subjectId.bind and
+        aclm.data.resource.resourceType === resource.resourceType.bind and
+        aclm.data.resource.resourceType === resource.resourceType.bind)
+      .lifted
+      .read[AclId]
+      .map(_.headOption)
+  }
+
+  // adds roleId to subjectId on resourceId only if an Acl record already exists
+  def grant(subjectId: SubjectId, resource: Resource, roleId: RoleId): IO[Boolean] = {
+    val aclrm = AclRoleModel
+    val aclm = AclModel
+
+    insertInto(aclrm.schemaPrefixed).query(
+      select(aclm.id, roleId.bind)
+        .from(aclm.schemaPrefixed)
+        .where(
+          aclm.data.subject.subjectId === subjectId.bind and
+            aclm.data.resource.resourceId === resource.resourceId.bind and
+            aclm.data.resource.resourceType === resource.resourceType.bind)
+    ).lifted.write.transactionally.map(_ => true)
+  }
+
+  def hasAnyPermission(requirements: Seq[AclData]): IO[Boolean] = {
+    val json = implicitly[Writes[Seq[AclData]]].writes(requirements)
+    val pgJson = PgJson(JsonData(json))
+
+    val q =
+      sql"""
+          select 1
+    from     (
+		select r ->>  'subject_id' as "subject_id",
+           r ->>   'resource_id' as "resource_id",
+           r ->>   'resource_type' as "resource_type",
+           (r ->> 'permission')::bit(32) as "permission"
+         from json_array_elements($pgJson::json) r)
+
+	     input inner join nxt.security_acl ssg
+               on (
+                   ssg.subject_id = input.subject_id
+               and ssg.resource_id = input.resource_id
+               and ssg.resource_type = input.resource_type
+               )
+             left outer join nxt.security_acl_role sgr on ssg.id = sgr.acl_id
+             left outer join nxt.security_role sr on sgr.role_id = sr.id
+    where
+            (ssg.permission | coalesce(sr.permission, 0::bit(32))) & (input.permission::bit(32)) = input.permission::bit(32)
+    """.read[Boolean]
+
+    q.map{ r =>
+        r.headOption match {
+        case None => false
+        case a => true
+      }
+    }
   }
 
   def findAclByAclId(id: AclId): IO[Option[Acl]] = {
@@ -117,5 +185,10 @@ trait AclService {
   val hasPermissionFunctionName = AclModel.sqlSchema match {
     case Some(prefix) => prefix + "." + "has_permission"
     case None => "has_permission"
+  }
+
+  val securitySchema = AclModel.sqlSchema match {
+    case Some(prefix) => prefix
+    case None => ""
   }
 }

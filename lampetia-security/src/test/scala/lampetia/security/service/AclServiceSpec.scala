@@ -19,6 +19,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
   val service = new AclService {}
   val groupService = new GroupService {}
   val userService = new UserService {}
+  val roleService = new RoleService {}
 
   final val EMPTY = ""
 
@@ -37,7 +38,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
         }
@@ -68,7 +69,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
           val aclData = AclData(subject, resource, Some(parentResource), writePermission)
 
-          val acl = service.grantAcl(aclData).run
+          val acl = service.grant(aclData).run
           whenReady(acl, oneMinute) { result =>
             result.id.value shouldNot be(EMPTY)
           }
@@ -93,7 +94,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val aclr = service.grantAcl(aclData).run
+        val aclr = service.grant(aclData).run
         whenReady(aclr, oneMinute) { acl =>
           acl.id.value shouldNot be(EMPTY)
 
@@ -128,7 +129,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val aclr = service.grantAcl(aclData).run
+        val aclr = service.grant(aclData).run
         whenReady(aclr, oneMinute) { acl =>
           acl.id.value shouldNot be(EMPTY)
 
@@ -156,7 +157,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, writePermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
@@ -197,7 +198,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
@@ -226,7 +227,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
@@ -255,7 +256,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
@@ -284,7 +285,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
         val aclData = AclData(subject, resource, None, readPermission)
 
-        val acl = service.grantAcl(aclData).run
+        val acl = service.grant(aclData).run
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
@@ -300,6 +301,66 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
   it should "succeed if subject has any of the input permissions" in {
 
+    val subjectPermission = Permission(1 << 16)
+    val groupPermission = Permission(1 << 10)
+    val groupRolePermission = Permission(1 << 5)
+
+    val userIO = userService.createUser(profileData).run
+    whenReady(userIO, oneMinute) { user =>
+
+      def groupData = GroupData(code = Code(UUID.randomUUID.toString))
+      val groupIO = groupService.createGroup(groupRef(user.id), groupData).run
+
+      whenReady(groupIO, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        // Add user as a member in the group
+        val groupMemberIO = groupService.addMember(group.id, user.id).run
+
+        whenReady(groupMemberIO, oneMinute) { groupMember =>
+          val roleData = RoleData(Code("test-role-"), groupRolePermission)
+          val createRoleIO = roleService.createRole(roleData).run
+
+          whenReady(createRoleIO, oneMinute) { role =>
+
+            val userSubject = Subject(SubjectId(user.id.value), SubjectUser)
+            val resource = Resource(ResourceId(UUID.randomUUID().toString), ResourceType("com.nxt.entity:1.0"))
+            val aclUserData = AclData(userSubject, resource, None, subjectPermission)
+
+            val grantUserAclIO = service.grant(aclUserData).run
+
+            whenReady(grantUserAclIO, oneMinute) { grantUserAcl =>
+
+              val groupSubject = Subject(SubjectId(group.id.value), SubjectGroup)
+              val aclGroupData = AclData(groupSubject, resource, None, groupPermission)
+              val groupAclIO = service.grant(aclGroupData).run
+
+              whenReady(groupAclIO, oneMinute) { groupAcl =>
+
+                  val grantRoleIO = service.grant(groupSubject.subjectId, resource, role.id).run
+
+                  whenReady(grantRoleIO, oneMinute) { grantRole =>
+                    val seq =
+                      Seq(
+                        AclData(userSubject, resource, None, subjectPermission), // this one exists
+                        AclData(userSubject, resource, None, Permission(1 << 11)), // this one doesn't
+                        AclData(userSubject, resource, None, Permission(1 << 6))) // this one doesn't exist also
+
+                    val hasAnyPermissionIO = service.hasAnyPermission(seq).run
+                    whenReady(hasAnyPermissionIO, oneMinute) { hasAnyPermission =>
+                      hasAnyPermission should be(true)
+                    }
+                  }
+
+              }
+
+            }
+          }
+
+        }
+
+      }
+    }
 
   }
 
