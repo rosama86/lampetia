@@ -64,8 +64,6 @@ trait BackendIO { self =>
   }
 
 
-
-
   trait LiftIO[A] extends Any {
 
     protected def io: IO[A]

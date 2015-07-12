@@ -83,6 +83,10 @@ trait Dialect {
     def apply(into: Operand, columns: Seq[Operand], values: Seq[Operand]): InsertNode =
       DefaultInsertNode(into, columns, values)
   }
+  implicit lazy val InsertQueryNodeBuilder: InsertQueryNodeBuilder = new InsertQueryNodeBuilder {
+    def apply(into: Operand, columns: Seq[Operand], query: QueryNode): InsertQueryNode =
+      DefaultInsertQueryNode(into, columns, query)
+  }
   implicit lazy val DeleteFromNodeBuilder: DeleteFromNodeBuilder = new DeleteFromNodeBuilder {
     def apply(table: Operand): DeleteFromNode = DefaultDeleteFromNode(table)
   }

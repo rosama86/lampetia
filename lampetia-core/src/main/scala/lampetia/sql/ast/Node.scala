@@ -405,7 +405,8 @@ case class DefaultUnionNode(operands: Seq[Operand], unionType: UnionType) extend
 }
 
 case class InsertInto(into: Operand, columns: Seq[Operand]) {
-  def values(operands: Operand*)(implicit b: InsertNodeBuilder) = b(into, columns, operands)
+  def values(operands: Operand*)(implicit b: InsertNodeBuilder): InsertNode = b(into, columns, operands)
+  def query(q: QueryNode)(implicit b: InsertQueryNodeBuilder): InsertQueryNode = b(into, columns, q)
 }
 
 trait InsertNodeBuilder {
@@ -418,6 +419,7 @@ trait InsertNode extends DMLNode {
   def values: Seq[Operand]
 }
 
+
 case class DefaultInsertNode(into: Operand, columns: Seq[Operand], values: Seq[Operand]) extends InsertNode {
   val operands: Seq[Operand] = Seq(into) ++ columns ++ values
   val sqlString: String =
@@ -425,6 +427,25 @@ case class DefaultInsertNode(into: Operand, columns: Seq[Operand], values: Seq[O
       s"insert into ${into.sqlString} values (${values.map(_.sqlString).mkString(",")})"
     else
       s"insert into ${into.sqlString}(${columns.map(_.sqlString).mkString(",")}) values (${values.map(_.sqlString).mkString(",")})"
+}
+
+trait InsertQueryNodeBuilder {
+  def apply(into: Operand, columns: Seq[Operand], query: QueryNode): InsertQueryNode
+}
+
+trait InsertQueryNode extends DMLNode {
+  def into: Operand
+  def columns: Seq[Operand]
+  def query: QueryNode
+}
+
+case class DefaultInsertQueryNode(into: Operand, columns: Seq[Operand], query: QueryNode) extends InsertQueryNode {
+  val operands: Seq[Operand] = into +: columns :+ query
+  val sqlString: String =
+    if (columns.isEmpty)
+      s"insert into ${into.sqlString} ${query.sqlString}"
+    else
+      s"insert into ${into.sqlString}(${columns.map(_.sqlString).mkString(",")}) ${query.sqlString}"
 }
 
 
