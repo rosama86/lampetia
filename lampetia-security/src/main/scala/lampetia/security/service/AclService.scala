@@ -49,17 +49,25 @@ trait AclService {
       .map(_ => acl)
   }
 
-  def hasAcl(subjectId: SubjectId, resource: Resource): IO[Option[AclId]] = {
+  def getAcl(subjectId: SubjectId, resource: Resource): IO[Option[AclId]] = {
     val aclm = AclModel
     select(aclm.id)
       .from(aclm.schemaPrefixed)
       .where(
         aclm.data.subject.subjectId === subjectId.bind and
-        aclm.data.resource.resourceType === resource.resourceType.bind and
-        aclm.data.resource.resourceType === resource.resourceType.bind)
+          aclm.data.resource.resourceType === resource.resourceType.bind and
+          aclm.data.resource.resourceType === resource.resourceType.bind)
       .lifted
       .read[AclId]
       .map(_.headOption)
+  }
+
+  def hasAcl(subjectId: SubjectId, resource: Resource): IO[Boolean] = {
+    getAcl(subjectId, resource)
+    .flatMap{
+      case None => IO.pure(false)
+      case _ => IO.pure(true)
+    }
   }
 
   // adds roleId to subjectId on resourceId only if an Acl record already exists
@@ -75,6 +83,30 @@ trait AclService {
             aclm.data.resource.resourceId === resource.resourceId.bind and
             aclm.data.resource.resourceType === resource.resourceType.bind)
     ).lifted.write.transactionally.map(_ => true)
+  }
+
+  // adds a permission to subjectId on resourceId only if ACL record already exists
+  def grant(subject: Subject, resource: Resource, permission: Permission): IO[Boolean] = {
+    val aclm = AclModel
+    val filter =
+      aclm.data.subject.subjectId === subject.subjectId.bind and
+        aclm.data.subject.subjectType === subject.subjectType.bind and
+        aclm.data.resource.resourceId === resource.resourceId.bind and
+        aclm.data.resource.resourceType === resource.resourceType.bind
+
+    select(aclm.properties: _*)
+      .from(aclm.schemaPrefixed)
+      .where(filter)
+      .lifted
+      .read[Acl]
+      .flatMap {
+      case Nil => IO.pure(0)
+      case acl =>
+        aclm.update(aclm.data.permission :=
+          (permission | acl.head.data.permission).bind.cast(Types.bit(32)))(filter).transactionally
+    }.flatMap {
+      r => IO.pure(r > 0)
+    }
   }
 
   def findAclByAclId(id: AclId): IO[Option[Acl]] = {

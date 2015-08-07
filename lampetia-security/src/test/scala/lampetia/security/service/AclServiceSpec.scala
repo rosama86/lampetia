@@ -23,7 +23,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
   final val EMPTY = ""
 
-  it should "create acl" in {
+  it should "Grant ACL" in {
 
     val u = userService.createUser(profileData).run
     whenReady(u, oneMinute) { owner =>
@@ -42,7 +42,41 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
         }
+      }
+    }
+  }
 
+
+  it should "find if subject has ACL on a resource" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val hasNoAcl = service.hasAcl(subject.subjectId, resource).run
+        whenReady(hasNoAcl, oneMinute) { hasNoAclR =>
+          hasNoAclR should be(right = false)
+        }
+
+        val acl = service.grant(aclData).run
+
+        whenReady(acl, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val hasAcl = service.hasAcl(subject.subjectId, resource).run
+          whenReady(hasAcl, oneMinute) { hasAclR =>
+            hasAclR should be(right = true)
+          }
+        }
       }
     }
   }
@@ -290,6 +324,53 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
 
           whenReady(rp, oneMinute) { rpr =>
             rpr should be(1)
+          }
+        }
+      }
+    }
+  }
+
+  it should "adds a permission to subjectId on resourceId only if a ACL record already exists" in {
+
+    val u = userService.createUser(profileData).run
+    whenReady(u, oneMinute) { owner =>
+      def groupData =
+        GroupData(code = Code(UUID.randomUUID.toString))
+      val g = groupService.createGroup(groupRef(owner.id), groupData).run
+      whenReady(g, oneMinute) { group =>
+        group.id.value shouldNot be(EMPTY)
+
+        val subject = Subject(SubjectId(owner.id.value), SubjectUser)
+        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+
+        val nogrant = service.grant(subject, resource, writePermission).run
+        whenReady(nogrant, oneMinute) { result =>
+          result should be(right = false)
+        }
+
+        val aclData = AclData(subject, resource, None, readPermission)
+
+        val aclRun = service.grant(aclData).run
+        whenReady(aclRun, oneMinute) { result =>
+          result.id.value shouldNot be(EMPTY)
+
+          val grant = service.grant(subject, resource, writePermission).run
+          whenReady(grant, oneMinute) { result =>
+            result should be(right = true)
+
+            val hasReadPermissionRun =
+              service.hasPermission(subject.subjectId, resource.resourceId, readPermission).run
+
+            whenReady(hasReadPermissionRun, oneMinute) { hasReadPermission =>
+              hasReadPermission should be(right = true)
+            }
+
+            val hasWritePermissionRun =
+              service.hasPermission(subject.subjectId, resource.resourceId, writePermission).run
+
+            whenReady(hasWritePermissionRun, oneMinute) { hasWritePermission =>
+              hasWritePermission should be(right = true)
+            }
           }
         }
       }
