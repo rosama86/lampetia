@@ -1,12 +1,9 @@
 package lampetia.security.model
 
 import lampetia.model._
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 
 import scala.util.{Success, Try}
-
-case class JsonData(value: JsValue) extends AnyVal
-case class PgJson(value: JsonData)
 
 case class SubjectId(value: String) extends AnyVal
 
@@ -476,8 +473,5 @@ trait SecuritySqlFormat {
 
   implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
   implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
-
-  implicit lazy val consumePgJson: Consume[PgJson] = consume[String].fmap(r => PgJson(JsonData(Json.parse(r))))
-  implicit lazy val producePgJson: Produce[PgJson] = a => produce(Json.stringify(a.value.value))
 
 }
