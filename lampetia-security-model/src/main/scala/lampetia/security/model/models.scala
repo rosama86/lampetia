@@ -1,7 +1,8 @@
 package lampetia.security.model
 
 import lampetia.model._
-import play.api.libs.json.{JsValue, Writes, Json}
+import play.api.libs.json.{JsValue, Json}
+
 import scala.util.{Success, Try}
 
 case class JsonData(value: JsValue) extends AnyVal
@@ -248,7 +249,7 @@ trait SecurityModel {
     def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
     object data extends DataModel[RoleData] {
       val code = property[Code]("code")
-      val permission = property[Permission]("permission")
+      val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
       val properties = Seq(code, permission)
     }
     override val features: Seq[Feature] = Seq(
