@@ -248,7 +248,7 @@ trait SecurityModel {
     def parse(stringId: String): Try[RoleId] = Success(RoleId(stringId))
     object data extends DataModel[RoleData] {
       val code = property[Code]("code")
-      val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
+      val permission = property[Permission]("permission")
       val properties = Seq(code, permission)
     }
     override val features: Seq[Feature] = Seq(
@@ -424,7 +424,7 @@ trait SecuritySqlFormat {
   implicit lazy val produceResourceOption: Produce[Option[Resource]] =
     a => produce(a.map(_.resourceId)) andThen produce(a.map(_.resourceType))
 
-  implicit lazy val consumePermission: Consume[Permission] = consume[Int].fmap(a => Permission(Bit32Converter.fromString(a+"")))
+  implicit lazy val consumePermission: Consume[Permission] = consume[String].fmap(r => Permission(Integer.parseUnsignedInt(r, 2)))
   implicit lazy val producePermission: Produce[Permission] = a => produce(a.code)
 
   implicit lazy val consumeGroupId: Consume[GroupId] = consume[String].fmap(GroupId)
@@ -476,33 +476,7 @@ trait SecuritySqlFormat {
   implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
   implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
 
-  implicit val AclDataWrites =
-    new Writes[AclData] {
-      def writes(o: AclData): JsValue =
-        Json.obj(
-          "subject_id" -> o.subject.subjectId.value,
-          "resource_id" -> o.resource.resourceId.value,
-          "resource_type" -> o.resource.resourceType.value,
-          "permission" -> Bit32Converter.bit32StringFromInt(o.permission.code)
-        )
-    }
-
   implicit lazy val consumePgJson: Consume[PgJson] = consume[String].fmap(r => PgJson(JsonData(Json.parse(r))))
   implicit lazy val producePgJson: Produce[PgJson] = a => produce(Json.stringify(a.value.value))
-
-
-  object Bit32Converter {
-    val zero = Array.fill(32)("0").mkString
-
-    def bit32StringFromInt(bits: Int): String = {
-      val string = Integer.toUnsignedString(bits, 2)
-      if(string.length < 32)
-        zero.take(32 - string.length) + string
-      else
-        string
-    }
-
-    def fromString(bitString: String): Int = Integer.parseUnsignedInt(bitString, 2)
-  }
 
 }
