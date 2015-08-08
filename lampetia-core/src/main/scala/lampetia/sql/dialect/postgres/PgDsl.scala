@@ -65,6 +65,7 @@ trait PgDsl extends Dsl with Dialect {
     val timestamp = DefaultTypeNode("timestamp")
     val json = DefaultTypeNode("json")
     val jsonb = DefaultTypeNode("jsonb")
+    val int = DefaultTypeNode("int")
     def bit(i: Int) = DefaultTypeNode(s"bit($i)")
   }
 

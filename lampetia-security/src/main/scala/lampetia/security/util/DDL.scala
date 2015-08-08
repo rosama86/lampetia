@@ -16,7 +16,8 @@ trait DDL {
       RoleModel.createSql ++
       GroupModel.createSql ++
       GroupMemberModel.createSql ++
-      AclModel.createSql
+      AclModel.createSql ++
+      AclRoleModel.createSql
     )
 
 }

@@ -419,7 +419,6 @@ trait InsertNode extends DMLNode {
   def values: Seq[Operand]
 }
 
-
 case class DefaultInsertNode(into: Operand, columns: Seq[Operand], values: Seq[Operand]) extends InsertNode {
   val operands: Seq[Operand] = Seq(into) ++ columns ++ values
   val sqlString: String =
@@ -435,7 +434,9 @@ trait InsertQueryNodeBuilder {
 
 trait InsertQueryNode extends DMLNode {
   def into: Operand
+
   def columns: Seq[Operand]
+
   def query: QueryNode
 }
 
@@ -447,8 +448,6 @@ case class DefaultInsertQueryNode(into: Operand, columns: Seq[Operand], query: Q
     else
       s"insert into ${into.sqlString}(${columns.map(_.sqlString).mkString(",")}) ${query.sqlString}"
 }
-
-
 
 trait DeleteFromNodeBuilder {
   def apply(table: Operand): DeleteFromNode
@@ -611,5 +610,6 @@ case class DefaultForeignKeyNode[E, R](model: Model[E], foreignKey: SqlForeignKe
   private val references = s"(${foreignKey.references.map(_.sqlName).mkString(",")}) "
   val sqlString: String =  s"alter table ${model.sqlQualifiedName} add $named $keys references ${foreignKey.refModel.sqlQualifiedName}$references"
 }
+
 
 

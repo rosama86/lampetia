@@ -2,8 +2,8 @@ package lampetia.security.model
 
 import lampetia.model._
 import play.api.libs.json.Json
-import scala.util.{Success, Try}
 
+import scala.util.{Success, Try}
 
 case class SubjectId(value: String) extends AnyVal
 
@@ -251,7 +251,26 @@ trait SecurityModel {
     }
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
-      sql.name("security_role")
+      sql.name("security_role"),
+      sql.primaryKey(id)
+    )
+  }
+
+  implicit object AclRoleModel
+    extends Model[AclRole]
+    with HasRef[AclRole, AclRoleRef] {
+    val modelName: String = "AclRole"
+    object ref extends RefModel[AclRoleRef] {
+      val aclId = property[AclId]("aclId")
+      val roleId = property[RoleId]("roleId")
+      val properties = Seq(aclId, roleId)
+    }
+
+    override val features: Seq[Feature] = Seq(
+      sql.schema(schema),
+      sql.name("security_acl_role"),
+      sql.foreignKey("sal_ref_acl_id")(ref.aclId)(AclModel, AclModel.id),
+      sql.foreignKey("sal_ref_role_id")(ref.roleId)(RoleModel, RoleModel.id)
     )
   }
 
@@ -279,7 +298,7 @@ trait SecurityModel {
       }
       object parentResource extends Composite[Option[Resource]] {
         val resourceId =
-          property[Option[ResourceId]]("resourceId")
+          property[ResourceId]("resourceId")
             .set(sql.optional)
             .set(sql.name("parent_resource_id"))
         val resourceType =
@@ -294,9 +313,19 @@ trait SecurityModel {
 
     override val features: Seq[Feature] = Seq(
       sql.schema(schema),
-      sql.name("security_acl")
+      sql.name("security_acl"),
+      sql.primaryKey(id)
     )
   }
+
+  final val noPermission         = Permission( 0 )
+  final val readPermission       = noPermission      | Permission( 1 << 0 )
+  final val writePermission      = readPermission    | Permission( 1 << 1 )
+  final val deletePermission     = writePermission   | Permission( 1 << 2 )
+  final val adminPermission      = deletePermission  | Permission( 1 << 3 )
+
+  final val rootPermission       = Permission( 1 << 31) // most significant bit
+
 }
 
 import lampetia.sql.dialect.h2.jdbc._
@@ -393,7 +422,7 @@ trait SecuritySqlFormat {
   implicit lazy val produceResourceOption: Produce[Option[Resource]] =
     a => produce(a.map(_.resourceId)) andThen produce(a.map(_.resourceType))
 
-  implicit lazy val consumePermission: Consume[Permission] = consume[Int].fmap(Permission)
+  implicit lazy val consumePermission: Consume[Permission] = consume[String].fmap(r => Permission(Integer.parseUnsignedInt(r, 2)))
   implicit lazy val producePermission: Produce[Permission] = a => produce(a.code)
 
   implicit lazy val consumeGroupId: Consume[GroupId] = consume[String].fmap(GroupId)
@@ -435,4 +464,14 @@ trait SecuritySqlFormat {
 
   implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
   implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)
+
+  implicit lazy val consumeRoleId: Consume[RoleId] = consume[String].fmap(RoleId)
+  implicit lazy val produceRoleId: Produce[RoleId] = a => produce(a.value)
+
+  implicit lazy val consumeRoleData: Consume[RoleData] = (consume[Code] ~ consume[Permission])(RoleData)
+  implicit lazy val produceRoleData: Produce[RoleData] = a => produce(a.code) andThen produce(a.permission)
+
+  implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
+  implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
+
 }
