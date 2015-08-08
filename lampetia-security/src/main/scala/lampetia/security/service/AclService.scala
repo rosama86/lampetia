@@ -17,7 +17,7 @@ trait AclService {
 
     val parentResourceCouples =
       acl.data.parentResource match {
-        case None => Seq.empty
+        case None => Seq.empty[Couple[Resource]]
         case Some(parentResource) =>
           Seq(
             aclm.data.parentResource.resourceId  := parentResource.resourceId.bind,
