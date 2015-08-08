@@ -14,25 +14,26 @@ trait AclService {
 
   protected def insertAcl(acl: Acl): IO[Int] = {
     val aclm = AclModel
-    acl.data.parentResource match {
-      case None =>
-        aclm.insert(aclm.id := acl.id.bind,
-          aclm.data.permission := acl.data.permission.bind.cast(Types.bit(32)),
-          aclm.data.subject.subjectId := acl.data.subject.subjectId.bind,
-          aclm.data.subject.subjectType := acl.data.subject.subjectType.bind,
-          aclm.data.resource.resourceId := acl.data.resource.resourceId.bind,
-          aclm.data.resource.resourceType := acl.data.resource.resourceType.bind)
-      case Some(pr) =>
-        aclm.insert(aclm.id := acl.id.bind,
-          aclm.data.permission := acl.data.permission.bind.cast(Types.bit(32)),
-          aclm.data.subject.subjectId := acl.data.subject.subjectId.bind,
-          aclm.data.subject.subjectType := acl.data.subject.subjectType.bind,
-          aclm.data.resource.resourceId := acl.data.resource.resourceId.bind,
-          aclm.data.resource.resourceType := acl.data.resource.resourceType.bind,
-          aclm.data.parentResource.resourceId := acl.data.parentResource.get.resourceId.bind,
-          aclm.data.parentResource.resourceType := acl.data.parentResource.get.resourceType.bind
-        )
-    }
+
+    val parentResourceCouples =
+      acl.data.parentResource match {
+        case None => Seq.empty
+        case Some(parentResource) =>
+          Seq(
+            aclm.data.parentResource.resourceId  := parentResource.resourceId.bind,
+            aclm.data.parentResource.resourceType := parentResource.resourceType.bind)
+      }
+
+    val couples =
+      parentResourceCouples ++
+      Seq(aclm.id := acl.id.bind,
+        aclm.data.permission := acl.data.permission.bind.cast(Types.bit(32)),
+        aclm.data.subject.subjectId := acl.data.subject.subjectId.bind,
+        aclm.data.subject.subjectType := acl.data.subject.subjectType.bind,
+        aclm.data.resource.resourceId := acl.data.resource.resourceId.bind,
+        aclm.data.resource.resourceType := acl.data.resource.resourceType.bind)
+
+    aclm.insert(couples : _*)
   }
 
   protected def insertAclRole(aclRole: AclRole): IO[Int] = {
@@ -64,7 +65,7 @@ trait AclService {
 
   def hasAcl(subjectId: SubjectId, resource: Resource): IO[Boolean] = {
     getAcl(subjectId, resource)
-    .flatMap{
+      .flatMap {
       case None => IO.pure(false)
       case _ => IO.pure(true)
     }
