@@ -1,4 +1,4 @@
-import io.github.lampetia.Common.Dependencies._
+import dependencies._
 
 name := "lampetia-security-model"
 
@@ -12,5 +12,3 @@ libraryDependencies ++= Seq(
   postgresql,
   h2,
   hikari)
-
-

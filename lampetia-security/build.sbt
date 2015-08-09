@@ -1,6 +1,10 @@
-import io.github.lampetia.Common.Dependencies._
+import dependencies._
 
 name := "lampetia-security"
+
+//enablePlugins(JavaServerAppPackaging)
+
+//mainClass in Compile := Some("lampetia.security.service.SecurityService")
 
 libraryDependencies ++= Seq(
   ficus,
@@ -13,5 +17,3 @@ libraryDependencies ++= Seq(
   h2,
   hikari,
   scalaTest)
-
-

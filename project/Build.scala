@@ -1,10 +1,9 @@
-package io.github.lampetia
+package lampetia
 
 import sbt.Keys._
 import sbt._
 import com.typesafe.sbt.SbtGit._
 import scala.Console._
-
 
 object Build extends sbt.Build {
 
@@ -12,16 +11,18 @@ object Build extends sbt.Build {
         val prompt = GitCommand.prompt(state).trim
         val regex = """(.*)\((.*)\)>""".r
         prompt match {
-          case regex(pname, "master") => 
-            s"""$BLUE$pname $RED[master]$RESET $$ """
-          case regex(pname, bname) => 
+          case regex(pname, "master") =>
+            s"""$BLUE$pname $GREEN[master]$RESET $$ """
+          case regex(pname, bname) =>
             s"""$BLUE$pname $YELLOW[$bname]$RESET $$ """
-          case pname => 
+          case pname =>
             s"""$BLUE$pname$RESET $$ """
         }
-        
+
       }
-  
+
+  val dependencies = Common.Dependencies
+
   override lazy val settings = super.settings ++
     Seq(
       organization := Common.organization,
@@ -59,5 +60,3 @@ object Build extends sbt.Build {
 
 
 }
-
-

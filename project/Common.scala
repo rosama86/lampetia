@@ -1,4 +1,4 @@
-package io.github.lampetia
+package lampetia
 
 import sbt._
 
