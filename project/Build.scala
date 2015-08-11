@@ -42,21 +42,41 @@ object Build extends sbt.Build {
     Project("lampetia-core", file("lampetia-core"))
       .dependsOn(`lampetia-model`)
 
+  lazy val `lampetia-spray` =
+    Project("lampetia-spray", file("lampetia-spray"))
+      .dependsOn(`lampetia-core`)
+
+  lazy val `lampetia-sql` =
+    Project("lampetia-sql", file("lampetia-sql"))
+      .dependsOn(`lampetia-core`)
+
+  lazy val `lampetia-postgresql` =
+    Project("lampetia-postgresql", file("lampetia-postgresql"))
+      .dependsOn(`lampetia-sql`)
+
+  lazy val `lampetia-mysql` =
+    Project("lampetia-mysql", file("lampetia-mysql"))
+      .dependsOn(`lampetia-sql`)
+
   lazy val `lampetia-security-model` =
     Project("lampetia-security-model", file("lampetia-security-model"))
-      .dependsOn(`lampetia-model`, `lampetia-core`)
+      .dependsOn(`lampetia-model`, `lampetia-core`, `lampetia-postgresql`)
 
-  lazy val `lampetia-security` =
-    Project("lampetia-security", file("lampetia-security"))
-      .dependsOn(`lampetia-model`, `lampetia-core`, `lampetia-security-model`)
+  lazy val `lampetia-security-service` =
+    Project("lampetia-security-service", file("lampetia-security-service"))
+      .dependsOn(`lampetia-model`, `lampetia-core`, `lampetia-postgresql`, `lampetia-security-model`)
 
   lazy val `lampetia` =
     Project("lampetia", file("."))
       .aggregate(
         `lampetia-model`,
         `lampetia-core`,
+        `lampetia-sql`,
+        `lampetia-spray`,
+        `lampetia-postgresql`,
+        `lampetia-mysql`,
         `lampetia-security-model`,
-        `lampetia-security`)
+        `lampetia-security-service`)
 
 
 }
