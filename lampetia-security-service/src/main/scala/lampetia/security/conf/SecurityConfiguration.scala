@@ -33,7 +33,7 @@ trait SecurityConfiguration extends Lifecycle { self: Configuration =>
 
   abstract override def shutdown(): Unit = {
     logger.info(s"[security] shutdown sequence: begin")
-    logger.info(s"[secuirty] shutdown sequence: done")
+    logger.info(s"[security] shutdown sequence: done")
     super.shutdown()
   }
 

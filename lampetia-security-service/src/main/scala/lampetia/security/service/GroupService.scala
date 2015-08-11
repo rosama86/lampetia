@@ -1,7 +1,6 @@
 package lampetia.security.service
 
 import lampetia.security.model._
-//import lampetia.sql.dialect.postgresql.Postgresql._
 
 /**
  * @author Radwa Osama

@@ -13,7 +13,7 @@ object Common {
     val jodaConvertVersion = "1.7"
     val ficusVersion = "1.1.1"
     val shapelessVersion = "2.2.0"
-    val akkaVersion = "2.3.9"
+    val akkaVersion = "2.3.12"
     val sprayVersion = "1.3.3"
     val playVersion = "2.4.0"
     val logbackVersion = "1.1.2"
@@ -45,6 +45,7 @@ object Common {
     val logback = "ch.qos.logback" % "logback-classic" % logbackVersion
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
     val sprayCan = "io.spray" %% "spray-can" % sprayVersion
+    val sprayRoute = "io.spray" %% "spray-routing" % sprayVersion
     val playFunctional = "com.typesafe.play" %% "play-functional" % playVersion
     val playJson = "com.typesafe.play" %% "play-json" % playVersion
     val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion

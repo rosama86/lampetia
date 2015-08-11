@@ -1,23 +1,25 @@
 package lampetia.spray
 
-import lampetia.conf.{Lifecycle, Configuration}
-
+import lampetia.conf.Configuration
 
 /**
  * @author Hossam Karim
  */
 
-trait SprayConfiguration extends Lifecycle { this: Configuration =>
+trait SprayConfiguration {
 
-  def apiPrefix: String
-  def serviceHost: String
-  def servicePort: Int
+  def configuration: Configuration
 
+  def moduleConfigurationPrefix: String
 
-  abstract override def shutdown(): Unit = {
-    logger.info(s"[spray] shutdown sequence: begin")
-    logger.info(s"[spray] shutdown sequence: done")
-    super.shutdown()
-  }
+  def apiPrefix: String =
+    configuration.config.getString(s"$moduleConfigurationPrefix.spray.api.prefix")
+
+  def serviceHost: String =
+    configuration.config.getString(s"$moduleConfigurationPrefix.spray.service.host")
+
+  def servicePort: Int =
+    configuration.config.getInt(s"$moduleConfigurationPrefix.spray.service.port")
+
 
 }
