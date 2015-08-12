@@ -1,8 +1,9 @@
 package lampetia.sql.dialect.postgresql
 
 import lampetia.conf.{Configuration, Lifecycle}
+import lampetia.meta._
 import lampetia.model._
-import lampetia.model.sql.SqlTypes
+import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql._
 import language.implicitConversions
 
@@ -47,8 +48,7 @@ trait Postgresql
 
 }
 
-trait PostgresqlConfiguration extends Lifecycle {
-    self: Postgresql with ConnectionSourceFactories with Configuration =>
+trait PostgresqlConfiguration extends Lifecycle { self: Configuration =>
 
   def pgJdbcDataSourceClassName: String
   def pgHost: String
@@ -59,19 +59,13 @@ trait PostgresqlConfiguration extends Lifecycle {
   def pgMaximumPoolSize: Int
   def pgLeakDetectionThreshold: Int
 
-  implicit lazy val context: ConnectionSource = hikari(
-    pgJdbcDataSourceClassName,
-    pgHost,
-    pgPort,
-    pgDatabase,
-    pgUser,
-    pgPassword,
-    pgMaximumPoolSize,
-    pgLeakDetectionThreshold)
+  def close(): Unit
+
 
   abstract override def shutdown(): Unit = {
     logger.info(s"[postgres] shutdown sequence: begin")
-    context.shutdown()
+    //context.shutdown()
+    close()
     logger.info(s"[postgres] shutdown sequence: done")
     super.shutdown()
   }

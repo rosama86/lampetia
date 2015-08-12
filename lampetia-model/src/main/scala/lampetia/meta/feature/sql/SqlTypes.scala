@@ -1,6 +1,6 @@
-package lampetia.model.sql
+package lampetia.meta.feature.sql
 
-import lampetia.model.PropertyType
+import lampetia.meta.PropertyType
 
 /**
  * @author Hossam Karim

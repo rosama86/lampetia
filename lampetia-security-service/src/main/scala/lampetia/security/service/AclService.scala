@@ -1,16 +1,15 @@
 package lampetia.security.service
 
-import lampetia.model.sql.ModelFeatures
+import lampetia.meta.feature.sql.ModelFeatures
 import lampetia.model.{Resource, ResourceId}
 import lampetia.security.model._
-//import lampetia.sql.dialect.postgresql.Postgresql._
 
 /**
  * @author Radwa Osama
  */
 trait AclService {
 
-  import lampetia.security.module.SecurityModule._
+  import lampetia.security.module.SecurityModule.sql._
 
   protected def insertAcl(acl: Acl): IO[Int] = {
     val aclm = AclModel

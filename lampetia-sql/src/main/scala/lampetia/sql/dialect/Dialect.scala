@@ -1,7 +1,7 @@
 package lampetia.sql.dialect
 
-import lampetia.model.sql.{SqlTypes, SqlForeignKey, SqlIndex, SqlPrimaryKey}
-import lampetia.model.{Model, Property}
+import lampetia.meta.{Property, Model}
+import lampetia.meta.feature.sql.{SqlTypes, SqlForeignKey, SqlIndex, SqlPrimaryKey}
 import lampetia.sql.ast._
 
 /**

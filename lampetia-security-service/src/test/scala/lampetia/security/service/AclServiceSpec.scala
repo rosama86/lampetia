@@ -14,7 +14,10 @@ import play.api.libs.json.Json
  * @author Radwa Osama
  */
 class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-  implicit val ec = executionContext
+
+  import sql._
+
+  implicit val ec = configuration.concurrent.executionContext
 
   val service = new AclService {}
   val groupService = new GroupService {}

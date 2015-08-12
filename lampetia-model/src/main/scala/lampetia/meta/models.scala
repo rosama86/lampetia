@@ -1,4 +1,4 @@
-package lampetia.model
+package lampetia.meta
 
 import org.joda.time.DateTime
 

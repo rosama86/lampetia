@@ -15,36 +15,42 @@ import SecurityModule._
  */
 
 
-class SecurityHttpServiceActor(val apiPrefix: String) extends HttpServiceActor {
+class SecurityHttpServiceActor(val conf: SprayConfiguration) extends HttpServiceActor {
 
   val groupRoute = new GroupRoute {
-    def actorRefFactory: ActorSystem = defaultActorSystem
+    def actorRefFactory: ActorSystem = configuration.akka.defaultActorSystem
   }
 
-  def mainRoute: Route =
-    pathPrefix(apiPrefix) {
-      groupRoute.groupRoute
+  def route: Route = groupRoute.groupRoute
+
+  def apiRoute: Route =
+    pathPrefix(conf.apiPrefix) {
+      pathPrefix(conf.apiVersion) {
+        route
+      }
     }
 
-  def receive = runRoute(mainRoute)
+  def receive = runRoute(apiRoute)
 }
 
 
 object SecurityHttpService {
 
   val sprayConfiguration: SprayConfiguration = new SprayConfiguration {
-    override def configuration: Configuration = SecurityModule
+    override def configuration: Configuration = SecurityModule.configuration
     override def moduleConfigurationPrefix: String = "lampetia.module.security"
   }
 
-  val apiPrefix = sprayConfiguration.apiPrefix
-
   val serviceActor =
-      defaultActorSystem
-      .actorOf(Props(classOf[SecurityHttpServiceActor], apiPrefix), "security-spray-service-actor")
+      configuration
+      .akka
+      .defaultActorSystem
+      .actorOf(
+          Props(classOf[SecurityHttpServiceActor], sprayConfiguration),
+          "security-spray-service-actor")
 
   def serviceStartup(): Unit = {
-    implicit val system = defaultActorSystem
+    implicit val system = configuration.akka.defaultActorSystem
     IO(Http) ! Http.Bind(serviceActor, sprayConfiguration.serviceHost, sprayConfiguration.servicePort)
   }
 
@@ -54,7 +60,7 @@ object SecurityHttpService {
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
-        shutdown()
+        configuration.shutdown()
       }
     })
   }

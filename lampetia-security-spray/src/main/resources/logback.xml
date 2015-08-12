@@ -8,8 +8,8 @@
         </encoder>
     </appender>
 
-    <logger name="sql-io" level="debug" />
-    <logger name="jdbc-io" level="debug" />
+    <logger name="sql-io" level="info" />
+    <logger name="jdbc-io" level="info" />
 
     <root level="info">
         <appender-ref ref="STDOUT" />

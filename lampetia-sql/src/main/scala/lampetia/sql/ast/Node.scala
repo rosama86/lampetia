@@ -1,7 +1,7 @@
 package lampetia.sql.ast
 
-import lampetia.model.{Model, Property}
-import lampetia.model.sql._
+import lampetia.meta.{Property, Model}
+import lampetia.meta.feature.sql._
 
 import scala.language.implicitConversions
 

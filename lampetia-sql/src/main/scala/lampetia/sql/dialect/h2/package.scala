@@ -1,6 +1,6 @@
 package lampetia.sql.dialect
 
-import lampetia.model.Model
+import lampetia.meta.Model
 import lampetia.sql.{JdbcCodec, ConnectionSourceFactories, JdbcIO}
 
 /**

@@ -15,6 +15,9 @@ trait SprayConfiguration {
   def apiPrefix: String =
     configuration.config.getString(s"$moduleConfigurationPrefix.spray.api.prefix")
 
+  def apiVersion: String =
+    configuration.config.getString(s"$moduleConfigurationPrefix.spray.api.version")
+
   def serviceHost: String =
     configuration.config.getString(s"$moduleConfigurationPrefix.spray.service.host")
 

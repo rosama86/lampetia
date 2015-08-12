@@ -7,7 +7,7 @@ import lampetia.security.model._
  */
 trait GroupService {
 
-  import lampetia.security.module.SecurityModule._
+  import lampetia.security.module.SecurityModule.sql._
 
   protected def insertGroup(group: Group): IO[Int] = {
     val m = GroupModel
@@ -50,13 +50,21 @@ trait GroupService {
       .read[Group]
   }*/
 
+  val findAllSql =
+    select(GroupModel.properties:_*)
+    .from(GroupModel.schemaPrefixed)
+    .limit("limit".?)
+    .sql
+
   def findAll(max: Int): IO[Seq[Group]] = {
-    val g = GroupModel
+    /*val g = GroupModel
     select(g.properties: _*)
       .from(g.schemaPrefixed)
       .limit(max.bind)
       .lifted
       .read[Group]
+    */
+    findAllSql.set("limit", max).read[Group]
   }
 
   def addMember(groupId: GroupId, memberId: UserId): IO[Int] = {

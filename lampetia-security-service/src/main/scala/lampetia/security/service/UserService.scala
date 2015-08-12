@@ -2,8 +2,7 @@ package lampetia.security.service
 
 import lampetia.model.Email
 import lampetia.security.model._
-import lampetia.security.module.SecurityModule
-//import lampetia.sql.dialect.postgresql.Postgresql._
+
 
 
 /**
@@ -12,7 +11,7 @@ import lampetia.security.module.SecurityModule
 
 trait UserService {
 
-  import SecurityModule._
+  import lampetia.security.module.SecurityModule.sql._
 
   protected def insertUser(user: User): IO[Int] = {
     val m = UserModel

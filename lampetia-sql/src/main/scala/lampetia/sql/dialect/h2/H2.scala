@@ -1,7 +1,8 @@
 package lampetia.sql.dialect.h2
 
+import lampetia.meta._
 import lampetia.model._
-import lampetia.model.sql.SqlTypes
+import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql.{SqlCodec, Ops, SqlIO}
 
 /**

@@ -11,7 +11,9 @@ import org.scalatest.{FlatSpec, Matchers}
  * @author Radwa Osama
  */
 class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-  implicit val ec = executionContext
+  import sql._
+
+  implicit val ec = configuration.concurrent.executionContext
 
   val service = new RoleService {}
 

@@ -2,7 +2,7 @@ package lampetia.security.service
 
 import java.util.UUID
 
-import lampetia.model.{Code, Email}
+import lampetia.model._
 import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule._
 import lampetia.test.LampetiaFutures
@@ -14,7 +14,9 @@ import play.api.libs.json.Json
  * @author Radwa Osama
  */
 class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-  implicit val ec = executionContext
+  import sql._
+
+  implicit val ec = configuration.concurrent.executionContext
 
   val service = new GroupService {}
   val userService = new UserService {}

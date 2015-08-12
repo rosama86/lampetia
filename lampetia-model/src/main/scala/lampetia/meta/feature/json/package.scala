@@ -1,4 +1,6 @@
-package lampetia.model
+package lampetia.meta.feature
+
+import lampetia.meta.{Property, Feature}
 
 /**
  * @author Hossam Karim

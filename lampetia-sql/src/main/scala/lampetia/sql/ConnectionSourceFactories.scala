@@ -85,7 +85,15 @@ trait ConnectionSourceFactories { self: JdbcIO =>
              password: String,
              maximumPoolSize: Int,
              leakDetectionThreshold: Int): ConnectionSource =
-    new HikariConnectionSourceFromDataSource(dataSourceClassName,serverName,portNumber,databaseName,user,password,maximumPoolSize,leakDetectionThreshold)
+    new HikariConnectionSourceFromDataSource(
+      dataSourceClassName,
+      serverName,
+      portNumber,
+      databaseName,
+      user,
+      password,
+      maximumPoolSize,
+      leakDetectionThreshold)
 
 
   def hikari(jdbcUrl: String,
@@ -93,6 +101,11 @@ trait ConnectionSourceFactories { self: JdbcIO =>
              password: String,
              maximumPoolSize: Int,
              leakDetectionThreshold: Int): ConnectionSource =
-    new HikariConnectionSourceFromJdbcUrl(jdbcUrl,user,password,maximumPoolSize,leakDetectionThreshold)
+    new HikariConnectionSourceFromJdbcUrl(
+      jdbcUrl,
+      user,
+      password,
+      maximumPoolSize,
+      leakDetectionThreshold)
 
 }

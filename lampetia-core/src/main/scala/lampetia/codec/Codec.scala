@@ -1,7 +1,5 @@
 package lampetia.codec
 
-import lampetia.model.{Model, Property}
-
 import scala.language.{higherKinds, implicitConversions}
 import play.api.libs.functional.syntax._
 import play.api.libs.functional._

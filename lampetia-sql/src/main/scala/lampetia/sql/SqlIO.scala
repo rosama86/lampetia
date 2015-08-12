@@ -1,7 +1,7 @@
 package lampetia.sql
 
 import lampetia.io.BackendIO
-import lampetia.model.Property
+import lampetia.meta.Property
 import lampetia.sql.ast._
 import org.slf4j.LoggerFactory
 

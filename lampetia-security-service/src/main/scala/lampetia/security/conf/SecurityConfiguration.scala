@@ -9,8 +9,6 @@ import scala.concurrent.ExecutionContext
 
 trait SecurityConfiguration extends Lifecycle { self: Configuration =>
 
-  lazy val executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
-
   lazy val schema: String =
     config.getString("lampetia.module.security.postgres.schema")
   lazy val pgJdbcDataSourceClassName: String =

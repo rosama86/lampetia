@@ -16,7 +16,9 @@ import play.api.libs.json.Json
 
 class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
 
-  implicit val ec = executionContext
+  import sql._
+
+  implicit val ec = configuration.concurrent.executionContext
 
   val service = new UserService {}
 

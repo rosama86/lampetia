@@ -13,9 +13,11 @@ import spray.httpx.PlayJsonSupport._
 
 trait GroupRoute extends HttpService {
 
-  import lampetia.security.module.SecurityModule._
+  import lampetia.security.module.SecurityModule
 
-  implicit val ec = executionContext
+  import SecurityModule.json._
+
+  implicit val ec = SecurityModule.configuration.concurrent.executionContext
 
   val groupService = new GroupService {}
 

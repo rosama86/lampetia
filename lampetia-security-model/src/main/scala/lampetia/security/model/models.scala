@@ -1,5 +1,7 @@
 package lampetia.security.model
 
+import lampetia.meta._
+import lampetia.meta.feature._
 import lampetia.model._
 import play.api.libs.json.JsValue
 import scala.util.{Success, Try}

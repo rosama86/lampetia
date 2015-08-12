@@ -1,8 +1,9 @@
 package lampetia.sql
 
 import lampetia.io.BackendIO
+import lampetia.meta.{Property, Model}
 import lampetia.model._
-import lampetia.model.sql._
+import lampetia.meta.feature.sql._
 import lampetia.sql.ast.{QueryNodeBuilder, Dsl, Operand, Operator}
 import lampetia.sql.dialect.Dialect
 

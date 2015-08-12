@@ -4,7 +4,7 @@ package lampetia.security.util
  * @author Hossam Karim
  */
 
-import lampetia.security.module.SecurityModule._
+import lampetia.security.module.SecurityModule.sql._
 
 trait DDL {
 
