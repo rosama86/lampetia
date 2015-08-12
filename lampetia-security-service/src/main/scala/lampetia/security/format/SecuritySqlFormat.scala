@@ -47,14 +47,14 @@ trait SecuritySqlFormat { self: JdbcCodec =>
   implicit lazy val producePasswordOption: Produce[Option[Password]] = a => produce(a.map(_.value))
 
   implicit lazy val consumeProviderResponse: Consume[ProviderResponse] =
-    consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(ProviderResponse)
+    consume[String].fmap(Json.parse).fmap(ProviderResponse)
   implicit lazy val produceProviderResponse: Produce[ProviderResponse] =
-    a => produce(a.value.stringify)
+    a => produce(Json.stringify(a.json))
 
   implicit lazy val consumeAccountDetails: Consume[AccountDetails] =
-    consume[String].fmap(json => PlayJson(Json.parse(json))).fmap(AccountDetails)
+    consume[String].fmap(Json.parse).fmap(AccountDetails)
   implicit lazy val produceAccountDetails: Produce[AccountDetails] =
-    a => produce(a.value.stringify)
+    a => produce(Json.stringify(a.json))
 
   implicit lazy val consumeProfileRef: Consume[ProfileRef] = consume[UserId].fmap(ProfileRef)
   implicit lazy val produceProfileRef: Produce[ProfileRef] = a => produce(a.userId)

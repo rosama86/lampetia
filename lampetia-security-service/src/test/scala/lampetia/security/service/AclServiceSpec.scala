@@ -262,7 +262,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         whenReady(acl, oneMinute) { result =>
           result.id.value shouldNot be(EMPTY)
 
-          val rp = service.rvokePermission(subject.subjectId, resource.resourceId, readPermission).run
+          val rp = service.revokePermission(subject.subjectId, resource.resourceId, readPermission).run
 
           whenReady(rp, oneMinute) { rpr =>
             rpr should be(1)
@@ -384,9 +384,9 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
     ProfileData(
       UsernamePasswordProvider,
       ProviderUserId(""),
-      ProviderResponse(PlayJson(Json.parse("[]"))),
+      ProviderResponse(Json.parse("[]")),
       Email(email),
       Some(Password("unsafe")),
-      AccountDetails(PlayJson(Json.parse("[]"))))
+      AccountDetails(Json.parse("[]")))
   }
 }

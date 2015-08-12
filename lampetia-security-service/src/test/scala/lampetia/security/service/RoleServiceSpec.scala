@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, Matchers}
 /**
  * @author Radwa Osama
  */
-class RoleServiceSpecs extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
+class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
   implicit val ec = executionContext
 
   val service = new RoleService {}

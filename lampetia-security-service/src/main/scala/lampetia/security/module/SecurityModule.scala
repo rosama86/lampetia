@@ -1,7 +1,7 @@
 package lampetia.security.module
 
 import lampetia.conf.Configuration
-import lampetia.security.format.SecuritySqlFormat
+import lampetia.security.format.{SecurityJsonFormat, SecuritySqlFormat}
 import lampetia.sql.dialect.postgresql.{PostgresqlConfiguration, Postgresql}
 import lampetia.security.conf.SecurityConfiguration
 import lampetia.security.model.SecurityModel
@@ -12,10 +12,11 @@ import lampetia.security.model.SecurityModel
 
 trait SecurityModule
   extends Configuration
-     with SecurityConfiguration
-     with Postgresql
-     with PostgresqlConfiguration
-     with SecurityModel
-     with SecuritySqlFormat
+    with SecurityConfiguration
+    with Postgresql
+    with PostgresqlConfiguration
+    with SecurityModel
+    with SecurityJsonFormat
+    with SecuritySqlFormat
 
 object SecurityModule extends SecurityModule

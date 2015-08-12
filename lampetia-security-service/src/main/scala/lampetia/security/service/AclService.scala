@@ -149,7 +149,7 @@ trait AclService {
       .transactionally
   }
 
-  def rvokePermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Int] = {
+  def revokePermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Int] = {
     val aclm = AclModel
     deleteFrom(aclm.schemaPrefixed)
       .where((aclm.data.subject.subjectId === subjectId.bind) and

@@ -2,8 +2,8 @@ package lampetia.security.spray.route
 
 import lampetia.security.service.GroupService
 import spray.routing.HttpService
-
 import scala.util.{Failure, Success}
+import spray.httpx.PlayJsonSupport._
 
 /**
  * @author Hossam Karim
@@ -26,7 +26,7 @@ trait GroupRoute extends HttpService {
     pathPrefix("group") {
       get {
         onComplete(getAll) {
-          case Success(v) => complete(v.map(g => g.id).mkString("[", ",", "]"))
+          case Success(v) => complete(v)
           case Failure(e) => failWith(e)
         }
       }

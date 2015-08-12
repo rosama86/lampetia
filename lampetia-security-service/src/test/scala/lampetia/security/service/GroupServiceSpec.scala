@@ -2,7 +2,7 @@ package lampetia.security.service
 
 import java.util.UUID
 
-import lampetia.model.{Code, Email, PlayJson}
+import lampetia.model.{Code, Email}
 import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule._
 import lampetia.test.LampetiaFutures
@@ -219,10 +219,10 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
     ProfileData(
       UsernamePasswordProvider,
       ProviderUserId(EMPTY),
-      ProviderResponse(PlayJson(Json.parse("[]"))),
+      ProviderResponse(Json.parse("[]")),
       Email(email),
       Some(Password("unsafe")),
-      AccountDetails(PlayJson(Json.parse("[]"))))
+      AccountDetails(Json.parse("[]")))
   }
 
 }

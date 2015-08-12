@@ -1,6 +1,7 @@
 package lampetia.security.model
 
 import lampetia.model._
+import play.api.libs.json.JsValue
 import scala.util.{Success, Try}
 
 case class SubjectId(value: String) extends AnyVal
@@ -53,8 +54,8 @@ object AuthenticationProvider {
 
 
 case class ProviderUserId(value: String) extends AnyVal
-case class ProviderResponse(value: JSON) extends AnyVal
-case class AccountDetails(value: JSON) extends AnyVal
+case class ProviderResponse(json: JsValue) extends AnyVal
+case class AccountDetails(json: JsValue) extends AnyVal
 case class ProfileId(value: String) extends AnyVal
 case class Password(value: String) extends AnyVal
 case class ProfileRef(userId: UserId)

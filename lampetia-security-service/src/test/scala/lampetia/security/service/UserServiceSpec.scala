@@ -26,10 +26,10 @@ class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
       ProfileData(
         UsernamePasswordProvider,
         ProviderUserId(""),
-        ProviderResponse(PlayJson(Json.parse("[]"))),
+        ProviderResponse(Json.parse("[]")),
         Email(email),
         Some(Password("unsafe")),
-        AccountDetails(PlayJson(Json.parse("[]"))))
+        AccountDetails(Json.parse("[]")))
     val user = service.createUser(profileData).run
     whenReady(user, oneMinute) { result =>
       result.id.value shouldNot be('empty)
@@ -42,10 +42,10 @@ class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
       ProfileData(
         UsernamePasswordProvider,
         ProviderUserId(""),
-        ProviderResponse(PlayJson(Json.parse("[]"))),
+        ProviderResponse(Json.parse("[]")),
         Email(email),
         Some(Password("unsafe")),
-        AccountDetails(PlayJson(Json.parse("[]"))))
+        AccountDetails(Json.parse("[]")))
     val actions = for {
       u <- service.createUser(profileData)
       p <- service.createUserProfile(u.id, profileData)
