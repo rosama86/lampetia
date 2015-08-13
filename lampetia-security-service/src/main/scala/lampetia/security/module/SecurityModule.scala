@@ -16,6 +16,7 @@ trait SecurityModule {
 
   object sql extends Postgresql with SecurityModel with SecuritySqlFormat {
     val schema = configuration.schema
+
     implicit lazy val context: sql.ConnectionSource = sql.hikari(
       configuration.pgJdbcDataSourceClassName,
       configuration.pgHost,

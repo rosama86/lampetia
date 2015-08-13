@@ -50,14 +50,22 @@ trait Postgresql
 
 trait PostgresqlConfiguration extends Lifecycle { self: Configuration =>
 
-  def pgJdbcDataSourceClassName: String
-  def pgHost: String
-  def pgPort: Int
-  def pgDatabase: String
-  def pgUser: String
-  def pgPassword: String
-  def pgMaximumPoolSize: Int
-  def pgLeakDetectionThreshold: Int
+  lazy val pgJdbcDataSourceClassName: String =
+    config.getString("lampetia.module.postgres.data-source-class-name")
+  lazy val pgHost: String =
+    config.getString("lampetia.module.postgres.host")
+  lazy val pgPort: Int =
+    config.getInt("lampetia.module.postgres.port")
+  lazy val pgDatabase: String =
+    config.getString("lampetia.module.postgres.database")
+  lazy val pgUser: String =
+    config.getString("lampetia.module.postgres.user")
+  lazy val pgPassword: String =
+    config.getString("lampetia.module.postgres.password")
+  lazy val pgMaximumPoolSize: Int =
+    config.getInt("lampetia.module.postgres.maximum-pool-size")
+  lazy val pgLeakDetectionThreshold: Int =
+    config.getInt("lampetia.module.postgres.leak-detection-threshold")
 
   def close(): Unit
 
