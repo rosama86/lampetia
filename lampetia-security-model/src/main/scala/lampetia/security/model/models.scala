@@ -294,7 +294,7 @@ trait SecurityModel {
       }
       object resource extends Composite[Resource] {
         val resourceId = property[ResourceId]("resourceId")
-        val resourceType = property[ResourceType]("resourceType")
+        val resourceType = property[ResourceUri]("resourceType")
         val properties = Seq(resourceId, resourceType)
       }
       object parentResource extends Composite[Option[Resource]] {
@@ -303,7 +303,7 @@ trait SecurityModel {
             .set(sql.optional)
             .set(sql.name("parent_resource_id"))
         val resourceType =
-          property[ResourceType]("resourceType")
+          property[ResourceUri]("resourceType")
             .set(sql.optional)
             .set(sql.name("parent_resource_type"))
         val properties = Seq(resourceId, resourceType)

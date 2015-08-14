@@ -84,15 +84,15 @@ trait SecuritySqlFormat { self: JdbcCodec =>
   implicit lazy val produceResourceId: Produce[ResourceId] = a => produce(a.value)
   implicit lazy val produceResourceIdOption: Produce[Option[ResourceId]] = a => produce(a.map(_.value))
 
-  implicit lazy val consumeResourceType: Consume[ResourceType] = consume[String].fmap(ResourceType)
-  implicit lazy val consumeResourceTypeOption: Consume[Option[ResourceType]] = consume[Option[String]].fmap(_.map(ResourceType))
-  implicit lazy val produceResourceType: Produce[ResourceType] = a => produce(a.value)
-  implicit lazy val produceResourceTypeOption: Produce[Option[ResourceType]] = a => produce(a.map(_.value))
+  implicit lazy val consumeResourceType: Consume[ResourceUri] = consume[String].fmap(ResourceUri)
+  implicit lazy val consumeResourceTypeOption: Consume[Option[ResourceUri]] = consume[Option[String]].fmap(_.map(ResourceUri))
+  implicit lazy val produceResourceType: Produce[ResourceUri] = a => produce(a.value)
+  implicit lazy val produceResourceTypeOption: Produce[Option[ResourceUri]] = a => produce(a.map(_.value))
 
-  implicit lazy val consumeResource: Consume[Resource] = (consume[ResourceId] ~ consume[ResourceType])(Resource)
+  implicit lazy val consumeResource: Consume[Resource] = (consume[ResourceId] ~ consume[ResourceUri])(Resource)
   implicit lazy val produceResource: Produce[Resource] = a => produce(a.resourceId) andThen produce(a.resourceType)
   implicit lazy val consumeResourceOption: Consume[Option[Resource]] =
-    (consume[Option[ResourceId]] ~ consume[Option[ResourceType]]) { (rido, rto) =>
+    (consume[Option[ResourceId]] ~ consume[Option[ResourceUri]]) { (rido, rto) =>
       for {
         rid <- rido
         rt <- rto
