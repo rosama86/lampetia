@@ -14,7 +14,7 @@ trait UUIDGenerator extends IdGenerator {
   def generateStringId: String = UUID.randomUUID.toString
 }
 
-trait JSON extends Any {
+/*trait JSON extends Any {
   def stringify: String
 }
 
@@ -28,7 +28,7 @@ trait JSONParser[T] {
 
 object JSON {
   def parse[T](json: String)(implicit parser: JSONParser[T]): JSON = parser.parse(json)
-}
+}*/
 
 
 

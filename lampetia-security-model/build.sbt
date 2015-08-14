@@ -1,4 +1,4 @@
-import io.github.lampetia.Common.Dependencies._
+import dependencies._
 
 name := "lampetia-security-model"
 
@@ -11,6 +11,6 @@ libraryDependencies ++= Seq(
   playFunctional,
   postgresql,
   h2,
-  hikari)
-
+  hikari,
+  scalaTest)
 

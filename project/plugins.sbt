@@ -5,6 +5,6 @@ resolvers += "Sonatype OSS Releases" at "https://oss.sonatype.org/service/local/
 
 resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.4")
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.8.4")
 
-
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.3")

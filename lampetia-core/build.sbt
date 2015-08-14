@@ -1,4 +1,4 @@
-import io.github.lampetia.Common.Dependencies._
+import dependencies._
 
 name := "lampetia-core"
 
@@ -13,5 +13,3 @@ libraryDependencies ++= Seq(
   postgresql,
   h2,
   hikari)
-
-

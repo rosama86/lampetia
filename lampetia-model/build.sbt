@@ -1,6 +1,5 @@
-import io.github.lampetia.Common.Dependencies._
+import dependencies._
+
 name := "lampetia-model"
 
 libraryDependencies ++= Seq(jodaConvert,jodaTime,playJson)
-
-
