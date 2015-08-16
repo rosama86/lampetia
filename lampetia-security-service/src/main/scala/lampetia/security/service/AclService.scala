@@ -1,7 +1,7 @@
 package lampetia.security.service
 
 import lampetia.meta.feature.sql.ModelFeatures
-import lampetia.model.{Resource, ResourceId}
+import lampetia.model.{ResourceUri, Resource, ResourceId}
 import lampetia.security.model._
 
 /**
@@ -14,23 +14,12 @@ trait AclService {
   protected def insertAcl(acl: Acl): IO[Int] = {
     val aclm = AclModel
 
-    val parentResourceCouples =
-      acl.data.parentResource match {
-        case None => Seq.empty[Couple[Resource]]
-        case Some(parentResource) =>
-          Seq(
-            aclm.data.parentResource.resourceId  := parentResource.resourceId.bind,
-            aclm.data.parentResource.resourceType := parentResource.resourceType.bind)
-      }
-
     val couples =
-      parentResourceCouples ++
       Seq(aclm.id := acl.id.bind,
         aclm.data.permission := acl.data.permission.bind.cast(Types.bit(32)),
         aclm.data.subject.subjectId := acl.data.subject.subjectId.bind,
         aclm.data.subject.subjectType := acl.data.subject.subjectType.bind,
-        aclm.data.resource.resourceId := acl.data.resource.resourceId.bind,
-        aclm.data.resource.resourceType := acl.data.resource.resourceType.bind)
+        aclm.data.resourceUri := acl.data.resourceUri.bind)
 
     aclm.insert(couples : _*)
   }
@@ -49,21 +38,20 @@ trait AclService {
       .map(_ => acl)
   }
 
-  def getAcl(subjectId: SubjectId, resource: Resource): IO[Option[AclId]] = {
+  def findOne(subjectId: SubjectId, resourceUri: ResourceUri): IO[Option[AclId]] = {
     val aclm = AclModel
     select(aclm.id)
       .from(aclm.schemaPrefixed)
       .where(
         aclm.data.subject.subjectId === subjectId.bind and
-          aclm.data.resource.resourceType === resource.resourceType.bind and
-          aclm.data.resource.resourceType === resource.resourceType.bind)
+          aclm.data.resourceUri === resourceUri.bind)
       .lifted
       .read[AclId]
       .map(_.headOption)
   }
 
-  def hasAcl(subjectId: SubjectId, resource: Resource): IO[Boolean] = {
-    getAcl(subjectId, resource)
+  def hasAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Boolean] = {
+    findOne(subjectId, resourceUri)
       .flatMap {
       case None => IO.pure(false)
       case _ => IO.pure(true)
@@ -71,7 +59,7 @@ trait AclService {
   }
 
   // adds roleId to subjectId on resourceId only if an Acl record already exists
-  def grant(subjectId: SubjectId, resource: Resource, roleId: RoleId): IO[Boolean] = {
+  def grant(subjectId: SubjectId, resourceUri: ResourceUri, roleId: RoleId): IO[Boolean] = {
     val aclrm = AclRoleModel
     val aclm = AclModel
 
@@ -80,19 +68,17 @@ trait AclService {
         .from(aclm.schemaPrefixed)
         .where(
           aclm.data.subject.subjectId === subjectId.bind and
-            aclm.data.resource.resourceId === resource.resourceId.bind and
-            aclm.data.resource.resourceType === resource.resourceType.bind)
+            aclm.data.resourceUri === resourceUri.bind)
     ).lifted.write.transactionally.map(_ => true)
   }
 
   // adds a permission to subjectId on resourceId only if ACL record already exists
-  def grant(subject: Subject, resource: Resource, permission: Permission): IO[Boolean] = {
+  def grant(subject: Subject, resourceUri: ResourceUri, permission: Permission): IO[Boolean] = {
     val aclm = AclModel
     val filter =
       aclm.data.subject.subjectId === subject.subjectId.bind and
         aclm.data.subject.subjectType === subject.subjectType.bind and
-        aclm.data.resource.resourceId === resource.resourceId.bind and
-        aclm.data.resource.resourceType === resource.resourceType.bind
+        aclm.data.resourceUri === resourceUri.bind
 
     select(aclm.properties: _*)
       .from(aclm.schemaPrefixed)
@@ -148,22 +134,24 @@ trait AclService {
       .transactionally
   }
 
-  def revokePermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Int] = {
+  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri, permission: Permission): IO[Int] = {
     val aclm = AclModel
     deleteFrom(aclm.schemaPrefixed)
-      .where((aclm.data.subject.subjectId === subjectId.bind) and
-      (aclm.data.resource.resourceId === resourceId.bind) and
-      (aclm.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32))))
+      .where(
+        (aclm.data.subject.subjectId === subjectId.bind) and
+        (aclm.data.resourceUri === resourceUri.bind) and
+        (aclm.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32)))
+      )
       .lifted
       .write
       .transactionally
   }
 
-  def revokePermission(subjectId: SubjectId, resourceId: ResourceId): IO[Int] = {
+  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri): IO[Int] = {
     val aclm = AclModel
     deleteFrom(aclm.schemaPrefixed)
       .where((aclm.data.subject.subjectId === subjectId.bind) and
-      (aclm.data.resource.resourceId === resourceId.bind))
+      (aclm.data.resourceUri === resourceUri.bind))
       .lifted
       .write
       .transactionally
@@ -171,6 +159,7 @@ trait AclService {
 
   def revokeAllPermissions(subjectId: SubjectId): IO[Int] = {
     val aclm = AclModel
+
     deleteFrom(aclm.schemaPrefixed)
       .where(aclm.data.subject.subjectId === subjectId.bind)
       .lifted

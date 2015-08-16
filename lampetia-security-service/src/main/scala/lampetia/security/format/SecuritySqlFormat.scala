@@ -137,9 +137,9 @@ trait SecuritySqlFormat { self: JdbcCodec =>
   implicit lazy val produceAclId: Produce[AclId] = a => produce(a.value)
 
   implicit lazy val consumeAclData: Consume[AclData] =
-    (consume[Subject] ~ consume[Resource] ~ consume[Option[Resource]] ~ consume[Permission])(AclData)
+    (consume[Subject] ~ consume[ResourceUri] ~ consume[Permission])(AclData)
   implicit lazy val produceAclData: Produce[AclData] =
-    a => produce(a.subject) andThen produce(a.resource) andThen produce(a.parentResource) andThen produce(a.permission)
+    a => produce(a.subject) andThen produce(a.resourceUri) andThen produce(a.permission)
 
   implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
   implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)

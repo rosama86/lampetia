@@ -3,6 +3,7 @@ package lampetia.security.sm
 import java.util.UUID
 
 import lampetia.model.{Code, ResourceUri}
+import lampetia.security.model._
 
 /**
  * @author Hossam Karim
@@ -53,48 +54,48 @@ object SecurityModelSpec extends App { self =>
   def acl(subject: Subject, uri: String, permission: Permission) =
     Acl(AclId(uuid), AclData(subject, ResourceUri(uri), permission))
 
-  val c1u1 = "c1u1".user
-  val c1u2 = "c1u2".user
-  val c1c2u0 = "c1c2u0".user
-  val c2u1 = "c2u1".user
-  val c2u2 = "c2u2".user
-  val c2u3 = "c2u3".user
-  val c2u4 = "c2u4".user
-  val c2u5 = "c2u5".user
+  val acmeUser1 = "c1u1".user
+  val acmeUser2 = "c1u2".user
+  val acmeNxtUser0 = "c1c2u0".user
+  val nxtUser1 = "c2u1".user
+  val nxtUser2 = "c2u2".user
+  val nxtUser3 = "c2u3".user
+  val nxtUser4 = "c2u4".user
+  val nxtUser5 = "c2u5".user
 
-  val users = Seq(c1u1, c1u2, c1c2u0, c2u1, c2u2, c2u3, c2u4)
+  val users = Seq(acmeUser1, acmeUser2, acmeNxtUser0, nxtUser1, nxtUser2, nxtUser3, nxtUser4)
 
-  val c1Group =
-    group(c1u2.id, None, "c1-group")
+  val acmeGroup =
+    group(acmeUser2.id, None, "acme-group")
   val nxtGroup =
-    group(c1u1.id, None, "nxt-group")
+    group(acmeUser1.id, None, "nxt-group")
   val nxtBoardGroup =
-    group(c1u1.id, Some(nxtGroup.id), "nxt-board-group")
+    group(acmeUser1.id, Some(nxtGroup.id), "nxt-board-group")
   val nxtTechGroup =
-    group(c2u1.id, Some(nxtGroup.id), "nxt-tech-group")
+    group(nxtUser1.id, Some(nxtGroup.id), "nxt-tech-group")
   val oracleConfGroup =
-    group(c2u1.id, Some(nxtGroup.id), "nxt-conference-group")
+    group(nxtUser1.id, Some(nxtGroup.id), "nxt-conference-group")
 
   val groups =
-    Seq(c1Group, nxtGroup, nxtBoardGroup, nxtTechGroup, oracleConfGroup)
+    Seq(acmeGroup, nxtGroup, nxtBoardGroup, nxtTechGroup, oracleConfGroup)
 
-  val metraGroupMembers =
-    Seq(c1u2, c1u1).map(u => groupMember(c1Group.id, u.subject.subjectId))
+  val acmeGroupMembers =
+    Seq(acmeUser2, acmeUser1).map(u => groupMember(acmeGroup.id, u.subject.subjectId))
 
   val nxtGroupMembers =
-    Seq(c2u4).map(u => groupMember(nxtGroup.id, u.subject.subjectId))
+    Seq(nxtUser4).map(u => groupMember(nxtGroup.id, u.subject.subjectId))
 
   val nxtBoardGroupMembers =
-    Seq(c1u2, c1u1, c1c2u0).map(u => groupMember(nxtBoardGroup.id, u.subject.subjectId))
+    Seq(acmeUser2, acmeUser1, acmeNxtUser0).map(u => groupMember(nxtBoardGroup.id, u.subject.subjectId))
 
   val nxtTechGroupMembers =
-    Seq(c2u1, c2u2, c2u3).map(u => groupMember(nxtTechGroup.id, u.subject.subjectId))
+    Seq(nxtUser1, nxtUser2, nxtUser3).map(u => groupMember(nxtTechGroup.id, u.subject.subjectId))
 
   val oracleConfGroupMembers =
-    Seq(c2u2, c2u3, c2u5).map(u => groupMember(oracleConfGroup.id, u.subject.subjectId))
+    Seq(nxtUser2, nxtUser3, nxtUser5).map(u => groupMember(oracleConfGroup.id, u.subject.subjectId))
 
   val groupMembers: Seq[GroupMember] =
-    metraGroupMembers ++ nxtGroupMembers ++ nxtBoardGroupMembers ++ nxtTechGroupMembers ++ oracleConfGroupMembers
+    acmeGroupMembers ++ nxtGroupMembers ++ nxtBoardGroupMembers ++ nxtTechGroupMembers ++ oracleConfGroupMembers
 
 
   def page(name: String) = Page(PageId(uuid), PageData(name))
@@ -109,8 +110,6 @@ object SecurityModelSpec extends App { self =>
     Document(DocumentId(uuid), DocumentRef(pageId), DocumentData(name))
 
 
-
-
   final val noPermission         = Permission( 0 )
   final val readPermission       = Permission( 1 << 0 )
   final val createPermission     = Permission( 1 << 1 )
@@ -123,7 +122,7 @@ object SecurityModelSpec extends App { self =>
 
   val homePage = page("User Home Page")
 
-  val metraPage = page("Metra Home Page")
+  val acmePage = page("ACME Home Page")
 
   val nxtPage = page("Nextechnology Home Page")
   val welcomeDocument = document(nxtPage.id, "Welcome Document")
@@ -134,8 +133,8 @@ object SecurityModelSpec extends App { self =>
   val oracleConferenceKeynontePresentation = presentation(oracleConference.id, "Keynote Presentation")
 
   val acls = Seq(
-    // [ACL-01] metraGroup CAN read and create metraPage
-    acl(c1Group.subject, metraPage.uri, readPermission | createPermission),
+    // [ACL-01] acmeGroup CAN read and create acmePage
+    acl(acmeGroup.subject, acmePage.uri, readPermission | createPermission),
     // [ACL-02] nxtTechGroup CAN create, read, update and delete ANY resource under oracleConference resource
     acl(nxtTechGroup.subject, s"${oracleConference.uri}/.*", crudPermission)
   )
@@ -161,12 +160,9 @@ object SecurityModelSpec extends App { self =>
       (lhs.subjectType == SubjectGroup &&
         isGroupMember(GroupId(lhs.subjectId.value), rhs.subjectId))
 
-  def uriMatches(permitted: ResourceUri, test: ResourceUri): Boolean = {
-    val permittedString = permitted.value
-    val testString = test.value
-    permittedString == testString || testString.matches(permittedString)
-  }
-  
+  def uriMatches(permitted: ResourceUri, test: ResourceUri) =
+    test.value.matches(permitted.value)
+
   def hasPermission(subject: Subject, resourceUri: ResourceUri, mask: Permission) =
     acls.exists { a =>
       subjectCompatible(a.data.subject, subject) &&
@@ -175,26 +171,22 @@ object SecurityModelSpec extends App { self =>
     }
   
 
-  //assert(isGroupMember(nxtTechGroup.id, hossam.subject.subjectId))
-  //assert(isGroupMember(nxtGroup.id, hossam.subject.subjectId))
-  //assert(isGroupMember(nxtBoardGroup.id, badr.subject.subjectId))
-  //assert(isGroupMember(nxtGroup.id, badr.subject.subjectId))
 
-  // c1u2 CAN read metraPage [ACL-01]
-  assert(hasPermission(c1u2.subject, metraPage.uri.resourceUri, readPermission))
+  // c1u2 CAN read acmePage [ACL-01]
+  assert(hasPermission(acmeUser2.subject, acmePage.uri.resourceUri, readPermission))
 
-  // c1u2 CAN create metraPage [ACL-01]
-  assert(hasPermission(c1u2.subject, metraPage.uri.resourceUri, createPermission))
+  // c1u2 CAN create acmePage [ACL-01]
+  assert(hasPermission(acmeUser2.subject, acmePage.uri.resourceUri, createPermission))
 
-  // c1u2 CANNOT update metraPage [ACL-01]
-  assert(!hasPermission(c1u2.subject, metraPage.uri.resourceUri, updatePermission))
+  // c1u2 CANNOT update acmePage [ACL-01]
+  assert(!hasPermission(acmeUser2.subject, acmePage.uri.resourceUri, updatePermission))
 
-  // c2u1 CANNOT read metraPage [ACL-01]
-  assert(!hasPermission(c2u1.subject, metraPage.uri.resourceUri, readPermission))
+  // c2u1 CANNOT read acmePage [ACL-01]
+  assert(!hasPermission(nxtUser1.subject, acmePage.uri.resourceUri, readPermission))
 
 
   // c2u1 CAN delete oracle conference keynote video, since he's in the nxtTechGroup [ACL-02]
-  assert(hasPermission(c2u1.subject, oracleConferenceKeynoteVideo.uri.resourceUri, deletePermission))
+  assert(hasPermission(nxtUser1.subject, oracleConferenceKeynoteVideo.uri.resourceUri, deletePermission))
 
 
 
