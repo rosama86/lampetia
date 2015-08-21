@@ -37,7 +37,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -61,7 +61,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -101,8 +101,8 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
           child.id.value shouldNot be(EMPTY)
 
           val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-          val resource = Resource(ResourceId(child.id.value), ResourceType("group"))
-          val parentResource = Resource(ResourceId(parent.id.value), ResourceType("group"))
+          val resource = Resource(ResourceId(child.id.value), ResourceUri("group"))
+          val parentResource = Resource(ResourceId(parent.id.value), ResourceUri("group"))
 
           val aclData = AclData(subject, resource, Some(parentResource), writePermission)
 
@@ -127,7 +127,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -162,7 +162,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -190,7 +190,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, writePermission)
 
@@ -228,7 +228,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -257,7 +257,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -286,7 +286,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -315,7 +315,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val aclData = AclData(subject, resource, None, readPermission)
 
@@ -344,7 +344,7 @@ class AclServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lampe
         group.id.value shouldNot be(EMPTY)
 
         val subject = Subject(SubjectId(owner.id.value), SubjectUser)
-        val resource = Resource(ResourceId(group.id.value), ResourceType("group"))
+        val resource = Resource(ResourceId(group.id.value), ResourceUri("group"))
 
         val nogrant = service.grant(subject, resource, writePermission).run
         whenReady(nogrant, oneMinute) { result =>

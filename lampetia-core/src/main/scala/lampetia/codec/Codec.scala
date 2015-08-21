@@ -16,6 +16,16 @@ trait Codec {
   type Consume[+A] = Reader => A
   type Produce[-A] = A => Writer => Writer
 
+  trait CodecType[A] {
+    def typeCode: Int
+  }
+
+  object CodecType {
+    def apply[A](tpe: Int): CodecType[A] = new CodecType[A] {
+      def typeCode = tpe
+    }
+  }
+
   implicit object ConsumeFunctor extends Functor[Consume] {
     def fmap[A, B](m: Consume[A], f: (A) => B): Consume[B] = u => f(m(u))
   }
@@ -37,13 +47,15 @@ trait Codec {
 }
 
 trait PrimitiveCodecs { self: Codec =>
-  
+
+  implicit def stringCodecType: CodecType[String]
   implicit def consumeString: Consume[String]
   implicit def produceString: Produce[String]
 
   implicit def consumeBoolean: Consume[Boolean]
   implicit def produceBoolean: Produce[Boolean]
 
+  implicit def intCodecType: CodecType[Int]
   implicit def consumeInt: Consume[Int]
   implicit def produceInt: Produce[Int]
 
@@ -52,4 +64,9 @@ trait PrimitiveCodecs { self: Codec =>
 
   implicit def consumeDouble: Consume[Double]
   implicit def produceDouble: Produce[Double]
+}
+
+trait OptionCodecs { self: Codec =>
+  implicit def consumeOption[A](implicit consume: Consume[A]): Consume[Option[A]]
+  implicit def produceOption[A](implicit produce: Produce[A], codecType: CodecType[A]): Produce[Option[A]]
 }

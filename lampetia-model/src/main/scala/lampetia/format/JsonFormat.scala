@@ -23,8 +23,8 @@ trait JsonFormat {
   implicit lazy val resourceIdJsonFormat: Format[ResourceId] =
     valueTypeFormat[ResourceId](ResourceId)(_.value)
 
-  implicit lazy val resourceTypeFormat: Format[ResourceType] =
-    valueTypeFormat[ResourceType](ResourceType)(_.value)
+  implicit lazy val resourceTypeFormat: Format[ResourceUri] =
+    valueTypeFormat[ResourceUri](ResourceUri)(_.value)
 
 
 
