@@ -25,18 +25,18 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
 
   it must "create a new ACL" in {
 
-    When("group owner creation starts ... ")
+    Given("a new group owner creation starts ... ")
     val cur = userService.createUser(testProfileData).run
     whenReady(cur, oneMinute) { owner =>
-      Then("generated group owner Id must not be empty")
+      And("the generated group owner Id is not empty")
       owner.id.value shouldNot be(EMPTY)
 
-      When("group creation starts ... ")
+      And("a new group creation starts ... ")
       def groupData = GroupData(code = Code(UUID.randomUUID.toString))
       val cgr = groupService.createGroup(groupRef(owner.id), groupData).run
 
       whenReady(cgr, oneMinute) { group =>
-        Then("generated group Id must not be empty")
+        And("the generated group Id is not empty")
         group.id.value shouldNot be(EMPTY)
 
         When("assigning group owner \"root\" permission on all group resources")
