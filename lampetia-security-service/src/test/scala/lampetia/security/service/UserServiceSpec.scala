@@ -1,56 +1,31 @@
 package lampetia.security.service
 
-import java.util.UUID
-
-import lampetia.model._
-import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule._
 import lampetia.test.LampetiaFutures
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import play.api.libs.json.Json
 
 /**
  * @author Hossam Karim
  */
 
-class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-
-  import sql._
+class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
   implicit val ec = configuration.concurrent.executionContext
 
   val service = new UserService {}
 
   it should "create user" in {
-    val email = s"${UUID.randomUUID.toString}@test.org"
-    def profileData =
-      ProfileData(
-        UsernamePasswordProvider,
-        ProviderUserId(""),
-        ProviderResponse(Json.parse("[]")),
-        Email(email),
-        Some(Password("unsafe")),
-        AccountDetails(Json.parse("[]")))
-    val user = service.createUser(profileData).run
+    val user = service.createUser(testProfileData).run
     whenReady(user, oneMinute) { result =>
       result.id.value shouldNot be('empty)
     }
   }
 
   it should "create user profile" in {
-    def email = s"${UUID.randomUUID.toString}@test.org"
-    def profileData =
-      ProfileData(
-        UsernamePasswordProvider,
-        ProviderUserId(""),
-        ProviderResponse(Json.parse("[]")),
-        Email(email),
-        Some(Password("unsafe")),
-        AccountDetails(Json.parse("[]")))
     val actions = for {
-      u <- service.createUser(profileData)
-      p <- service.createUserProfile(u.id, profileData)
+      u <- service.createUser(testProfileData)
+      p <- service.createUserProfile(u.id, testProfileData)
     } yield p
 
     val f = actions.transactionally.run
@@ -59,12 +34,5 @@ class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
       result.id.value shouldNot be('empty)
     }
   }
-
-
-
-
-
-
-
 
 }

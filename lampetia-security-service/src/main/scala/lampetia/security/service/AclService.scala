@@ -38,20 +38,81 @@ trait AclService {
       .map(_ => acl)
   }
 
-  def findOne(subjectId: SubjectId, resourceUri: ResourceUri): IO[Option[AclId]] = {
+  def findAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Option[AclId]] = {
     val aclm = AclModel
     select(aclm.id)
       .from(aclm.schemaPrefixed)
       .where(
         aclm.data.subject.subjectId === subjectId.bind and
-          aclm.data.resourceUri === resourceUri.bind)
+          aclm.data.resourceUri ~ resourceUri.bind)
       .lifted
       .read[AclId]
       .map(_.headOption)
   }
+  
+  def findAcl(id: AclId): IO[Option[Acl]] = {
+    val aclm = AclModel
+    select(aclm.properties: _*)
+      .from(aclm.schemaPrefixed)
+      .where(aclm.id === id.bind)
+      .lifted
+      .read[Acl]
+      .map(_.headOption)
+  }
 
-  def hasAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Boolean] = {
-    findOne(subjectId, resourceUri)
+  def findAll(max: Int): IO[Seq[Acl]] = {
+    val aclm = AclModel
+    select(aclm.properties: _*)
+      .from(aclm.schemaPrefixed)
+      .limit(max.bind)
+      .lifted
+      .read[Acl]
+  }
+
+  def revokePermission(aclId: AclId): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where(aclm.id === aclId.bind)
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri, permission: Permission): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where(
+        (aclm.data.subject.subjectId === subjectId.bind) and
+          (aclm.data.resourceUri === resourceUri.bind) and
+          (aclm.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32)))
+      )
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri): IO[Int] = {
+    val aclm = AclModel
+    deleteFrom(aclm.schemaPrefixed)
+      .where((aclm.data.subject.subjectId === subjectId.bind) and
+      (aclm.data.resourceUri === resourceUri.bind))
+      .lifted
+      .write
+      .transactionally
+  }
+
+  def revokeAllPermissions(subjectId: SubjectId): IO[Int] = {
+    val aclm = AclModel
+
+    deleteFrom(aclm.schemaPrefixed)
+      .where(aclm.data.subject.subjectId === subjectId.bind)
+      .lifted
+      .write
+      .transactionally
+  }
+
+  /*def hasAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Boolean] = {
+    findAcl(subjectId, resourceUri)
       .flatMap {
       case None => IO.pure(false)
       case _ => IO.pure(true)
@@ -95,25 +156,6 @@ trait AclService {
     }
   }
 
-  def findAclByAclId(id: AclId): IO[Option[Acl]] = {
-    val aclm = AclModel
-    select(aclm.properties: _*)
-      .from(aclm.schemaPrefixed)
-      .where(aclm.id === id.bind)
-      .lifted
-      .read[Acl]
-      .map(_.headOption)
-  }
-
-  def findAll(max: Int): IO[Seq[Acl]] = {
-    val aclm = AclModel
-    select(aclm.properties: _*)
-      .from(aclm.schemaPrefixed)
-      .limit(max.bind)
-      .lifted
-      .read[Acl]
-  }
-
   def hasPermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Boolean] = {
     select(
       function(hasPermissionFunctionName,
@@ -125,50 +167,8 @@ trait AclService {
       .map(_.head)
   }
 
-  def revokePermission(aclId: AclId): IO[Int] = {
-    val aclm = AclModel
-    deleteFrom(aclm.schemaPrefixed)
-      .where(aclm.id === aclId.bind)
-      .lifted
-      .write
-      .transactionally
-  }
-
-  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri, permission: Permission): IO[Int] = {
-    val aclm = AclModel
-    deleteFrom(aclm.schemaPrefixed)
-      .where(
-        (aclm.data.subject.subjectId === subjectId.bind) and
-        (aclm.data.resourceUri === resourceUri.bind) and
-        (aclm.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32)))
-      )
-      .lifted
-      .write
-      .transactionally
-  }
-
-  def revokePermission(subjectId: SubjectId, resourceUri: ResourceUri): IO[Int] = {
-    val aclm = AclModel
-    deleteFrom(aclm.schemaPrefixed)
-      .where((aclm.data.subject.subjectId === subjectId.bind) and
-      (aclm.data.resourceUri === resourceUri.bind))
-      .lifted
-      .write
-      .transactionally
-  }
-
-  def revokeAllPermissions(subjectId: SubjectId): IO[Int] = {
-    val aclm = AclModel
-
-    deleteFrom(aclm.schemaPrefixed)
-      .where(aclm.data.subject.subjectId === subjectId.bind)
-      .lifted
-      .write
-      .transactionally
-  }
-
   val hasPermissionFunctionName = AclModel.sqlSchema match {
     case Some(prefix) => prefix + "." + "has_permission"
     case None => "has_permission"
-  }
+  }*/
 }

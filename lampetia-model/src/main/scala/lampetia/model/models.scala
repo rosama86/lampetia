@@ -17,8 +17,9 @@ trait UUIDGenerator extends IdGenerator {
 case class ResourceId(value: String) extends AnyVal
 case class ResourceUri(value: String) extends AnyVal {
   def /(child: ResourceUri): ResourceUri = ResourceUri(s"$value/${child.value}")
+  def * = ResourceUri(s"$value/.*")
 }
-case class Resource(resourceId: ResourceId, resourceType: ResourceUri)
+case class Resource(resourceId: ResourceId, resourceUri: ResourceUri)
 
 case class Email(value: String) extends AnyVal
 case class Code(value: String) extends AnyVal
