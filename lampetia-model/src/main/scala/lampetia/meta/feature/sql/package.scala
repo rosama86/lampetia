@@ -63,6 +63,25 @@ package object sql {
   def uniqueIndex(property: Property[_], properties: Property[_]*): SqlIndex =
     SqlIndex(None, property +: properties, unique = true)
 
+  case class SqlFunction(name: String, schema: String)
+  def function(name: String)(schema: String): SqlFunction =
+    SqlFunction(name, schema)
+
+  implicit class SqlFunctionFeatures(val function: SqlFunction) extends AnyVal {
+
+    def sqlName: String = function.name
+
+    def sqlSchema: Option[String] =
+      function.schema == null || function.schema.isEmpty match {
+      case true => None
+      case false => Some(function.name)
+    }
+
+    def schemaPrefixed =   sqlSchema match {
+      case Some(schema) => s"$schema.$sqlName"
+      case None         => sqlName
+    }
+  }
 
   implicit class ModelFeatures[A](val model: Model[A]) extends AnyVal {
 
