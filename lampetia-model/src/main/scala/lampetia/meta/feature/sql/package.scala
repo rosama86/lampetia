@@ -74,7 +74,7 @@ package object sql {
     def sqlSchema: Option[String] =
       function.schema == null || function.schema.isEmpty match {
       case true => None
-      case false => Some(function.name)
+      case false => Some(function.schema)
     }
 
     def schemaPrefixed =   sqlSchema match {

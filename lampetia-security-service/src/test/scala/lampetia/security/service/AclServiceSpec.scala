@@ -35,17 +35,16 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
     }
   }
 
-  it should "find an existing ACL records for a subject on a resource" in {
-
-    When("finding a non existing ACL, it shouldn't be found")
+  it should "not find a non existing Acl for a subject on a resource" in {
     val nonExistingAcl =
       service.findAcl(SubjectId("acl.data.subject.subjectId"), ResourceUri("acl.data.resourceUri")).run
 
     whenReady(nonExistingAcl, oneMinute) { result =>
-      Then("it shouldn't be found")
       result should be(None)
     }
+  }
 
+  it should "find an existing ACL records for a subject on a resource" in {
     val findNewAcl =
       newAcl.flatMap {
         acl => service.findAcl(acl.data.subject.subjectId, acl.data.resourceUri)
@@ -53,30 +52,42 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
 
     When("finding an existing ACL, it shouldn't be found")
     whenReady(findNewAcl, oneMinute) { result =>
-      Then("it should be found")
       result shouldNot be(None)
     }
   }
 
-  it should "find ACL record by Id" in {
-
-    When("finding a non existing ACL, it shouldn't be found")
-    val nonExistingAcl = service.findAcl(AclId("non-existing-id")).run
-
+  it should "return false when checking a non existing ACL" in {
+    val nonExistingAcl =
+      service.hasAcl(SubjectId("acl.data.subject.subjectId"), ResourceUri("acl.data.resourceUri")).run
     whenReady(nonExistingAcl, oneMinute) { result =>
-      Then("it shouldn't be found")
+      result should be(right = false)
+    }
+  }
+
+  it should "return true when checking a non existing ACL" in {
+    val findNewAcl =
+      newAcl.flatMap {
+        acl => service.hasAcl(acl.data.subject.subjectId, acl.data.resourceUri)
+      }.run
+    whenReady(findNewAcl, oneMinute) { result =>
+      result should be(right = true)
+    }
+  }
+
+  it should "not find ACL record with non existing Id" in {
+    val nonExistingAcl = service.findAcl(AclId("non-existing-id")).run
+    whenReady(nonExistingAcl, oneMinute) { result =>
       result should be(None)
     }
+  }
 
+  it should "find ACL record by Id" in {
     val findNewAcl =
       newAcl.flatMap { acl => service.findAcl(acl.id)}.run
 
-    When("finding an existing ACL, it shouldn't be found")
     whenReady(findNewAcl, oneMinute) { result =>
-      Then("it should be found")
       result shouldNot be(None)
     }
-
   }
 
   it should "find all ACL" in {
@@ -85,9 +96,139 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
       newAcl.flatMap(_ => newAcl).flatMap(_ => service.findAll(10)).run
 
     whenReady(addMultipleAcls, oneMinute) { result =>
-      Then("at least 2 acls should be there")
-    //  result shouldNot be(Nil)
-   //   result.size should be > 2
+      result shouldNot be(Nil)
+      result.size should be > 2
+    }
+  }
+
+  it should "not add a role to a subject on a resource if no ACL records exist" in {
+    val grantRole =
+      service.grant(
+        SubjectId("invalidSubject"), ResourceUri("invalid-resource"), RoleId("invalid-role")).run
+
+    whenReady(grantRole, oneMinute) { result =>
+      result should be(right = false)
+    }
+  }
+
+  it should " add a role to a subject on a resource if ACL records exist" in {
+    val grantRole =
+      newAcl.
+        flatMap {
+        acl =>
+          roleService.createRole(RoleData(Code("test-role"), updatePermission))
+            .flatMap {
+            role =>
+              service.grant(acl.data.subject.subjectId, acl.data.resourceUri, role.id)
+          }
+      }.run
+
+    whenReady(grantRole, oneMinute) { result =>
+      result should be(right = true)
+    }
+  }
+
+  it should "not add permission to a subject on a resource if no ACL records exists" in {
+    val grantPermission =
+      service.grant(
+        SubjectId("invalidSubject"), ResourceUri("invalid-resource"), createPermission).run
+
+    whenReady(grantPermission, oneMinute) { result =>
+      result should be(right = false)
+    }
+  }
+
+  it should "add permission to a subject on a resource if ACL records exists" in {
+    val grantPermission =
+      newAcl.
+        flatMap {
+        acl =>
+          service.grant(acl.data.subject.subjectId, acl.data.resourceUri, createPermission)
+      }.run
+
+    whenReady(grantPermission, oneMinute) { result =>
+      result should be(right = true)
+    }
+  }
+
+  it should "have no permission by default" in {
+
+    whenReady(newAcl.run, oneMinute) { acl =>
+
+      val subjectId = acl.data.subject.subjectId
+      val resourceUri = acl.data.resourceUri
+
+      // it should have no permission
+      val noPermission =
+        service.hasPermission(subjectId,
+          resourceUri, readPermission | createPermission | updatePermission | deletePermission | rootPermission).run
+
+      whenReady(noPermission, oneMinute) { result =>
+        result should be (right = false)
+      }
+    }
+  }
+
+  it should "have only read permission inherited from ACL" in {
+
+    whenReady(newAcl.run, oneMinute) { acl =>
+
+      val subjectId = acl.data.subject.subjectId
+      val resourceUri = acl.data.resourceUri
+
+      whenReady(service.grant(subjectId, resourceUri, readPermission).run, oneMinute) { granted =>
+
+        // it should have no permission
+        val noPermission =
+          service.hasPermission(subjectId, resourceUri,
+            createPermission | updatePermission | deletePermission | rootPermission).run
+
+        whenReady(noPermission, oneMinute) { result =>
+          result should be (right = false)
+        }
+
+        // it should have read permission
+        val readPermissionR =
+          service.hasPermission(subjectId, resourceUri, readPermission).run
+
+        whenReady(readPermissionR, oneMinute) { result =>
+          result should be (right = true)
+        }
+      }
+    }
+  }
+
+  it should "have only read permission inherited from role" in {
+
+    whenReady(newAcl.run, oneMinute) { acl =>
+
+      val subjectId = acl.data.subject.subjectId
+      val resourceUri = acl.data.resourceUri
+
+      val addRole =
+      roleService.createRole(RoleData(Code("test-role"), readPermission)).flatMap {
+        role =>
+          service.grant(subjectId, resourceUri, role.id)
+      }.run
+
+      whenReady(addRole, oneMinute) { granted =>
+        // it should have no permission from:
+        val noPermission =
+          service.hasPermission(subjectId, resourceUri,
+            createPermission | updatePermission | deletePermission | rootPermission).run
+
+        whenReady(noPermission, oneMinute) { result =>
+          result should be(right = false)
+        }
+
+        // it should have read permission
+        val readPermissionR =
+          service.hasPermission(subjectId, resourceUri, readPermission).run
+
+        whenReady(readPermissionR, oneMinute) { result =>
+          result should be(right = true)
+        }
+      }
     }
   }
 
@@ -107,10 +248,6 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
     true should be(false)
   }
 
-  it should "have permission" in {
-    true should be(false)
-  }
-
   private def newAcl = {
     userService.createUser(testProfileData)
       .flatMap {
@@ -124,7 +261,7 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
         group.id.value shouldNot be(EMPTY)
         val subject = Subject(SubjectId(group.ref.owner.value), SubjectUser)
         val resource = Resource(ResourceId(group.id.value), ResourceUri("com.nxt.group"))
-        val aclData = AclData(subject, resource.resourceUri.*, rootPermission)
+        val aclData = AclData(subject, resource.resourceUri.*, noPermission)
         service.grant(aclData)
     }
   }

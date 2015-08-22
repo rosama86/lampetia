@@ -3,16 +3,12 @@ package lampetia.security.service
 import lampetia.model.ResourceUri
 import lampetia.security.model._
 
-import scala.language.implicitConversions
-
 /**
  * @author Radwa Osama
  */
 trait AclService {
 
   import lampetia.security.module.SecurityModule.sql._
-
-  implicit def permissionToAclPermission(permission: Permission): AclPermission = AclPermission(permission)
 
   protected def insertAcl(acl: Acl): IO[Int] = {
     val aclm = AclModel
@@ -41,6 +37,42 @@ trait AclService {
       .map(_ => acl)
   }
 
+  // adds roleId to subjectId on resourceId only if an Acl record already exists
+  def grant(subjectId: SubjectId, resourceUri: ResourceUri, roleId: RoleId): IO[Boolean] = {
+    val aclrm = AclRoleModel
+    val aclm = AclModel
+
+    insertInto(aclrm.schemaPrefixed).query(
+      select(aclm.id, roleId.bind)
+        .from(aclm.schemaPrefixed)
+        .where(
+          aclm.data.subject.subjectId === subjectId.bind and
+            aclm.data.resourceUri === resourceUri.bind)
+    ).lifted.write.transactionally.map(_ > 0)
+  }
+
+  // adds a permission to subjectId on resourceId only if ACL record already exists
+  def grant(subjectId: SubjectId, resourceUri: ResourceUri, permission: Permission): IO[Boolean] = {
+    val aclm = AclModel
+    val filter =
+      aclm.data.subject.subjectId === subjectId.bind and
+        aclm.data.resourceUri === resourceUri.bind
+
+    select(aclm.properties: _*)
+      .from(aclm.schemaPrefixed)
+      .where(filter)
+      .lifted
+      .read[Acl]
+      .flatMap {
+      case Nil => IO.pure(0)
+      case acl =>
+        aclm.update(aclm.data.permission :=
+          (permission | acl.head.data.permission).bind.cast(Types.bit(32)))(filter).transactionally
+    }.flatMap {
+      r => IO.pure(r > 0)
+    }
+  }
+
   def findAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Option[Acl]] = {
     val aclm = AclModel
     select(aclm.properties: _*)
@@ -61,6 +93,14 @@ trait AclService {
       .lifted
       .read[Acl]
       .map(_.headOption)
+  }
+
+  def hasAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Boolean] = {
+    findAcl(subjectId, resourceUri)
+      .flatMap {
+      case None => IO.pure(false)
+      case _ => IO.pure(true)
+    }
   }
 
   def findAll(max: Int): IO[Seq[Acl]] = {
@@ -140,69 +180,5 @@ trait AclService {
       .read[Boolean]
       .map(_.head)
   }
-
-  /*
-        def hasAcl(subjectId: SubjectId, resourceUri: ResourceUri): IO[Boolean] = {
-    findAcl(subjectId, resourceUri)
-      .flatMap {
-      case None => IO.pure(false)
-      case _ => IO.pure(true)
-    }
-  }
-  // adds roleId to subjectId on resourceId only if an Acl record already exists
-  def grant(subjectId: SubjectId, resourceUri: ResourceUri, roleId: RoleId): IO[Boolean] = {
-    val aclrm = AclRoleModel
-    val aclm = AclModel
-
-    insertInto(aclrm.schemaPrefixed).query(
-      select(aclm.id, roleId.bind)
-        .from(aclm.schemaPrefixed)
-        .where(
-          aclm.data.subject.subjectId === subjectId.bind and
-            aclm.data.resourceUri === resourceUri.bind)
-    ).lifted.write.transactionally.map(_ => true)
-  }
-
-  // adds a permission to subjectId on resourceId only if ACL record already exists
-  def grant(subject: Subject, resourceUri: ResourceUri, permission: Permission): IO[Boolean] = {
-    val aclm = AclModel
-    val filter =
-      aclm.data.subject.subjectId === subject.subjectId.bind and
-        aclm.data.subject.subjectType === subject.subjectType.bind and
-        aclm.data.resourceUri === resourceUri.bind
-
-    select(aclm.properties: _*)
-      .from(aclm.schemaPrefixed)
-      .where(filter)
-      .lifted
-      .read[Acl]
-      .flatMap {
-      case Nil => IO.pure(0)
-      case acl =>
-        aclm.update(aclm.data.permission :=
-          (permission | acl.head.data.permission).bind.cast(Types.bit(32)))(filter).transactionally
-    }.flatMap {
-      r => IO.pure(r > 0)
-    }
-  }
-
-  def hasPermission(subjectId: SubjectId, resourceId: ResourceId, permission: Permission): IO[Boolean] = {
-    select(
-      function(hasPermissionFunctionName,
-        subjectId.bind,
-        resourceId.bind,
-        permission.bind.cast(Types.bit(32))))
-      .lifted
-      .read[Boolean]
-      .map(_.head)
-  }
-*/
-
-
-  case class AclPermission(permission: Permission) {
-    def & = AclModel.data.permission & permission.bind.cast(Types.bit(32)) === permission.bind.cast(Types.bit(32))
-  }
-
-
 
 }
