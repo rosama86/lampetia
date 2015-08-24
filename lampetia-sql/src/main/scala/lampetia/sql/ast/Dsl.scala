@@ -15,6 +15,7 @@ trait Dsl {
   def surround(operand: Operand)(implicit b: SurroundNodeBuilder): SurroundNode = b(operand)
   def typeName(typeName: String)(implicit b: TypeNodeBuilder) = b(typeName)
   def select(operands: Operand*)(implicit qb: QueryNodeBuilder, sb: SelectNodeBuilder): qb.N = qb(Seq(sb(operands)))
+  def selectDistinct(operands: Operand*)(implicit qb: QueryNodeBuilder, sb: SelectNodeBuilder): qb.N = qb(Seq(sb(operands, true)))
 
   def not(operand: Operator)(implicit b: NotNodeBuilder): NotNode = b(operand)
   def insertInto(operand: Operand, columns: Operand*): InsertInto = InsertInto(operand, columns)
