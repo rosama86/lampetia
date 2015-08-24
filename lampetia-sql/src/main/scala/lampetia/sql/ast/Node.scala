@@ -191,7 +191,7 @@ trait SurroundNodeBuilder {
   def apply(operand: Operand): SurroundNode
 }
 
-trait SurroundNode {
+trait SurroundNode extends Operator {
   def operand: Operand
 }
 
@@ -300,13 +300,17 @@ case class DefaultQueryNode(operands: Seq[Operand]) extends QueryNode {
 }
 
 trait SelectNodeBuilder {
-  def apply(operands: Seq[Operand]): SelectNode
+  def apply(operands: Seq[Operand], distinct: Boolean = false): SelectNode
 }
 
 trait SelectNode extends DQLNode
-  
-case class DefaultSelectNode(operands: Seq[Operand]) extends SelectNode {
-  val sqlString: String = s"select ${operands.map(_.sqlString).mkString(",")}"
+
+case class DefaultSelectNode(operands: Seq[Operand], distinct: Boolean) extends SelectNode {
+  val sqlString: String =
+    if(distinct)
+      s"select distinct ${operands.map(_.sqlString).mkString(",")}"
+    else
+      s"select ${operands.map(_.sqlString).mkString(",")}"
 }
 
 trait FromNodeBuilder {

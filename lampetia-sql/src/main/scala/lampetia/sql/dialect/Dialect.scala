@@ -65,7 +65,7 @@ trait Dialect {
   }
 
   implicit lazy val SelectNodeBuilder: SelectNodeBuilder = new SelectNodeBuilder {
-    def apply(operands: Seq[Operand]): SelectNode = DefaultSelectNode(operands)
+    def apply(operands: Seq[Operand], distinct: Boolean = false): SelectNode = DefaultSelectNode(operands, distinct)
   }
   implicit lazy val FromNodeBuilder: FromNodeBuilder = new FromNodeBuilder {
     def apply(operands: Seq[Operand]): FromNode = DefaultFromNode(operands)
