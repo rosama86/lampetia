@@ -56,6 +56,7 @@ trait Dsl {
     def <=[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" <= ", value, other)
     def >[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" > ", value, other)
     def >=[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" >= ", value, other)
+    def in[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" in ", value, other, groupSecond = true)
     def isNull(implicit b: PostfixNodeBuilder): PostfixNode = b("is null", Seq(value))
     def isNotNull(implicit b: PostfixNodeBuilder): PostfixNode = b("is not null", Seq(value))
     def &[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" & ", value, other)

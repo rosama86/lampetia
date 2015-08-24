@@ -13,20 +13,15 @@ import play.api.libs.json.Json
 /**
  * @author Radwa Osama
  */
-class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-  import sql._
+class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
   implicit val ec = configuration.concurrent.executionContext
 
   val service = new GroupService {}
   val userService = new UserService {}
 
-  final val EMPTY = ""
-
-  def groupRef(ownerId: UserId, parentGroupId: Option[GroupId] = None): GroupRef = GroupRef(ownerId, parentGroupId)
-
   it should "create group" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -38,7 +33,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "create group with parent group" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -58,7 +53,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "find group By group Id" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -108,7 +103,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "add group member" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -116,7 +111,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       whenReady(g, oneMinute) { group =>
         group.id.value shouldNot be(EMPTY)
         // add new user
-        val u = userService.createUser(profileData).run
+        val u = userService.createUser(testProfileData).run
 
         whenReady(u, oneMinute) { user =>
 
@@ -134,7 +129,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "remove group member" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -142,7 +137,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       whenReady(g, oneMinute) { group =>
         group.id.value shouldNot be(EMPTY)
         // add new user
-        val u = userService.createUser(profileData).run
+        val u = userService.createUser(testProfileData).run
 
         whenReady(u, oneMinute) { user =>
           user.id.value shouldNot be(EMPTY)
@@ -167,7 +162,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }
 
   it should "remove group" in {
-    val u = userService.createUser(profileData).run
+    val u = userService.createUser(testProfileData).run
     whenReady(u, oneMinute) { owner =>
       def groupData =
         GroupData(code = Code(UUID.randomUUID.toString))
@@ -188,7 +183,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
 
 
     val p = for {
-      u <- userService.createUser(profileData)
+      u <- userService.createUser(testProfileData)
       parent <- service.createGroup(GroupRef(u.id, None), groupData)
       a1 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
       a11 <- service.createGroup(GroupRef(u.id, Some(a1.id)), groupData)
@@ -210,21 +205,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
 
     val f = p.transactionally.run
     whenReady(f, oneMinute) { groups =>
-      //groups.foreach(println)
-      //groups shouldNot be(Seq.empty[Group])
       groups.length should be(8)
     }
   }
-
-  def profileData = {
-    val email = s"${UUID.randomUUID.toString}@test.org"
-    ProfileData(
-      UsernamePasswordProvider,
-      ProviderUserId(EMPTY),
-      ProviderResponse(Json.parse("[]")),
-      Email(email),
-      Some(Password("unsafe")),
-      AccountDetails(Json.parse("[]")))
-  }
-
 }

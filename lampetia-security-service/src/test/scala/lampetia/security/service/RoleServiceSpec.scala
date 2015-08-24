@@ -10,8 +10,9 @@ import org.scalatest.{FlatSpec, Matchers}
 /**
  * @author Radwa Osama
  */
-class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures {
-  import sql._
+class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
+
+  import  sql._
 
   implicit val ec = configuration.concurrent.executionContext
 
@@ -19,7 +20,7 @@ class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
 
   it should "create a new role" in {
 
-    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = adminPermission)
+    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = rootPermission)
     val rIO = service.createRole(roleData).run
 
     whenReady(rIO, oneMinute) { role =>
@@ -29,7 +30,7 @@ class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
 
   it should "find a role by Id" in {
 
-    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = adminPermission)
+    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = rootPermission)
     val rIO = service.createRole(roleData).run
 
     whenReady(rIO, oneMinute) { role =>
@@ -52,7 +53,7 @@ class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
 
   it should "find all" in {
 
-    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = adminPermission)
+    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = rootPermission)
     val rIO = service.createRole(roleData).run
 
     whenReady(rIO, oneMinute) { role =>
@@ -71,7 +72,7 @@ class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lamp
 
   it should "remove role by Id" in {
 
-    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = adminPermission)
+    val roleData = RoleData(code = Code("TEST_ADMIN_PERM"), permission = rootPermission)
     val rIO = service.createRole(roleData).run
 
     whenReady(rIO, oneMinute) { role =>
