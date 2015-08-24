@@ -2,6 +2,7 @@ package lampetia.security.model
 
 import lampetia.meta._
 import lampetia.meta.feature._
+import lampetia.meta.feature.sql.SqlFunction
 import lampetia.model._
 import play.api.libs.json.JsValue
 import scala.util.{Success, Try}
@@ -128,6 +129,8 @@ case object NotAuthorized extends Exception("Principle not authorized to perform
 trait SecurityModel {
 
   def schema: String
+
+  def has_permission = new SqlFunction("has_permission", schema)
 
   implicit object UserModel
     extends Model[User]
@@ -310,7 +313,7 @@ trait SecurityModel {
   final val updatePermission     = Permission( 1 << 2 )
   final val deletePermission     = Permission( 1 << 3 )
 
-  final val rootPermission       = Permission( 1 << 31) // most significant bit
+  final val rootPermission       = Permission( (1 << 31) - 1) // most significant bit
 
 }
 

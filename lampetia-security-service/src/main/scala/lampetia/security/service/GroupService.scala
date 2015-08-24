@@ -50,11 +50,11 @@ trait GroupService {
       .read[Group]
   }*/
 
-  val findAllSql =
+/*  val findAllSql =
     select(GroupModel.properties:_*)
     .from(GroupModel.schemaPrefixed)
     .limit("limit".?)
-    .sql
+    .sql*/
 
   def findAll(max: Int): IO[Seq[Group]] = {
     /*val g = GroupModel
@@ -64,7 +64,8 @@ trait GroupService {
       .lifted
       .read[Group]
     */
-    findAllSql.set("limit", max).read[Group]
+    //findAllSql.set("limit", max).read[Group]
+    null
   }
 
   def addMember(groupId: GroupId, memberId: UserId): IO[Int] = {
