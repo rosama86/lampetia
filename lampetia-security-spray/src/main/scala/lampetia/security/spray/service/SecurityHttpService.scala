@@ -3,7 +3,7 @@ package lampetia.security.spray.service
 import akka.actor.{Props, ActorSystem}
 import akka.io.IO
 import lampetia.conf.Configuration
-import lampetia.security.spray.route.GroupRoute
+import lampetia.security.spray.route.{SecurityRoute, GroupRoute}
 import lampetia.spray.SprayConfiguration
 import spray.can.Http
 import spray.routing._
@@ -17,11 +17,15 @@ import SecurityModule._
 
 class SecurityHttpServiceActor(val conf: SprayConfiguration) extends HttpServiceActor {
 
+  val securityRoute = new SecurityRoute {
+    def actorRefFactory: ActorSystem = configuration.akka.defaultActorSystem
+  }
+
   val groupRoute = new GroupRoute {
     def actorRefFactory: ActorSystem = configuration.akka.defaultActorSystem
   }
 
-  def route: Route = groupRoute.groupRoute
+  def route: Route = securityRoute.validateRoute ~ groupRoute.groupRoute
 
   def apiRoute: Route =
     pathPrefix(conf.apiPrefix) {
