@@ -9,7 +9,7 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 /**
- * @auther rhelal
+ * @author rhelal
  */
 trait SecurityRoute extends HttpService with SecureRoute {
 

@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
- * @auther rhelal
+ * @author rhelal
  */
 trait SecureRoute extends HttpService {
 

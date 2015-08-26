@@ -1,7 +1,7 @@
 package lampetia.security.spray.route
 
 /**
- * @auther rhelal
+ * @author rhelal
  */
 class SecurityRouteSpec {
 

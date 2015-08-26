@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 import scala.util.Try
 
 /**
- * @auther rhelal
+ * @author rhelal
  */
 object Authenticator {
 
