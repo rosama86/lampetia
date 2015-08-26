@@ -3,6 +3,6 @@ package lampetia.security.spray.route
 /**
  * @auther rhelal
  */
-class SecureRouteSpec {
+class SecurityRouteSpec {
 
 }
