@@ -105,4 +105,31 @@ trait GroupService {
     .read[Group]
   }
 
+  def findMembers(parentGroupId: GroupId): IO[Seq[GroupMember]] = {
+    val g = GroupModel
+    val gm = GroupMemberModel
+    val recursiveGroup = 'rec_group
+
+    val columns = g.properties.map('g dot _)
+
+    val withQuery =
+      select(columns:_*)
+        .from(g.schemaPrefixed as 'g)
+        .where('g dot g.id === parentGroupId.bind)
+        .union(
+          select(columns:_*)
+            .from(g.schemaPrefixed as 'g, recursiveGroup)
+            .where(recursiveGroup dot 'id === 'g dot g.ref.parent))
+
+    val selection =
+      select(gm.ref.groupId, gm.ref.memberId)
+        .from(recursiveGroup
+                .innerJoin(gm.schemaPrefixed as 'gm)
+                .on (recursiveGroup dot g.id === 'gm dot gm.ref.groupId))
+
+    withRecursive(recursiveGroup, withQuery, selection)
+      .lifted
+      .read[GroupMember]
+  }
+
 }

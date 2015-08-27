@@ -201,4 +201,89 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       groups.length should be(8)
     }
   }
+
+
+  it should "find all members inside the group and its children by group" in {
+
+    def groupData = GroupData(Code(UUID.randomUUID.toString))
+
+
+    val p = for {
+      u <- userService.createUser(testProfileData)
+      parent <- service.createGroup(GroupRef(u.id, None), groupData)
+      _ <- service.addMember(parent.id, u.id)
+
+      a1 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      a1u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a1.id, a1u1.id)
+      a1u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a1.id, a1u2.id)
+
+      a11 <- service.createGroup(GroupRef(u.id, Some(a1.id)), groupData)
+      a11u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a11.id, a11u1.id)
+      a11u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a11.id, a11u2.id)
+
+      a12 <- service.createGroup(GroupRef(u.id, Some(a1.id)), groupData)
+      a12u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a12.id, a12u1.id)
+      a12u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a12.id, a12u2.id)
+
+      a2 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      a2u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a2.id, a2u1.id)
+      a2u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a2.id, a2u2.id)
+
+      a21 <- service.createGroup(GroupRef(u.id, Some(a2.id)), groupData)
+      a21u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a21.id, a21u1.id)
+      a21u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a21.id, a21u2.id)
+
+      a22 <- service.createGroup(GroupRef(u.id, Some(a2.id)), groupData)
+      a22u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a22.id, a22u1.id)
+      a22u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a22.id, a22u2.id)
+
+      a3 <- service.createGroup(GroupRef(u.id, Some(parent.id)), groupData)
+      a3u1 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a3.id, a3u1.id)
+      a3u2 <- userService.createUser(testProfileData)
+      _ <- service.addMember(a3.id, a3u2.id)
+
+      childrenMembers <- service.findMembers(parent.id)
+      _ <- service.removeMember(a11.id, a11u1.id)
+      _ <- service.removeMember(a11.id, a11u2.id)
+      _ <- service.removeGroup(a11.id)
+      _ <- service.removeMember(a12.id, a12u1.id)
+      _ <- service.removeMember(a12.id, a12u2.id)
+      _ <- service.removeGroup(a12.id)
+      _ <- service.removeMember(a1.id, a1u1.id)
+      _ <- service.removeMember(a1.id, a1u2.id)
+      _ <- service.removeGroup(a1.id)
+      _ <- service.removeMember(a21.id, a21u1.id)
+      _ <- service.removeMember(a21.id, a21u2.id)
+      _ <- service.removeGroup(a21.id)
+      _ <- service.removeMember(a22.id, a22u1.id)
+      _ <- service.removeMember(a22.id, a22u2.id)
+      _ <- service.removeGroup(a22.id)
+      _ <- service.removeMember(a2.id, a2u1.id)
+      _ <- service.removeMember(a2.id, a2u2.id)
+      _ <- service.removeGroup(a2.id)
+      _ <- service.removeMember(a3.id, a3u1.id)
+      _ <- service.removeMember(a3.id, a3u2.id)
+      _ <- service.removeGroup(a3.id)
+      _ <- service.removeMember(parent.id, u.id)
+      _ <- service.removeGroup(parent.id)
+    } yield childrenMembers
+
+    val f = p.transactionally.run
+    whenReady(f, oneMinute) { members =>
+      members.length should be(15)
+    }
+  }
 }

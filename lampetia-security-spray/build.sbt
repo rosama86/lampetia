@@ -21,4 +21,5 @@ libraryDependencies ++= Seq(
   akkaActor,
   sprayCan,
   sprayRoute,
-  scalaTest)
+  scalaTest,
+  sprayTest)
