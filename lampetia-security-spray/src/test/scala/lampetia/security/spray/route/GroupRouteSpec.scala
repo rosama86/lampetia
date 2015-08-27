@@ -172,7 +172,7 @@ class GroupRouteSpec extends FlatSpec with Matchers  with ScalaFutures with Scal
             groupMembers shouldNot be(Seq.empty[GroupMember])
             groupMembers.size should be(1)
             groupMembers.map(_.ref.groupId) should be(List(group.id))
-            //groupMembers.map(_.ref.memberId) should be(List(owner.id))
+            groupMembers.map(_.ref.memberId) should be(List(SubjectId(owner.id.value)))
           }
         }
       }
