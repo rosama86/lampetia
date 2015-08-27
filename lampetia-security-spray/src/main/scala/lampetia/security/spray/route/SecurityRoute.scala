@@ -19,14 +19,7 @@ trait SecurityRoute extends HttpService with SecureRoute {
   import spray.httpx.PlayJsonSupport._
 
   /*
-  POST      /group  --> create new group without parent
-  POST      /group/$id --> create new group with parent group of id = $id
-
-  GET       /group/$id --> find group by group id = $id
-  DELETE    /group/$id --> delete group by group id = $id
-
-  PUT       /group/$id/member/$id --> update group of first id to add member of second id on it
-  DELETE    /group/$id/member/$id --> update group of first id to remove member of second id on it
+  GET  /validate // secure, used for internal services to validate the tokens they have, like UI
 
    */
 

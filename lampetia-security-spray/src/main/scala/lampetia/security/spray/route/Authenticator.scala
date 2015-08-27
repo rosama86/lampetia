@@ -37,7 +37,4 @@ object Authenticator {
     Try(Jwts.parser().setSigningKey(key).parseClaimsJws(compactJwt).getBody.getSubject)
   }
 
-  def main(aregs: Array[String]): Unit =
-    println("token=" + Authenticator.compact("d0d60d34-1141-402a-8409-5dd295d50cf6"))
-
 }

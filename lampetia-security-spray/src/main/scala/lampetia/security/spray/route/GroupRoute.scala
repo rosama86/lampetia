@@ -18,13 +18,13 @@ trait GroupRoute extends HttpService with SecureRoute {
 
   /*
   POST      /group  --> create new group without parent
-  POST      /group/$id --> create new group with parent group of id = $id
+  POST      /group/$parentGroupId --> create new group with parent group of id = $parentGroupId
 
-  GET       /group/$id --> find group by group id = $id
-  DELETE    /group/$id --> delete group by group id = $id
+  GET       /group/$groupId --> find group by group id = $groupId
+  DELETE    /group/$groupId --> delete group by group id = $groupId
 
-  PUT       /group/$id/member/$id --> update group of first id to add member of second id on it
-  DELETE    /group/$id/member/$id --> update group of first id to remove member of second id on it
+  POST       /group/$groupId/member/$userId --> add member of $userId to group of $groupId
+  DELETE    /group/$groupId/member/$userId --> remove member of $userId from group of $groupId
 
    */
 
@@ -78,7 +78,7 @@ trait GroupRoute extends HttpService with SecureRoute {
             }
           } ~
           path(Segment / "member" / Segment) { (groupId, memberId) =>
-            put {
+            post {
               onComplete(groupService.addMember(GroupId(groupId), UserId(memberId)).run) {
                 case Success(0) => complete(StatusCodes.NotFound)
                 case Success(_) => complete(StatusCodes.Created)
