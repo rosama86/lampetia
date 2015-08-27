@@ -42,6 +42,16 @@ trait UserService {
      .map(_ => user)
   }
 
+  def findOne(id: UserId): IO[Option[User]] = {
+    val u = UserModel
+    select(u.properties: _*)
+      .from(u.schemaPrefixed)
+      .where(u.id === id.bind)
+      .lifted
+      .read[User]
+      .map(_.headOption)
+  }
+
   def createUserProfile(userId: UserId, data: ProfileData): IO[Profile] = {
     val p = ProfileModel
     val id = p.generate

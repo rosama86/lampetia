@@ -31,7 +31,7 @@ trait GroupService {
       .map(_ => group)
   }
 
-  def findGroupByGroupId(id: GroupId): IO[Option[Group]] = {
+  def findOne(id: GroupId): IO[Option[Group]] = {
     val g = GroupModel
     select(g.properties: _*)
       .from(g.schemaPrefixed)
@@ -39,33 +39,6 @@ trait GroupService {
       .lifted
       .read[Group]
       .map(_.headOption)
-  }
-
-  /*def findGroupByParentGroupId(id: GroupId): IO[Seq[Group]] = {
-    val g = GroupModel
-    select(g.properties: _*)
-      .from(g.schemaPrefixed)
-      .where(g.ref.parent === id.bind)
-      .lifted
-      .read[Group]
-  }*/
-
-/*  val findAllSql =
-    select(GroupModel.properties:_*)
-    .from(GroupModel.schemaPrefixed)
-    .limit("limit".?)
-    .sql*/
-
-  def findAll(max: Int): IO[Seq[Group]] = {
-    /*val g = GroupModel
-    select(g.properties: _*)
-      .from(g.schemaPrefixed)
-      .limit(max.bind)
-      .lifted
-      .read[Group]
-    */
-    //findAllSql.set("limit", max).read[Group]
-    null
   }
 
   def addMember(groupId: GroupId, memberId: UserId): IO[Int] = {

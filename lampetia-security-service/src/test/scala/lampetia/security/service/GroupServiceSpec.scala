@@ -60,7 +60,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
       val group = service.createGroup(groupRef(owner.id), groupData).run
       whenReady(group, oneMinute) { result =>
         result.id.value shouldNot be(EMPTY)
-        val selectedGroup = service.findGroupByGroupId(result.id).run
+        val selectedGroup = service.findOne(result.id).run
         whenReady(selectedGroup, oneMinute) { selection =>
           selection shouldNot be(None)
           selection.get.id should be(result.id)
@@ -96,7 +96,7 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
   }*/
 
   it should "try to find non-existing group By group Id" in {
-    val selectedGroup = service.findGroupByGroupId(GroupId("none")).run
+    val selectedGroup = service.findOne(GroupId("none")).run
     whenReady(selectedGroup, oneMinute) { selection =>
       selection should be(None)
     }
@@ -151,13 +151,6 @@ class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with Lam
           }
         }
       }
-    }
-  }
-
-  it should "find all" in {
-    val groups = service.findAll(10).run
-    whenReady(groups, oneMinute) { result =>
-      result.size should be >= 0
     }
   }
 
