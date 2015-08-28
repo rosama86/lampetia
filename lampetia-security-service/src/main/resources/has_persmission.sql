@@ -9,7 +9,7 @@ $$
                            resource_uri
                    FROM lampetia.security_acl acl
                    WHERE acl.subject_id = p_subject_id
-                     AND p_resource_uri ~ acl.resource_uri)
+                     AND acl.resource_uri ~ p_resource_uri)
                 SELECT id
                 FROM r ) ssgr ON ssg.id = ssgr.id
     LEFT OUTER JOIN lampetia.security_acl_role sgr ON ssg.id = sgr.acl_id
@@ -34,7 +34,7 @@ $$
                 SELECT r.id AS group_id
                 FROM r ) g ON acl.subject_type = 'SUBJECT_GROUP'
     AND acl.subject_id = g.group_id
-    AND p_resource_uri ~ acl.resource_uri
+    AND acl.resource_uri ~ p_resource_uri
     LEFT OUTER JOIN lampetia.security_acl_role sgr ON (acl.id = sgr.acl_id)
     LEFT OUTER JOIN lampetia.security_role sr ON (sr.id = sgr.role_id)
     WHERE (acl.permission | coalesce(sr.permission, 0::bit(32))) & (p_mask::bit(32)) = p_mask::bit(32)
