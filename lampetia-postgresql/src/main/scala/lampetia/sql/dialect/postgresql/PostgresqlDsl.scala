@@ -1,5 +1,6 @@
 package lampetia.sql.dialect.postgresql
 
+import lampetia.meta.Property
 import lampetia.sql.ast._
 import lampetia.sql.dialect.Dialect
 
@@ -59,6 +60,41 @@ trait PostgresqlDsl extends Dsl with Dialect {
   def `with`(alias: IdentifierNode, body: Operand, selection: Operand) = WithNode(alias, body, selection)
   def withRecursive(alias: IdentifierNode, body: Operand, selection: Operand) = WithNode(alias, body, selection, recursive = true)
 
+  trait PgOperandOps[V <: Operand] extends OperandOps[V] {
+
+    // Postgres pattern matching operators
+    // http://www.postgresql.org/docs/9.4/static/functions-matching.html
+    def similarTo[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" similar to ", value, other)
+    def ~[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" ~ ", value, other)
+    def ~*[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" ~* ", value, other)
+    def !~[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" !~ ", value, other)
+    def !~*[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" !~* ", value, other)
+  }
+
+  trait PgOperatorOps[V <: Operator] extends OperatorOps[Operator] with PgOperandOps[Operator]
+
+  trait SymbolsDsl extends PgOperandOps[Operand] {
+    def symbol: Symbol
+    def asIdentifier(implicit b: IdentifierNodeBuilder): IdentifierNode = b(symbol.name)
+    def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
+  }
+
+  implicit class Symbols(val symbol: Symbol) extends SymbolsDsl {
+    def value: Operand = asIdentifier
+  }
+
+  trait PropertyLifterDsl[A] extends PgOperandOps[Operand] {
+    def property: Property[A]
+    def asColumnIdentifier(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] = b[A](property)
+  }
+
+  implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
+    def value: Operand = asColumnIdentifier
+  }
+
+  implicit class OperandOpsEx[A <: Operand](val value: A) extends PgOperandOps[A]
+
+  implicit class OperatorOpsEx[A <: Operator](val value: A) extends PgOperatorOps[A]
 
   object Types {
     val date = DefaultTypeNode("date")

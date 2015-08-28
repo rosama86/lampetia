@@ -18,19 +18,19 @@ trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
 
   implicit class Integers(val value: Int) extends IntegersDsl
 
-  implicit class OperandOpsEx[A <: Operand](val value: A) extends OperandOps
+  //implicit class OperandOpsEx[A <: Operand](val value: A) extends OperandOps
 
-  implicit class OperatorOpsEx[A <: Operator](val value: A) extends OperatorOps
+  //implicit class OperatorOpsEx[A <: Operator](val value: A) extends OperatorOps
 
-  implicit class Symbols(val symbol: Symbol) extends SymbolsDsl {
+  /*implicit class Symbols(val symbol: Symbol) extends SymbolsDsl {
     def value: Operand = asIdentifier
-  }
+  }*/
 
   implicit class CoupleEx[A](val property: Property[A]) extends CoupleDsl[A]
 
-  implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
+  /*implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
     def value: Operand = asColumnIdentifier
-  }
+  }*/
 
   implicit class StringSqlImplicits(val sqlString: String) extends StringsSql
 

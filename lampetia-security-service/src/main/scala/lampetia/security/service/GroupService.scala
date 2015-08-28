@@ -31,7 +31,7 @@ trait GroupService {
       .map(_ => group)
   }
 
-  def findGroupByGroupId(id: GroupId): IO[Option[Group]] = {
+  def findOne(id: GroupId): IO[Option[Group]] = {
     val g = GroupModel
     select(g.properties: _*)
       .from(g.schemaPrefixed)
@@ -39,32 +39,6 @@ trait GroupService {
       .lifted
       .read[Group]
       .map(_.headOption)
-  }
-
-  /*def findGroupByParentGroupId(id: GroupId): IO[Seq[Group]] = {
-    val g = GroupModel
-    select(g.properties: _*)
-      .from(g.schemaPrefixed)
-      .where(g.ref.parent === id.bind)
-      .lifted
-      .read[Group]
-  }*/
-
-  val findAllSql =
-    select(GroupModel.properties:_*)
-    .from(GroupModel.schemaPrefixed)
-    .limit("limit".?)
-    .sql
-
-  def findAll(max: Int): IO[Seq[Group]] = {
-    /*val g = GroupModel
-    select(g.properties: _*)
-      .from(g.schemaPrefixed)
-      .limit(max.bind)
-      .lifted
-      .read[Group]
-    */
-    findAllSql.set("limit", max).read[Group]
   }
 
   def addMember(groupId: GroupId, memberId: UserId): IO[Int] = {
@@ -129,6 +103,33 @@ trait GroupService {
     withRecursive(recursiveGroup, withQuery, selection)
     .lifted
     .read[Group]
+  }
+
+  def findMembers(parentGroupId: GroupId): IO[Seq[GroupMember]] = {
+    val g = GroupModel
+    val gm = GroupMemberModel
+    val recursiveGroup = 'rec_group
+
+    val columns = g.properties.map('g dot _)
+
+    val withQuery =
+      select(columns:_*)
+        .from(g.schemaPrefixed as 'g)
+        .where('g dot g.id === parentGroupId.bind)
+        .union(
+          select(columns:_*)
+            .from(g.schemaPrefixed as 'g, recursiveGroup)
+            .where(recursiveGroup dot 'id === 'g dot g.ref.parent))
+
+    val selection =
+      select(gm.ref.groupId, gm.ref.memberId)
+        .from(recursiveGroup
+                .innerJoin(gm.schemaPrefixed as 'gm)
+                .on (recursiveGroup dot g.id === 'gm dot gm.ref.groupId))
+
+    withRecursive(recursiveGroup, withQuery, selection)
+      .lifted
+      .read[GroupMember]
   }
 
 }

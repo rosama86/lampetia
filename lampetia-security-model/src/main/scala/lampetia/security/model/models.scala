@@ -2,6 +2,7 @@ package lampetia.security.model
 
 import lampetia.meta._
 import lampetia.meta.feature._
+import lampetia.meta.feature.sql.SqlFunction
 import lampetia.model._
 import play.api.libs.json.JsValue
 import scala.util.{Success, Try}
@@ -62,12 +63,12 @@ case class ProfileId(value: String) extends AnyVal
 case class Password(value: String) extends AnyVal
 case class ProfileRef(userId: UserId)
 case class ProfileData(
-   provider: AuthenticationProvider,
-   providerUserId: ProviderUserId,
-   providerResponse: ProviderResponse,
-   email: Email,
-   password: Option[Password],
-   accountDetails: AccountDetails)
+                        provider: AuthenticationProvider,
+                        providerUserId: ProviderUserId,
+                        providerResponse: ProviderResponse,
+                        email: Email,
+                        password: Option[Password],
+                        accountDetails: AccountDetails)
 case class Profile(id: ProfileId, ref: ProfileRef, data: ProfileData)
 
 sealed trait SubjectType {
@@ -118,7 +119,7 @@ case class RoleData(code: Code, permission: Permission)
 case class Role(id: RoleId, data: RoleData)
 
 case class AclId(value: String) extends AnyVal
-case class AclData(subject: Subject, resource: Resource, parentResource: Option[Resource], permission: Permission)
+case class AclData(subject: Subject, resourceUri: ResourceUri, permission: Permission)
 case class Acl(id: AclId, data: AclData)
 case class AclRoleRef(aclId: AclId, roleId: RoleId)
 case class AclRole(ref: AclRoleRef) extends AnyVal
@@ -128,6 +129,8 @@ case object NotAuthorized extends Exception("Principle not authorized to perform
 trait SecurityModel {
 
   def schema: String
+
+  def has_permission = new SqlFunction("has_permission", schema)
 
   implicit object UserModel
     extends Model[User]
@@ -292,24 +295,9 @@ trait SecurityModel {
         val subjectType = property[SubjectType]("subjectType")
         val properties = Seq(subjectId, subjectType)
       }
-      object resource extends Composite[Resource] {
-        val resourceId = property[ResourceId]("resourceId")
-        val resourceType = property[ResourceType]("resourceType")
-        val properties = Seq(resourceId, resourceType)
-      }
-      object parentResource extends Composite[Option[Resource]] {
-        val resourceId =
-          property[ResourceId]("resourceId")
-            .set(sql.optional)
-            .set(sql.name("parent_resource_id"))
-        val resourceType =
-          property[ResourceType]("resourceType")
-            .set(sql.optional)
-            .set(sql.name("parent_resource_type"))
-        val properties = Seq(resourceId, resourceType)
-      }
+      val resourceUri = property[ResourceUri]("resourceUri")
       val permission = property[Permission]("permission").set(sql.`type`("bit(32)"))
-      val properties = subject.properties ++ resource.properties ++ parentResource.properties :+ permission
+      val properties = subject.properties :+ resourceUri :+ permission
     }
 
     override val features: Seq[Feature] = Seq(
@@ -320,12 +308,12 @@ trait SecurityModel {
   }
 
   final val noPermission         = Permission( 0 )
-  final val readPermission       = noPermission      | Permission( 1 << 0 )
-  final val writePermission      = readPermission    | Permission( 1 << 1 )
-  final val deletePermission     = writePermission   | Permission( 1 << 2 )
-  final val adminPermission      = deletePermission  | Permission( 1 << 3 )
+  final val createPermission     = Permission( 1 << 0 )
+  final val readPermission       = Permission( 1 << 1 )
+  final val updatePermission     = Permission( 1 << 2 )
+  final val deletePermission     = Permission( 1 << 3 )
 
-  final val rootPermission       = Permission( 1 << 31) // most significant bit
+  final val rootPermission       = Permission( (1 << 31) - 1) // most significant bit
 
 }
 

@@ -25,9 +25,10 @@ object Common {
   }
 
   object Resolvers {
+    val spray = "spray repo" at "http://repo.spray.io"
     val typesafe = "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
     val sonatype = Resolver.sonatypeRepo("releases")
-    val all = Seq(typesafe,sonatype)
+    val all = Seq(spray,typesafe,sonatype)
   }
 
   object Settings {
@@ -53,6 +54,7 @@ object Common {
     val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
     val scalaTest = "org.scalatest" % "scalatest_2.11" % scalaTestVersion % "test"
+    val sprayTest = "io.spray" % "spray-testkit_2.11" % sprayVersion % "test"
 
   }
 

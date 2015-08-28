@@ -18,15 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 trait JdbcCodec extends SqlCodec { self =>
 
-  trait JdbcSqlType[A] {
-    def sqlType: Int
-  }
 
-  object JdbcSqlType {
-    def apply[A](tpe: Int): JdbcSqlType[A] = new JdbcSqlType[A] {
-      def sqlType = tpe
-    }
-  }
 
   protected[sql] class MutableResultSetReader(rs: ResultSet) extends SqlReader {
 
@@ -130,14 +122,14 @@ trait JdbcCodec extends SqlCodec { self =>
   }
 
   implicit def consumeOption[A](implicit consume: Consume[A]): Consume[Option[A]] = consume andThen Option.apply
-  implicit def produceOption[A](implicit produce: Produce[A], sqlType: JdbcSqlType[A]): Produce[Option[A]] =
+  implicit def produceOption[A](implicit produce: Produce[A], codecType: CodecType[A]): Produce[Option[A]] =
     (option: Option[A]) => (sqlWriter: SqlWriter) => option match {
       case Some(value) => produce(value)(sqlWriter)
-      case None => sqlWriter.writeNull(sqlType.sqlType)
+      case None => sqlWriter.writeNull(codecType.typeCode)
     } 
 
-  implicit val stringSqlType: JdbcSqlType[String] = JdbcSqlType[String](java.sql.Types.VARCHAR)
-  implicit val intSqlType: JdbcSqlType[Int] = JdbcSqlType[Int](java.sql.Types.INTEGER)
+  implicit val stringCodecType: CodecType[String] = CodecType[String](java.sql.Types.VARCHAR)
+  implicit val intCodecType: CodecType[Int] = CodecType[Int](java.sql.Types.INTEGER)
 
 }
 

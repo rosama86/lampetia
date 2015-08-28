@@ -15,6 +15,7 @@ trait Dsl {
   def surround(operand: Operand)(implicit b: SurroundNodeBuilder): SurroundNode = b(operand)
   def typeName(typeName: String)(implicit b: TypeNodeBuilder) = b(typeName)
   def select(operands: Operand*)(implicit qb: QueryNodeBuilder, sb: SelectNodeBuilder): qb.N = qb(Seq(sb(operands)))
+  def selectDistinct(operands: Operand*)(implicit qb: QueryNodeBuilder, sb: SelectNodeBuilder): qb.N = qb(Seq(sb(operands, true)))
 
   def not(operand: Operator)(implicit b: NotNodeBuilder): NotNode = b(operand)
   def insertInto(operand: Operand, columns: Operand*): InsertInto = InsertInto(operand, columns)
@@ -40,8 +41,8 @@ trait Dsl {
   }
 
 
-  trait OperandOps extends Any {
-    def value: Operand
+  trait OperandOps[V <: Operand] extends Any {
+    def value: V
     def surround(implicit b: SurroundNodeBuilder): SurroundNode = b(value)
     def dot[B](other: B)(implicit c: B => Operand, b: InfixNodeBuilder): InfixNode = b(".", value, other)
     def as[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" as ", value, other)
@@ -55,6 +56,7 @@ trait Dsl {
     def <=[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" <= ", value, other)
     def >[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" > ", value, other)
     def >=[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" >= ", value, other)
+    def in[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" in ", value, other, groupSecond = true)
     def isNull(implicit b: PostfixNodeBuilder): PostfixNode = b("is null", Seq(value))
     def isNotNull(implicit b: PostfixNodeBuilder): PostfixNode = b("is not null", Seq(value))
     def &[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" & ", value, other)
@@ -76,21 +78,14 @@ trait Dsl {
     def between[B <: Operand, C <: Operand](b: B, c: C)(implicit bnb: BetweenNodeBuilder) = bnb(value, b, c)
   }
 
-  trait OperatorOps extends Any with OperandOps {
-    override def value: Operator
+  trait OperatorOps[V <: Operator] extends Any  { this: OperandOps[V] =>
+    def value: V
     def and[B](other: B)(implicit ev: B => Operator, b: AndNodeBuilder): AndNode = b(Seq(value, other))
     def or[B](other: B)(implicit ev: B => Operator, b: OrNodeBuilder): OrNode = b(Seq(value, other))
   }
 
 
   implicit def symbolIdentifier(value: Symbol)(implicit b: IdentifierNodeBuilder): IdentifierNode = b(value.name)
-
-  trait SymbolsDsl extends Any with OperandOps {
-    def symbol: Symbol
-    def asIdentifier(implicit b: IdentifierNodeBuilder): IdentifierNode = b(symbol.name)
-    def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
-  }
-
 
 
   implicit def liftModel[A](model: Model[A])(implicit b: TableIdentifierNodeBuilder): TableIdentifierNode[A] =
@@ -101,11 +96,5 @@ trait Dsl {
 
   implicit def liftProperties(properties: Seq[Property[_]])(implicit b: ColumnIdentifierNodeBuilder): Seq[ColumnIdentifierNode[_]] =
     properties.map(p => b(p))
-
-  trait PropertyLifterDsl[A] extends Any with OperandOps {
-    def property: Property[A]
-    def asColumnIdentifier(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] = b[A](property)
-  }
-
 
 }

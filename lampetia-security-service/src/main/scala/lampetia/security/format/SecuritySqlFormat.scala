@@ -1,17 +1,17 @@
 package lampetia.security.format
 
+import lampetia.codec.{OptionCodecs, PrimitiveCodecs, Codec}
 import lampetia.model._
 import lampetia.security.model._
-import lampetia.sql.JdbcCodec
 import play.api.libs.json.Json
 
 /**
  * @author Hossam Karim
  */
 
-trait SecuritySqlFormat { self: JdbcCodec =>
+trait SecuritySqlFormat { self: Codec with PrimitiveCodecs with OptionCodecs =>
 
-  implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String](consumeString).fmap(SubjectId)
+  implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)
 
   implicit lazy val consumeSubjectType: Consume[SubjectType] = consume[String].fmap(SubjectType.apply)
@@ -84,22 +84,22 @@ trait SecuritySqlFormat { self: JdbcCodec =>
   implicit lazy val produceResourceId: Produce[ResourceId] = a => produce(a.value)
   implicit lazy val produceResourceIdOption: Produce[Option[ResourceId]] = a => produce(a.map(_.value))
 
-  implicit lazy val consumeResourceType: Consume[ResourceType] = consume[String].fmap(ResourceType)
-  implicit lazy val consumeResourceTypeOption: Consume[Option[ResourceType]] = consume[Option[String]].fmap(_.map(ResourceType))
-  implicit lazy val produceResourceType: Produce[ResourceType] = a => produce(a.value)
-  implicit lazy val produceResourceTypeOption: Produce[Option[ResourceType]] = a => produce(a.map(_.value))
+  implicit lazy val consumeResourceType: Consume[ResourceUri] = consume[String].fmap(ResourceUri)
+  implicit lazy val consumeResourceTypeOption: Consume[Option[ResourceUri]] = consume[Option[String]].fmap(_.map(ResourceUri))
+  implicit lazy val produceResourceType: Produce[ResourceUri] = a => produce(a.value)
+  implicit lazy val produceResourceTypeOption: Produce[Option[ResourceUri]] = a => produce(a.map(_.value))
 
-  implicit lazy val consumeResource: Consume[Resource] = (consume[ResourceId] ~ consume[ResourceType])(Resource)
-  implicit lazy val produceResource: Produce[Resource] = a => produce(a.resourceId) andThen produce(a.resourceType)
+  implicit lazy val consumeResource: Consume[Resource] = (consume[ResourceId] ~ consume[ResourceUri])(Resource)
+  implicit lazy val produceResource: Produce[Resource] = a => produce(a.resourceId) andThen produce(a.resourceUri)
   implicit lazy val consumeResourceOption: Consume[Option[Resource]] =
-    (consume[Option[ResourceId]] ~ consume[Option[ResourceType]]) { (rido, rto) =>
+    (consume[Option[ResourceId]] ~ consume[Option[ResourceUri]]) { (rido, rto) =>
       for {
         rid <- rido
         rt <- rto
       } yield Resource(rid, rt)
     }
   implicit lazy val produceResourceOption: Produce[Option[Resource]] =
-    a => produce(a.map(_.resourceId)) andThen produce(a.map(_.resourceType))
+    a => produce(a.map(_.resourceId)) andThen produce(a.map(_.resourceUri))
 
   implicit lazy val consumePermission: Consume[Permission] = consume[String].fmap(r => Permission(Integer.parseUnsignedInt(r, 2)))
   implicit lazy val producePermission: Produce[Permission] = a => produce(a.code)
@@ -137,9 +137,9 @@ trait SecuritySqlFormat { self: JdbcCodec =>
   implicit lazy val produceAclId: Produce[AclId] = a => produce(a.value)
 
   implicit lazy val consumeAclData: Consume[AclData] =
-    (consume[Subject] ~ consume[Resource] ~ consume[Option[Resource]] ~ consume[Permission])(AclData)
+    (consume[Subject] ~ consume[ResourceUri] ~ consume[Permission])(AclData)
   implicit lazy val produceAclData: Produce[AclData] =
-    a => produce(a.subject) andThen produce(a.resource) andThen produce(a.parentResource) andThen produce(a.permission)
+    a => produce(a.subject) andThen produce(a.resourceUri) andThen produce(a.permission)
 
   implicit lazy val consumeAcl: Consume[Acl] = (consume[AclId] ~ consume[AclData])(Acl)
   implicit lazy val produceAcl: Produce[Acl] = a => produce(a.id) andThen produce(a.data)

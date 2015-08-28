@@ -13,6 +13,7 @@ fullRunTask(service, Runtime, bootable)
 fork in service := true
 
 libraryDependencies ++= Seq(
+  "io.jsonwebtoken" % "jjwt" % "0.5",
   ficus,
   jodaConvert,
   jodaTime,
@@ -20,4 +21,5 @@ libraryDependencies ++= Seq(
   akkaActor,
   sprayCan,
   sprayRoute,
-  scalaTest)
+  scalaTest,
+  sprayTest)
