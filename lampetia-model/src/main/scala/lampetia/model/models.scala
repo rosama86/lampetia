@@ -21,5 +21,9 @@ case class ResourceUri(value: String) extends AnyVal {
 }
 case class Resource(resourceId: ResourceId, resourceUri: ResourceUri)
 
+case class UriPattern(value: String) extends AnyVal {
+  def * = UriPattern(s"$value/.*")
+}
+
 case class Email(value: String) extends AnyVal
 case class Code(value: String) extends AnyVal

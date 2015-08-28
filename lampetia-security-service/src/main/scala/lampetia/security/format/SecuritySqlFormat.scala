@@ -89,6 +89,11 @@ trait SecuritySqlFormat { self: Codec with PrimitiveCodecs with OptionCodecs =>
   implicit lazy val produceResourceType: Produce[ResourceUri] = a => produce(a.value)
   implicit lazy val produceResourceTypeOption: Produce[Option[ResourceUri]] = a => produce(a.map(_.value))
 
+  implicit lazy val consumeUriPattern: Consume[UriPattern] = consume[String].fmap(UriPattern)
+  implicit lazy val consumeUriPatternOption: Consume[Option[UriPattern]] = consume[Option[String]].fmap(_.map(UriPattern))
+  implicit lazy val produceUriPattern: Produce[UriPattern] = a => produce(a.value)
+  implicit lazy val produceUriPatternOption: Produce[Option[UriPattern]] = a => produce(a.map(_.value))
+
   implicit lazy val consumeResource: Consume[Resource] = (consume[ResourceId] ~ consume[ResourceUri])(Resource)
   implicit lazy val produceResource: Produce[Resource] = a => produce(a.resourceId) andThen produce(a.resourceUri)
   implicit lazy val consumeResourceOption: Consume[Option[Resource]] =
