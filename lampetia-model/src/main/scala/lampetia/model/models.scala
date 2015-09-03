@@ -27,3 +27,9 @@ case class UriPattern(value: String) extends AnyVal {
 
 case class Email(value: String) extends AnyVal
 case class Code(value: String) extends AnyVal
+
+case class Name(value: String) extends AnyVal
+case class Title(value: String) extends AnyVal
+case class Url(value: String) extends AnyVal
+case class Locale(value:String) extends AnyVal
+case class Phone(value: String) extends AnyVal
