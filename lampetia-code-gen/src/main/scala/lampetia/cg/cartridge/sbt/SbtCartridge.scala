@@ -71,8 +71,7 @@ class DefaultSbtCartridge(val config: Config) extends SbtCartridge {
     val root = rootBuildTask(project)
     val buildProperties = buildPropertiesTask(project)
     val subProjects = project.subProjects.map(subProjectBuildTask)
-    //subProjects ++ Seq(plugins, common, root, buildProperties)
-    subProjects ++ Seq(root)
+    subProjects ++ Seq(plugins, common, root, buildProperties)
   }
 
 }

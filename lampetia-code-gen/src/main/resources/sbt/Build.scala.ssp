@@ -5,61 +5,58 @@
 <%@ val project: SbtProject %>
 <%@ val config: Config%>
 
-package lampetia.sbt
+package nxt
+
 import sbt.Keys._
 import sbt._
 import com.typesafe.sbt.SbtGit._
 import scala.Console._
-import com.typesafe.sbt.packager.archetypes.AkkaAppPackaging
-
 
 object Build extends sbt.Build {
+        val buildPrompt: State => String = { state =>
+        val prompt = GitCommand.prompt(state).trim
+        val regex = """(.*)\((.*)\)>""".r
+        prompt match {
+        case regex(pname, "master") =>
+                s"""$BLUE$pname $GREEN[master]$RESET $$ """
+        case regex(pname, bname) =>
+                s"""$BLUE$pname $YELLOW[$bname]$RESET $$ """
+        case pname =>
+                s"""$BLUE$pname$RESET $$ """
+}
 
-  val buildPrompt: State => String = { state =>
-    val prompt = GitCommand.prompt(state).trim
-    val regex = """(.*)\((.*)\)>""".r
-    prompt match {
-      case regex(pname, "master") =>
-        s"""$BLUE$pname $RED[master]$RESET $$ """
-      case regex(pname, "null") =>
-        s"""$BLUE$pname$RESET $$ """
-      case regex(pname, bname) =>
-        s"""$BLUE$pname $YELLOW[$bname]$RESET $$ """
-      case pname =>
-        s"""$BLUE$pname$RESET $$ """
-    }
-  }
+}
 
-  override lazy val settings = super.settings ++
-    Seq(
-      organization := Common.organization,
-      version := Common.version,
-      scalaVersion := Common.Versions.scalaVersion,
-      scalacOptions ++= Common.Settings.scalacOptions,
-      resolvers ++= Common.Resolvers.all,
-      shellPrompt := buildPrompt,
-      fork in Test := true,
-      publishArtifact in Test := true
-    )
+val dependencies = Common.Dependencies
 
-  #for (p <- project.subProjects)
+override lazy val settings = super.settings ++
+        Seq(
+                organization := Common.organization,
+                version := Common.version,
+                scalaVersion := Common.Versions.scalaVersion,
+                scalacOptions ++= Common.Settings.scalacOptions,
+                scalacOptions in Test ++= Seq("-Yrangepos"),
+                resolvers ++= Common.Resolvers.all,
+                shellPrompt := buildPrompt,
+                fork in Test := true)
+
+#for (p <- project.subProjects)
   lazy val `${p.name.lispCase}`=
-    Project("${p.name.lispCase}", file("${p.name.lispCase}"))
-    #if (p.dependencies.nonEmpty)
-      .dependsOn(${p.dependencies.map(_.name.lispCase.backqoute).mkString(",")})
-    #end
-    #if (p.plugins.nonEmpty)
-      .enablePlugins(${p.plugins.mkString(",")})
-    #end
+  Project("${p.name.lispCase}", file("${p.name.lispCase}"))
+  #if (p.dependencies.nonEmpty)
+    .dependsOn(${p.dependencies.map(_.name.lispCase.backqoute).mkString(",")})
   #end
+  #if (p.plugins.nonEmpty)
+    .enablePlugins(${p.plugins.mkString(",")})
+  #end
+#end
 
-  lazy val `${project.name.lispCase}` =
-    Project("${project.name.lispCase}", file("."))
-      #if (project.subProjects.nonEmpty)
-      .aggregate(
-        ${project.subProjects.map(_.name.lispCase.backqoute).mkString(",")}
-      )
-      #end
-
+lazy val `${project.name.lispCase}` =
+Project("${project.name.lispCase}", file("."))
+#if (project.subProjects.nonEmpty)
+  .aggregate(
+  ${project.subProjects.map(_.name.lispCase.backqoute).mkString(",")}
+  )
+#end
 
 }

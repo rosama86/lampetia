@@ -7,63 +7,73 @@
 <%@ val project: SbtProject %>
 <%@ val config: Config%>
 
-package lampetia.sbt
+package nxt
 
 import sbt._
 
 object Common {
 
-  val organization = "${config.as[String]("cg.template.sbt.default-organization")}"
-  val version = "${config.as[String]("cg.template.sbt.default-version")}"
+val organization = "${config.as[String]("cg.template.sbt.default-organization")}"
+val version = "${config.as[String]("cg.template.sbt.default-version")}"
 
-  object Versions {
+object Versions {
     val scalaVersion = "2.11.7"
-    val ficusVersion = "1.1.2"
-    val akkaVersion = "2.3.10"
+    val lampetiaVersion = "0.1-SNAPSHOT"
+    val jodaTimeVersion = "2.8"
+    val jodaConvertVersion = "1.7"
+    val ficusVersion = "1.1.1"
+    val shapelessVersion = "2.2.0"
+    val akkaVersion = "2.3.12"
     val sprayVersion = "1.3.3"
-    val slickVersion = "3.0.0"
-    val playVersion = "2.3.9"
+    val playVersion = "2.4.0"
     val logbackVersion = "1.1.3"
     val postgresqlJdbcVersion = "9.4-1201-jdbc41"
+    val mysqlJdbcVersion = "5.1.36"
+    val h2Version = "1.4.187"
     val hikariVersion = "2.3.7"
-    val rediscalaVersion = "1.4.1"
-    val specs2Version = "2.3.13"
-  }
+    val scalaTestVersion = "2.2.4"
+}
 
-  object Resolvers {
-    val typesafe = Resolver.typesafeRepo("releases")
+object Resolvers {
+    val spray = "spray repo" at "http://repo.spray.io"
+    val typesafe = "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
     val sonatype = Resolver.sonatypeRepo("releases")
-    val all = Seq(typesafe,sonatype)
-  }
+    val all = Seq(spray,typesafe,sonatype)
+}
 
-  object Settings {
+object Settings {
+    //val scalacOptions = Seq("-unchecked", "-deprecation", "-feature", "-Xlint")
     val scalacOptions = Seq("-unchecked", "-deprecation", "-feature")
-  }
+}
 
-  object Dependencies {
+object Dependencies {
     import Versions._
 
+    val lampetiaModel = "io.lampetia" %% "lampetia-model" % lampetiaVersion
+    val lampetiaCore = "io.lampetia" %% "lampetia-core" % lampetiaVersion
+    val lampetiaSql = "io.lampetia" %% "lampetia-postgresql" % lampetiaVersion
+    val lampetiaPostgresql = "io.lampetia" %% "lampetia-postgresql" % lampetiaVersion
+    val lampetiaMysql = "io.lampetia" %% "lampetia-mysql" % lampetiaVersion
+    val lampetiaSpray = "io.lampetia" %% "lampetia-spray" % lampetiaVersion
+    val lampetiaSecurityModel = "io.lampetia" %% "lampetia-security-model" % lampetiaVersion
+    val lampetiaSecurityService = "io.lampetia" %% "lampetia-security-service" % lampetiaVersion
+    val lampetiaSecuritySpray = "io.lampetia" %% "lampetia-security-spray" % lampetiaVersion
     val ficus = "net.ceedubs" %% "ficus" % ficusVersion
+    val jodaTime = "joda-time" % "joda-time" % jodaTimeVersion
+    val jodaConvert = "org.joda" % "joda-convert" % jodaConvertVersion
+    val shapeless = "com.chuusai" %% "shapeless" % shapelessVersion
     val logback = "ch.qos.logback" % "logback-classic" % logbackVersion
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
-    val akkaKernel = "com.typesafe.akka" % "akka-kernel_2.11" % akkaVersion
     val sprayCan = "io.spray" %% "spray-can" % sprayVersion
-    val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % sprayVersion
-    val slick = "com.typesafe.slick" %% "slick" % slickVersion
+    val sprayRoute = "io.spray" %% "spray-routing" % sprayVersion
+    val playFunctional = "com.typesafe.play" %% "play-functional" % playVersion
     val playJson = "com.typesafe.play" %% "play-json" % playVersion
     val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion
+    val mysql = "mysql" % "mysql-connector-java" % mysqlJdbcVersion
+    val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
-    val rediscala = "com.etaty.rediscala" %% "rediscala" % rediscalaVersion
-
-    val sprayTestkit = "io.spray" %% "spray-testkit" % sprayVersion % "test"
-    val sprayUtil = "io.spray" %% "spray-util" % sprayVersion % "test"
-    val specs2Core = "org.specs2" %% "specs2-core" % specs2Version % "test"
-
-    val serviceDependencies =
-      Seq(
-        ficus,logback,akkaKernel,akkaActor,sprayCan,sprayRouting,slick,playJson,postgresql,hikari,rediscala,
-        sprayTestkit,sprayUtil,specs2Core)
-
-  }
+    val scalaTest = "org.scalatest" % "scalatest_2.11" % scalaTestVersion % "test"
+    val sprayTest = "io.spray" % "spray-testkit_2.11" % sprayVersion % "test"
+}
 
 }
