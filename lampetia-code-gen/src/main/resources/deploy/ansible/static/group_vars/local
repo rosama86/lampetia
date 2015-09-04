@@ -1,0 +1,9 @@
+---
+
+remote:
+  user: vagrant
+  volume: /home/vagrant
+  locale: "en_US.UTF-8"
+  env: development
+
+ansible_ssh_user: vagrant

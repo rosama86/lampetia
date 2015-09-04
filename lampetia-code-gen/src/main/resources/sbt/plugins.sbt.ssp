@@ -1,0 +1,16 @@
+
+resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+
+resolvers += "Sonatype OSS Releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+
+resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
+
+resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.0-RC1")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.6.4")
+
+addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")

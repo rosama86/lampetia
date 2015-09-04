@@ -1,0 +1,67 @@
+---
+
+- name: postgres libpq-dev
+  apt: name=libpq-dev state=present
+
+- name: postgres python-dev
+  apt: name=python-dev state=present
+
+- name: postgres psycopg2
+  pip: name=psycopg2 state=present
+
+- name: create postgres SQL directory
+  command: mkdir -p /var/lib/postgresql/sql creates=/var/lib/postgresql/sql
+
+- name: postgres container development
+  docker:
+    image: "{{docker.postgres.image.name}}"
+    name: "{{docker.postgres.container.name}}"
+    state: running
+    detach: True
+    ports:
+      - "{{docker.postgres.host.port}}:{{docker.postgres.container.port}}"
+    env:
+      POSTGRES_PASSWORD: "{{docker.postgres.container.password}}"
+    volumes:
+      - /var/lib/postgresql/data:/var/lib/postgresql/data
+      - /var/lib/postgresql/sql:/var/lib/postgresql/sql
+  when: remote.env == "development"
+
+- name: postgres container production
+  docker:
+    image: "{{docker.postgres.image.name}}"
+    name: "{{docker.postgres.container.name}}"
+    state: running
+    detach: True
+    ports:
+      - "127.0.0.1:{{docker.postgres.host.port}}:{{docker.postgres.container.port}}"
+    env:
+      POSTGRES_PASSWORD: "{{docker.postgres.container.password}}"
+    volumes:
+      - /var/lib/postgresql/data:/var/lib/postgresql/data
+      - /var/lib/postgresql/sql:/var/lib/postgresql/sql
+  when: remote.env == "production"
+
+
+- name: postgres database
+  postgresql_db: name={{docker.postgres.db.name}}
+                 login_host=0.0.0.0
+                 login_user=postgres
+                 login_password={{docker.postgres.container.password}}
+
+- name: postgres user
+  postgresql_user: db={{docker.postgres.db.name}}
+                   login_host=0.0.0.0
+                   login_user=postgres
+                   login_password={{docker.postgres.container.password}}
+                   name={{docker.postgres.db.username}}
+                   password={{docker.postgres.db.password}}
+                   role_attr_flags=CREATEROLE,CREATEUSER,CREATEDB,INHERIT,LOGIN,REPLICATION
+                   state=present
+
+
+- name: generate security SQL DDL up file
+  template: src=security-up.sql.j2 dest=/var/lib/postgresql/sql/security-up.sql
+
+- name: generate security SQL DDL down file
+  template: src=security-down.sql.j2 dest=/var/lib/postgresql/sql/security-down.sql

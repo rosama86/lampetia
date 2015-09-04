@@ -1,0 +1,57 @@
+---
+
+- name: create security service directory
+  command: mkdir -p "{{docker.security.src}}" creates="{{docker.security.src}}"
+
+- name: generate Dockerfile for Java security service
+  template: src=Dockerfile-java.j2 dest="{{docker.security.src}}/Dockerfile"
+
+- name: create the Java image for security service
+  docker_image: path="{{docker.security.src}}/" name=java state=present
+
+
+- name: localbuilds
+  synchronize: src="localbuilds/security/" dest="{{docker.security.build}}/"
+
+- name: start up script
+  copy: src="localbuilds/start-service.sh" dest="{{docker.security.build}}/"
+
+- name: echo security service build dir
+  debug: msg="{{docker.security.build}}"
+
+- name: generate Dockerfile for security service
+  template: src="Dockerfile-security.j2"  dest="{{docker.security.build}}/Dockerfile"
+
+- name: remove the security service container
+  docker:
+    image: "{{docker.security.image.name}}"
+    name: "{{docker.security.container.name}}"
+    state: absent
+
+- name: remove the security service image if it exists
+  docker_image: name={{docker.security.image.name}} state=absent
+
+- name: create the security service image
+  docker_image: path="{{docker.security.build}}/" name={{docker.security.image.name}} state=present
+
+- name: deploy the service
+  docker:
+    image: "{{docker.security.image.name}}"
+    name: "{{docker.security.container.name}}"
+    state: reloaded
+    detach: True
+    links:
+      - postgres:postgres
+    env:
+      APP_NAME: "{{docker.security.package.name}}"
+      APP_VERSION: "{{docker.security.package.version}}"
+      APP_PKG: "{{docker.security.package.path}}/{{docker.security.package.name}}-{{docker.security.package.version}}.tgz"
+      POSTGRES_DB_NAME: "{{docker.postgres.db.name}}"
+      POSTGRES_USER: "{{docker.postgres.db.username}}"
+      POSTGRES_PASSWORD: "{{docker.postgres.db.password}}"
+      POSTGRES_SCHEMA: "{{docker.postgres.db.schema}}"
+      POSTGRES_SECURITY_SCHEMA: "{{docker.postgres.db.schema}}"
+
+- name: get service container ip
+  shell: "{{docker.cmd.ip}} {{docker.security.container.name}}"
+  register: security_ip

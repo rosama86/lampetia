@@ -1,0 +1,65 @@
+doctype html
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+head
+  meta(charset="utf-8")
+  meta(name="author" content="")
+  meta(name="keywords" content="")
+  meta(name="viewport" content="width=device-width,initial-scale=1")
+  title Generated App
+  script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular.min.js")
+  script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-aria.min.js")
+  script(src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.15/angular-route.min.js")
+  script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js")
+  script(src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js")
+  script(src="/js/app/app.js")
+  link(href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css", rel="stylesheet")
+body(ng-app='app')
+  .container
+    .row
+      br
+    .row
+      .col-sm-6
+        p.text-left
+#if(module.secure)
+          strong Welcome #{response.data.profiles[0].email}
+#else
+          strong Welcome
+#end
+#if(module.secure)
+      .col-sm-6
+        a.text-right(href="/logout")
+          p.text-right Logout
+#end
+    .row
+      .col-sm-12
+        #topmenu
+          ul.dropdown.clearfix.boxed
+            li
+              a(href="#/")
+                i.icon-menu
+                span Index
+#for(model <- metamodels.entityModels)
+            li
+              a(href="#/${model.modelName.lispCase}s")
+                i.icon-menu
+                span ${model.modelName}s
+#end
+    div(ng-view)
+#if(module.secure)
+  script.
+    var principle = {
+      token: '#{token}',
+      id: '#{response.id}',
+      email: '#{response.data.profiles[0].email}',
+      name: '#{response.data.profiles[0].fullName}'
+    };
+#end

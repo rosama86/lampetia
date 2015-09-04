@@ -22,6 +22,8 @@ object Common {
     val h2Version = "1.4.187"
     val hikariVersion = "2.3.7"
     val scalaTestVersion = "2.2.4"
+    val scalateVersion = "1.7.1"
+    val commonsioVersion = "1.4"
   }
 
   object Resolvers {
@@ -55,7 +57,8 @@ object Common {
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
     val scalaTest = "org.scalatest" % "scalatest_2.11" % scalaTestVersion % "test"
     val sprayTest = "io.spray" % "spray-testkit_2.11" % sprayVersion % "test"
-
+    val scalate = "org.scalatra.scalate" %% "scalate-core" % scalateVersion
+    val commonsio = "commons-io" % "commons-io" % commonsioVersion
   }
 
 }

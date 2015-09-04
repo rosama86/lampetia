@@ -1,0 +1,41 @@
+---
+- name: set machine locale
+  lineinfile: dest=/etc/environment line="LC_ALL=\"{{remote.locale}}\"" state=present
+
+- name: machine kernel options
+  lineinfile: dest=/etc/default/grub line='GRUB_CMDLINE_LINUX="cgroup_enable=memory swapaccount=1"' state=present
+  notify:
+    - update grub
+
+- name: copy vim dot files
+  # the ending '/' in the source is important
+  copy: src=dotvim/ dest="/home/{{remote.user}}/.vim" owner="{{remote.user}}"
+
+- name: copy bash files [bash_colors]
+  copy: src=bash/bash_colors dest="/home/{{remote.user}}/.bash_colors" owner="{{remote.user}}"
+
+- name: copy bash files [git-prompt]
+  copy: src=bash/git-prompt.sh dest="/home/{{remote.user}}/.git-prompt.sh" owner="{{remote.user}}"
+
+- name: copy bash files [bash_profile]
+  copy: src=bash/bash_profile dest="/home/{{remote.user}}/.bash_profile" owner="{{remote.user}}"
+
+- name: copy docker-ip utility
+  copy: src=bash/docker-ip dest=/usr/local/bin owner="{{remote.user}}" mode="u+rwx"
+
+- name: install python pip
+  easy_install: name=pip
+
+- name: install docker python client
+  pip: name=docker-py
+
+- name: add docker group
+  group: name=docker state=present
+
+- name: add current user to the docker group
+  user: name={{remote.user}} group=docker
+  notify:
+    - restart docker
+
+
+

@@ -1,0 +1,43 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.conf
+
+import lampetia.config.Configuration
+import lampetia.route.SprayConfiguration
+import lampetia.store.postgresql.PostgresqlConfiguration
+import lampetia.store.redis.RedisConfiguration
+import com.typesafe.config.{Config, ConfigFactory}
+import ${module.basePackage}.store.postgresql.Postgresql${module.name}Module
+
+object ${module.name}Configuration
+  extends Configuration
+  with PostgresqlConfiguration
+  with RedisConfiguration
+  with SprayConfiguration {
+
+  override def prefix = "${module.name.lispCase}"
+  override def config: Config = ConfigFactory.load()
+
+}
+
+object Default${module.name}Module extends Postgresql${module.name}Module { module =>
+
+  def configuration: Configuration = ${module.name}Configuration
+  def postgresqlConfiguration: PostgresqlConfiguration = ${module.name}Configuration
+  def sprayConfiguration: SprayConfiguration = ${module.name}Configuration
+  def redisConfiguration: RedisConfiguration = ${module.name}Configuration
+
+  def schema: String = postgresqlConfiguration.dbSchema
+  def securitySchema: String = postgresqlConfiguration.securityDbSchema
+  def applicationName: String = configuration.applicationName
+
+}

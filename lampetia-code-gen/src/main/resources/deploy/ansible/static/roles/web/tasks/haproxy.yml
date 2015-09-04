@@ -1,0 +1,25 @@
+---
+
+- name: create haproxy conf directory
+  command: mkdir -p /etc/haproxy creates=/etc/haproxy
+
+- name: generate haproxy conf file
+  template: src=haproxy.cfg.j2 dest=/etc/haproxy/haproxy.cfg
+
+- name: run haproxy container
+  docker:
+    image: "{{docker.haproxy.image.name}}"
+    name: "{{docker.haproxy.container.name}}"
+    state: restarted
+    detach: True
+    expose:
+      - "{{docker.haproxy.container.port}}"
+    links:
+      - "{{docker.service.container.name}}:{{docker.service.container.name}}"
+      - "{{docker.security.container.name}}:{{docker.security.container.name}}"
+    volumes:
+      - /etc/haproxy:/usr/local/etc/haproxy/
+
+- name: get haproxy container ip
+  shell: "{{docker.cmd.ip}} {{docker.haproxy.container.name}}"
+  register: haproxy_ip

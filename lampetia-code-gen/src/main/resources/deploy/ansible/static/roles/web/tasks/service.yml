@@ -1,0 +1,57 @@
+---
+
+- name: create service directory
+  command: mkdir -p "{{docker.service.src}}" creates="{{docker.service.src}}"
+
+- name: generate Dockerfile for Java services
+  template: src=Dockerfile-java.j2 dest="{{docker.service.src}}/Dockerfile"
+
+- name: create the Java image
+  docker_image: path="{{docker.service.src}}/" name=java state=present
+
+
+- name: localbuilds
+  synchronize: src="localbuilds/service/" dest="{{docker.service.build}}/"
+
+- name: start up script
+  copy: src="localbuilds/start-service.sh" dest="{{docker.service.build}}/"
+
+- name: echo service build dir
+  debug: msg="{{docker.service.build}}"
+
+- name: generate Dockerfile for demo service
+  template: src="Dockerfile-service.j2"  dest="{{docker.service.build}}/Dockerfile"
+
+- name: remove the service container
+  docker:
+    image: "{{docker.service.image.name}}"
+    name: "{{docker.service.container.name}}"
+    state: absent
+
+- name: remove the service image if it exists
+  docker_image: name={{docker.service.image.name}} state=absent
+
+- name: create the service image
+  docker_image: path="{{docker.service.build}}/" name={{docker.service.image.name}} state=present
+
+- name: deploy the service
+  docker:
+    image: "{{docker.service.image.name}}"
+    name: "{{docker.service.container.name}}"
+    state: reloaded
+    detach: True
+    links:
+      - postgres:postgres
+    env:
+      APP_NAME: "{{docker.service.package.name}}"
+      APP_VERSION: "{{docker.service.package.version}}"
+      APP_PKG: "{{docker.service.package.path}}/{{docker.service.package.name}}-{{docker.service.package.version}}.tgz"
+      POSTGRES_DB_NAME: "{{docker.postgres.db.name}}"
+      POSTGRES_USER: "{{docker.postgres.db.username}}"
+      POSTGRES_PASSWORD: "{{docker.postgres.db.password}}"
+      POSTGRES_SCHEMA: "{{docker.postgres.db.schema}}"
+      POSTGRES_SECURITY_SCHEMA: "{{docker.postgres.db.schema}}"
+
+- name: get service container ip
+  shell: "{{docker.cmd.ip}} {{docker.service.container.name}}"
+  register: service_ip

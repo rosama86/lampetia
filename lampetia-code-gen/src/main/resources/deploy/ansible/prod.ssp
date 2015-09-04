@@ -1,0 +1,15 @@
+#import(com.typesafe.config.Config)
+<%@ val config: Config%>
+website-host   ansible_ssh_host=${config.getString("cg.generator.deploy.ansible.prod.ip")}
+db-host        ansible_ssh_host=${config.getString("cg.generator.deploy.ansible.prod.ip")}
+
+[webservers]
+website-host
+
+[dbservers]
+db-host
+
+
+[remote:children]
+webservers
+dbservers

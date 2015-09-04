@@ -1,0 +1,95 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val model: Entity %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+package ${module.basePackage}.route
+
+import lampetia.model._
+import ${module.basePackage}.model._
+import ${module.basePackage}.conf.Default${module.name}Module._
+#if (module.secure)
+import lampetia.security.route.SecureRoute
+#end
+import spray.httpx.PlayJsonSupport
+import spray.http.StatusCodes
+import scala.util.{Success, Failure}
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+import ${i}
+#end
+
+#if (module.secure)
+trait ${model.modelName}Route extends StatefulRouteBuilder[${model.modelName}] with SecureRoute with SprayHttpService { self =>
+#else
+trait ${model.modelName}Route extends StatefulRouteBuilder[${model.modelName}] with SprayHttpService { self =>
+#end
+
+#{
+  val principle = if (module.secure) "withPrinciple userId" else ""
+  val acceptPrinciple = if (module.secure) "(userId: UserId)" else ""
+  val passPrinciple = if (module.secure) "(userId)" else ""
+}#
+
+  val statefulService = ${model.modelName.camelCase}Service
+
+  import ${module.name}Syntax._
+  import ${model.modelName}Ops._
+  import PlayJsonSupport._
+
+#if(module.enableTestingFeatures)
+  import lampetia.model.DateTimeInterval
+  import org.joda.time.DateTime
+  import scala.concurrent.Future
+#if(module.secure)
+  import lampetia.model.UserId
+#end
+
+  def mostRecent${acceptPrinciple}: Future[Seq[${model.modelName}]] =
+    statefulService.find(DateTimeInterval(new DateTime().minusDays(100), new DateTime().plusDays(100)) ${principle})
+
+  def getMostRecent${acceptPrinciple} =
+    get {
+      onComplete(mostRecent${passPrinciple}) {
+        case Success(instances)   => complete(instances)
+        case Failure(ex)          => failWith(ex)
+      }
+    }
+#end
+
+  val mainRoute =
+    pathPrefix("${model.modelName.lispCase}") {
+#if (module.secure)
+      secure { userId =>
+#end
+        pathEndOrSingleSlash {
+#if(module.enableTestingFeatures)
+          getMostRecent${passPrinciple} ~
+#end
+          post {
+            entity(as[${model.dataModelName}]) { data =>
+              onComplete(statefulService.insert(data ${principle})) {
+                case Success(instance) => complete(StatusCodes.Created, instance.resource)
+                case Failure(ex)       => postExceptionHandler(ex)
+              }
+            }
+          }
+        }  ~
+        path(idOf[${model.modelName}, ${model.idModelName}]) { id =>
+          pathEndOrSingleSlash {
+            getOne(id ${principle}) ~ deleteAll(id ${principle})
+          }
+        }
+      }
+#if (module.secure)
+    }
+#end
+
+}

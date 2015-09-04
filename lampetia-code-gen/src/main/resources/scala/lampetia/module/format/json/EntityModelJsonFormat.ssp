@@ -1,0 +1,67 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+<%@ val model: Entity %>
+#{
+  val modelVar = model.modelName.camelCase
+  val idVar = model.idModelName.camelCase
+  val dataVar = model.dataModelName.camelCase
+  val refVar = model.refModelName.camelCase
+}#
+
+#if (model.hasReferenceModel)
+  ${render("EntityPureReferenceModel.ssp", Map("model" -> model))}
+#end
+
+// Entity Data ${model.dataModelName} Reads
+#match (model.entityDataProperties.length)
+#case (1)
+  #{val p = model.entityDataProperties(0)}#
+  implicit lazy val ${dataVar}Reads: Reads[${model.dataModelName}] =
+  ${p.jsonReader(model)}.map(${model.dataModelName})
+#otherwise
+  implicit lazy val ${dataVar}Reads: Reads[${model.dataModelName}] = (
+  <%=model.entityDataProperties.jsonReaderProperties.map(_.jsonReader(model)).mkString(" and\n")%>
+  )(${model.dataModelName}.apply _)
+#end
+
+
+// Entity Data ${model.dataModelName} Writes
+implicit lazy val ${dataVar}Writes: TopLevelWrites[${model.dataModelName}] =
+new TopLevelWrites[${model.dataModelName}] {
+def obj(instance: ${model.dataModelName}): JsObject = Json.obj(
+<%=
+  model.entityDataProperties.jsonWriterProperties
+  .map(_.jsonWriter("instance", model))
+  .mkString(",\n")%>)
+}
+
+// Entity Model ${model.modelName} Reads
+implicit lazy val ${modelVar}Reads: Reads[${model.modelName}] =
+#if (model.hasReferenceModel)
+  (${idVar}Reads and ${refVar}Reads and ${dataVar}Reads and timestampReads)(${model.modelName}.apply _)
+#else
+  (${idVar}Reads and ${dataVar}Reads and timestampReads)(${model.modelName}.apply _)
+#end
+
+// Entity Model ${model.modelName} Writes
+implicit lazy val ${modelVar}Writes: TopLevelWrites[${model.modelName}] =
+new TopLevelWrites[${model.modelName}] {
+def obj(instance: ${model.modelName}): JsObject =
+#if (model.hasReferenceModel)
+  Json.obj("id" -> instance.id) ++
+  ${refVar}Writes.obj(instance.ref) ++
+  ${dataVar}Writes.obj(instance.data) ++
+  timestampWrites.obj(instance.timestamp)
+#else
+  Json.obj("id" -> instance.id) ++ ${dataVar}Writes.obj(instance.data) ++ timestampWrites.obj(instance.timestamp)
+#end
+}

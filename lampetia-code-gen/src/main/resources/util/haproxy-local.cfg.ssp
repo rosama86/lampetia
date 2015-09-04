@@ -1,0 +1,41 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+defaults
+  maxconn  4000
+  retries  3
+  timeout  connect 5s
+  timeout  client  1m
+  timeout  server  1m
+  balance  roundrobin
+
+backend security-service
+  mode http
+  server security-service      127.0.0.1:${config.getString("cg.generator.security-service.spray.port")}
+
+backend ${module.name.lispCase}-service
+  mode http
+  server ${module.name.lispCase}-service            127.0.0.1:${config.getString("cg.generator.service.spray.port")}
+
+backend ${module.name.lispCase}-web
+  mode http
+  server ${module.name.lispCase}-web              127.0.0.1:${config.getString("cg.generator.node.service.port")}
+
+frontend ${module.name.lispCase}
+  mode http
+  bind *:80
+
+  acl is-security-api   path_dir      /api/s/
+  acl is-api            path_dir      /api/
+
+  use_backend security-service       if is-security-api
+  use_backend ${module.name.lispCase}-service             if is-api
+
+  use_backend ${module.name.lispCase}-web

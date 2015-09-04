@@ -1,0 +1,12 @@
+---
+
+- include: service.yml
+
+- include: security.yml
+
+- include: haproxy.yml
+
+- include: node.yml
+
+- include: nginx.yml
+

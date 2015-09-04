@@ -1,0 +1,19 @@
+export CLICOLOR=1
+LS_COLORS='di=1:fi=0:ln=31'
+source ~/.profile
+source ~/.git-prompt.sh
+source ~/.bash_colors
+PATH_C=$Black"\w "
+GIT_C=$BRed
+HOST_NAME=$(hostname)
+HOST_IP=$(ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://')
+PROMPT_C=$White"⏣ ["$HOST_IP":"$HOST_NAME"]"
+CLEAR_C="\[\033[00m\]"
+export PS1=$PROMPT_C$PATH_C$GIT_C'$(__git_ps1 "[%s] ")'$CLEAR_C
+
+docker-ip() {
+  docker inspect --format '{{ .NetworkSettings.IPAddress }}' "$@"
+}
+
+
+

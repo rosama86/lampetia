@@ -1,0 +1,106 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+mod = angular.module 'app', ['ngRoute', 'ngAria']
+
+#if(module.secure)
+mod.factory 'authInterceptor', ($rootScope, $q, $window) ->
+  request: (config) ->
+    config.headers = config.headers or {}
+    #console.log "Requested: #{config.url}"
+    token = principle.token
+    config.headers.Authorization = 'Bearer ' + token if (token)
+    config
+
+  response: (res) ->
+    #console.log "Interceptor"
+    res || $q.when(res)
+
+  responseError: (rejection) ->
+    #console.log 'Rejected'
+    #console.log JSON.stringify rejection
+    if (rejection.status == 0 or rejection.status == 401)
+      $window.location.href = '/login'
+    $q.reject(rejection)
+
+mod.config ($httpProvider) ->
+  $httpProvider.interceptors.push('authInterceptor')
+
+#end
+
+mod.service 'AppService', [
+  '$http'
+  ($http) ->
+#for(model <- metamodels.entityModels)
+
+    get${model.modelName}s: ->
+      $http.get "/api/${model.modelName.lispCase}"
+
+    get${model.modelName}: (id) ->
+      $http.get "/api/${model.modelName.lispCase}/#{id}"
+
+    post${model.modelName}: (data) ->
+      $http.post "/api/${model.modelName.lispCase}", data
+
+    delete${model.modelName}: (id) ->
+      $http.delete "/api/${model.modelName.lispCase}/#{id}"
+
+#end
+]
+
+#for(model <- metamodels.entityModels)
+${model.modelName}sController = ($scope, AppService) ->
+
+  init = ->
+    AppService.get${model.modelName}s()
+    .success (data, status, headers, config) ->
+      $scope.model = data or []
+    .error (data, status, headers, config) ->
+      $scope.model = []
+
+  init()
+
+
+${model.modelName}Controller = ($scope, $routeParams, AppService) ->
+
+  init = ->
+    AppService.get${model.modelName}($routeParams.id)
+    .success (data, status, headers, config) ->
+      $scope.${model.modelName.camelCase} = data or {}
+    .error (data, status, headers, config) ->
+      $scope.${model.modelName.camelCase} = {}
+
+  init()
+
+#end
+
+
+
+#for(model <- metamodels.entityModels)
+${model.modelName}sController.$inject = ['$scope', 'AppService']
+${model.modelName}Controller.$inject = ['$scope', 'AppService']
+#end
+
+mod.config [
+  '$routeProvider'
+  ($routeProvider) ->
+    $routeProvider
+#for(model <- metamodels.entityModels)
+    .when '/${model.modelName.lispCase}s',
+      templateUrl: '/template/${model.modelName.lispCase}s'
+      controller: ${model.modelName}sController
+    .when '/${model.modelName.lispCase}s/:id',
+      templateUrl: '/template/${model.modelName.lispCase}'
+      controller: ${model.modelName}Controller
+#end
+    return
+]
+

@@ -1,0 +1,26 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module %>
+<%@ val config: Config %>
+<%@ val model: Model %>
+<%@ val properties: Seq[RefProperty] %>
+<%@ val refVar: String %>
+<%@ val refModelName: String %>
+
+#match (properties.length)
+#case (1)
+  #{val p = properties(0)}#
+  implicit lazy val ${refVar}Reads: Reads[${refModelName}] =
+  ${p.jsonReader(model)}.map(${refModelName})
+#otherwise
+  implicit lazy val ${refVar}Reads: Reads[${refModelName}] = (
+  <%=properties.jsonReaderProperties.map(_.jsonReader(model)).mkString(" and\n")%>
+  )(${refModelName}.apply _)
+#end

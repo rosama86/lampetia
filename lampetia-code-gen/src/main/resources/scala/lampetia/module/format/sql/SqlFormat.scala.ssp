@@ -1,0 +1,238 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.format.sql
+
+import ${module.basePackage}.model._
+import ${module.basePackage}.format.json.${module.name}JsonFormat._
+import lampetia.format.sql._
+import lampetia.format.sql.PostgresqlTypes._
+import play.api.libs.json._
+import lampetia.model._
+import org.joda.time.DateTime
+import ExtendedPostgresDriver.api._
+import slick.jdbc.{SetParameter, GetResult}
+import scala.util.{Try, Success}
+import org.slf4j.LoggerFactory
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+trait ${module.name}SqlFormat extends SqlFormat with BaseUserSqlFormat {
+
+  //private lazy val logger = LoggerFactory.getLogger(classOf[${module.name}SqlFormat])
+
+#for (model <- metamodels.valueModels)
+  #{val pname = model.valueProperty.propertyName}#
+  // Value ${model.modelName} Mapping
+  implicit val ${model.modelName.camelCase}Mapping: BaseColumnType[${model.modelName}] =
+    MappedColumnType.base[${model.modelName}, ${model.valueProperty.tpe.modelName}](_.${pname}, ${model.modelName})
+
+  // Value ${model.modelName} GetResult
+  implicit val ${model.modelName.camelCase}GetResult: GetResult[${model.modelName}] =
+  GetResult[${model.modelName}](r => ${model.modelName}(r.<<[${model.valueProperty.tpe.modelName}]))
+  // Value ${model.modelName} SetParameter
+  implicit val ${model.modelName.camelCase}SetParameter: SetParameter[${model.modelName}] =
+  SetParameter[${model.modelName}]((${model.modelName.camelCase}, pp) => pp.set${model.valueProperty.tpe.modelName}(${model.modelName.camelCase}.${pname}))
+
+#end
+
+#for (model <- metamodels.idModels)
+  // Id Model ${model.modelName} of Entity ${model.entity.modelName} Mapping
+  implicit val ${model.modelName.camelCase}Mapping: BaseColumnType[${model.modelName}] =
+    MappedColumnType.base[${model.modelName}, String](_.value, ${model.modelName})
+
+  // Id Model ${model.modelName} of Entity ${model.entity.modelName} SetParameter
+  implicit val ${model.modelName.camelCase}SetParameter: SetParameter[${model.modelName}] =
+    SetParameter[${model.modelName}]((${model.modelName.camelCase}, pp) => pp.setString(${model.modelName.camelCase}.value))
+
+  // Id Model ${model.modelName} of Entity ${model.entity.modelName} GetResult
+  implicit val ${model.modelName.camelCase}GetResult: GetResult[${model.modelName}] =
+    GetResult[${model.modelName}](r => ${model.modelName}(r.<<[String]))
+  implicit val ${model.modelName.camelCase}OptionGetResult: GetResult[Option[${model.modelName}]] =
+    GetResult[Option[${model.modelName}]](r => r.<<?[String].map(${model.modelName}))
+
+#end
+
+#for (model <- metamodels.enumModels)
+  #{
+    val tpeName = model.discriminator.tpe.literalTypeName
+    val pName = model.discriminator.propertyName
+  }#
+  // Enum ${model.modelName} Mapping
+  implicit val ${model.modelName.camelCase}Mapping: BaseColumnType[${model.modelName}] =
+    MappedColumnType.base[${model.modelName}, ${tpeName}](
+      instance => instance.${pName},
+      value => ${model.modelName}.from${tpeName}(value)
+    )
+
+  // Enum ${model.modelName} SetParameter
+  implicit val ${model.modelName.camelCase}SetParameter: SetParameter[${model.modelName}] =
+    SetParameter[${model.modelName}]((instance, pp) => pp.set${tpeName}(instance.${pName}))
+
+  // Enum ${model.modelName} GetResult
+  implicit val ${model.modelName.camelCase}GetResult: GetResult[${model.modelName}] =
+    GetResult[${model.modelName}](r => ${model.modelName}.from${tpeName}(r.<<[${tpeName}]))
+#end
+
+#for (model <- metamodels.compositeModels)
+  #if (model.needsSqlJsonMapper)
+  ${model.sqlJsonMapper}
+  #else
+
+  // Composite ${model.modelName} GetResult
+  implicit val ${model.modelName.camelCase}GetResult = GetResult[${model.modelName}] { r =>
+    ${model.modelName}(
+    #{val ps = model.properties.map(p => s"${p.propertyName} = r.<<[${p.typeName}]").mkString(",\n")}#
+    ${ps}
+  )
+  }
+  #end
+#end
+
+#for (model <- metamodels.entityModels)
+  // Record representation of Entity ${model.modelName}
+  case class ${model.modelName}Record(
+    <%=model.entitySqlProperties.map(_.sqlRecordProperty).mkString(",\n")%>
+  )
+  #for (m <- model.entityJsonOrJsonbArrayComposites)
+    // Mapping for type List[${m.modelName}] to Json
+    ${m.sqlJsonArrayMapper}
+  #end
+
+  // Metamodel for Entity ${model.modelName}
+  object ${model.metaName} {
+    val table = "${model.sqlName}"
+    #for(p <- model.entitySqlProperties)
+      val ${p.propertyName} = "${p.sqlName(model)}"
+    #end
+    #{ val all = model.entitySqlProperties.map(sp => "$" + sp.propertyName).mkString(", ") }#
+    val * = s"${all}"
+  }
+
+  #if (model.hasReferenceModel)
+  implicit val ${model.refModelName.camelCase}GetResult = GetResult[${model.refModelName}] { r =>
+    ${model.refModelName}(
+      #{val ps = model.entityRefProperties.map(p => s"${p.propertyName} = r.<<[${p.typeName}]").mkString(",\n")}#
+      ${ps}
+    )
+  }
+  #end
+
+  implicit val ${model.dataModelName.camelCase}GetResult = GetResult[${model.dataModelName}] { r =>
+    ${model.dataModelName}(
+      #{val ps = model.entityDataProperties.map(p => s"${p.propertyName} = r.<<[${p.typeName}]").mkString(",\n")}#
+      ${ps}
+    )
+  }
+
+
+
+  implicit val ${model.modelName.camelCase}GetResult = GetResult[${model.modelName}] { r =>
+    ${model.modelName}(
+      id = r.<<[${model.id.typeName}],
+      #if (model.hasReferenceModel)
+      ref = r.<<[${model.refModelName}],
+      #end
+      data = r.<<[${model.dataModel.modelName}],
+      timestamp = r.<<[Timestamp])
+  }
+
+  // Slick mapping for Entity ${model.modelName}
+  class ${model.modelName}Table(tag: Tag)
+    extends Table[${model.modelName}Record](tag, Some(schema), ${model.metaName}.table)
+        with PrimaryKey[${model.modelName}Record, ${model.id.tpe.modelName}] {
+#for (col <- model.nonIdEntitySqlProperties)
+      ${col.sqlColumnProperty(model)}
+#end
+      def * = (${model.entitySqlProperties.map(_.sqlFlattenName).mkString(",")})<>(${model.modelName}Record.tupled, ${model.modelName}Record.unapply)
+      <%=model.sqlFeatures%>
+  }
+
+  // Query model for Entity ${model.modelName}
+  val ${model.modelName.camelCase}Table = TableQuery[${model.modelName}Table]
+
+  // Implicit ${model.modelName} SlickEntity evidence
+  trait ${model.modelName}SlickEntity
+    extends SlickEntity[${model.modelName}]
+    with    ReaderEntity[${model.modelName}]
+    with    WriterEntity[${model.modelName}] {
+
+    type Id = ${model.idModelName}
+    type StoreType = ${model.modelName}Record
+    type TableModel = ${model.modelName}Table
+
+    def identity = ${module.name}Syntax.${model.modelName}Identity
+
+    def queryModel: TableQuery[TableModel] = ${model.modelName.camelCase}Table
+
+    def read(record: StoreType): ${model.modelName} =
+      <%=model.sqlReader()%>
+
+    def write(instance: ${model.modelName}): StoreType =
+      <%=model.sqlWriter()%>
+
+  }
+
+  implicit val ${model.modelName.camelCase}SlickEntity: ${model.modelName}SlickEntity = new ${model.modelName}SlickEntity {}
+
+  // allow filtering ${model.modelName} by Id
+  implicit val ${model.modelName.camelCase}IdFilter: ${model.modelName.camelCase}SlickEntity.Filter[${model.idModelName}] = new ${model.modelName.camelCase}SlickEntity.Filter[${model.idModelName}] {
+    def fn(filter: ${model.idModelName}): ${model.modelName.camelCase}SlickEntity.TableModel => Rep[Boolean] = _.id === filter
+  }
+
+  #if (model.hasReferenceModel)
+    #{
+      def prop(p: Property) =
+      if(p.optional)
+      s"""|(
+          |  (qm.${p.propertyName}.isEmpty && f.${p.propertyName}.isEmpty) ||
+          |  (qm.${p.propertyName} === f.${p.propertyName})
+          |)
+         """.stripMargin
+      else
+      s"qm.${p.propertyName} === f.${p.propertyName}"
+      val filter = model.entityRefProperties.map(prop).mkString(" &&\n ")
+      val hasOptionalRefProperty = model.entityRefProperties.exists(_.optional)
+    }#
+    // allow filtering ${model.modelName} by ${model.modelName}Ref
+    implicit val ${model.modelName.camelCase}RefFilter: ${model.modelName.camelCase}SlickEntity.Filter[${model.modelName}Ref] = new ${model.modelName.camelCase}SlickEntity.Filter[${model.modelName}Ref] {
+      def fn(f: ${model.modelName}Ref): ${model.modelName.camelCase}SlickEntity.TableModel => Rep[Boolean] = {
+        #if (hasOptionalRefProperty)
+        val q: ${model.modelName.camelCase}SlickEntity.TableModel => Rep[Option[Boolean]] =
+          qm =>
+            ${filter}
+        q.andThen(_.getOrElse(false))
+        #else
+          qm =>
+            ${filter}
+        #end
+      }
+
+    }
+  #end
+
+  implicit val ${model.modelName.camelCase}DateTimeIntervalFilter: ${model.modelName.camelCase}SlickEntity.Filter[DateTimeInterval] = new ${model.modelName.camelCase}SlickEntity.Filter[DateTimeInterval] {
+    def fn(filter: DateTimeInterval): ${model.modelName.camelCase}SlickEntity.TableModel => Rep[Boolean] =
+      _.updatedAt.between(filter.from, filter.to)
+  }
+
+#end
+}
+
+/*
+object ${module.name}SqlFormat extends ${module.name}SqlFormat {
+  def schema: String = ${module.name}Configuration.dbSchema
+  def applicationName: String = ${module.name}Configuration.applicationName
+}
+*/
+

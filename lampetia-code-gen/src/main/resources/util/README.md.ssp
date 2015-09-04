@@ -1,0 +1,104 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+#{
+  object Security {
+
+    object Spray {
+      val bindPort = config.getString("cg.generator.security-service.spray.port")
+    }
+
+    object Postgres {
+      val dbName = config.getString("cg.generator.security-service.postgres.db-name")
+      val username = config.getString("cg.generator.security-service.postgres.username")
+      val password = config.getString("cg.generator.security-service.postgres.password")
+      val schema = config.getString("cg.generator.security-service.postgres.schema")
+      val securitySchema = config.getString("cg.generator.security-service.postgres.security-schema")
+    }
+  }
+
+  object Service {
+    object Spray {
+      val bindPort = config.getString("cg.generator.service.spray.port")
+    }
+
+    object Postgres {
+      val dbName = config.getString("cg.generator.service.postgres.db-name")
+      val username = config.getString("cg.generator.service.postgres.username")
+      val password = config.getString("cg.generator.service.postgres.password")
+      val schema = config.getString("cg.generator.service.postgres.schema")
+      val securitySchema = config.getString("cg.generator.service.postgres.security-schema")
+    }
+  }
+  val facebookClientId = config.getString("cg.generator.node.facebook.client-id")
+  val facebookClientSecret = config.getString("cg.generator.node.facebook.client-secret")
+}#
+## Setup
+
+
+- Build lampetia-security and package as TGZ tar ball, then copy to:
+
+```bash
+${module.name.lispCase}-deploy/ansible/roles/web/files/localbuilds/security
+```
+
+- To copy `${module.name.lispCase}-web` to the deploy directory, run:
+
+```bash
+./copy-to-deploy.sh
+```
+
+- Bring up the vagrant VM and then run ansible, refer to the README file under `${module.name.lispCase}-deploy`
+for instructions
+
+- Start `lampetia-security`, in lampetia project directory, run:
+
+```bash
+export SERVICE_BIND_PORT=${Security.Spray.bindPort}
+export POSTGRES_DB_NAME=${Security.Postgres.dbName}
+export POSTGRES_USER=${Security.Postgres.username}
+export POSTGRES_PASSWORD='${Security.Postgres.password}'
+export POSTGRES_SECURITY_SCHEMA=${Security.Postgres.securitySchema}
+export POSTGRES_SCHEMA=${Security.Postgres.schema}
+sbt lampetia-security/runAkka
+```
+
+- Start `${module.name.lispCase}-service`:
+
+```bash
+export SERVICE_BIND_PORT=${Service.Spray.bindPort}
+export POSTGRES_DB_NAME=${Service.Postgres.dbName}
+export POSTGRES_USER=${Service.Postgres.username}
+export POSTGRES_PASSWORD='${Service.Postgres.password}'
+export POSTGRES_SECURITY_SCHEMA=${Service.Postgres.securitySchema}
+export POSTGRES_SCHEMA=${Service.Postgres.schema}
+sbt ${module.name.lispCase}-service/runAkka
+```
+
+- Install and start `${module.name.lispCase}-web`:
+
+```bash
+cd ${module.name.lispCase}-web
+npm install
+coffee server.coffee
+```
+
+- Start haproxy for local environment:
+
+```bash
+sudo haproxy -f haproxy-local.cfg
+```
+
+to enable haproxy debug mode, start it with `-d` option:
+
+```bash
+sudo haproxy -d -f haproxy-local.cfg
+```
+

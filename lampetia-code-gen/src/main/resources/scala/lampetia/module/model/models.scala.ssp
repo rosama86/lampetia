@@ -1,0 +1,144 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+package ${module.basePackage}.model
+
+import lampetia.model._
+import org.joda.time.DateTime
+import scala.util.{Try, Success}
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+
+#for (model <- metamodels.idModels)
+  // Id model for Entity ${model.entity.modelName}
+  case class ${model.modelName}(value: String) extends AnyVal
+#end
+
+#for (model <- metamodels.enumModels)
+  #{
+    val pname = model.discriminator.propertyName
+    val ptpe = model.discriminator.tpe.literalTypeName
+  }#
+  // Enum ${model.modelName}
+  sealed trait ${model.modelName} {
+    def ${pname}: ${ptpe}
+  }
+
+  #for (cs <- model.cases )
+  case object ${cs} extends ${model.modelName} {
+    def ${pname} = "${cs}"
+  }
+  #end
+
+  #for (gc <- model.generalCase)
+  case class ${gc}(${pname}: ${ptpe}) extends ${model.modelName}
+  #end
+
+  object ${model.modelName} {
+    def from${ptpe}(${pname}: ${ptpe}): ${model.modelName} = ${pname} match {
+  #for (cs <- model.cases)
+      case "${cs}"  => ${cs}
+  #end
+  #for (gc <- model.generalCase)
+      case _             => ${gc}(${pname})
+  #end
+    }
+  }
+
+#end
+
+#for (model <- metamodels.valueModels)
+
+  // Value ${model.modelName}
+  case class ${model.modelName}(${model.valueProperty.propertyName}: ${model.valueProperty.typeName}) extends AnyVal
+
+#end
+
+#for (model <- metamodels.compositeModels)
+
+
+  // Composite ${model.modelName}
+  case class ${model.modelName}(${model.properties.map(_.nameColonTypeInEntity).mkString(",")})
+
+
+#end
+
+  object ${module.name}Models {
+  #for (model <- metamodels.entityModels)
+    val ${model.modelName.camelCase}ResourceType = ResourceType("${model.resourceType}")
+  #end
+  }
+
+#for (model <- metamodels.entityModels)
+  // Entity ${model.modelName}
+  case class ${model.dataModelName}(${model.entityDataProperties.map(_.nameColonTypeInEntity).mkString(",")})
+  #if (model.hasReferenceModel)
+  case class ${model.modelName}Ref(${model.entityRefProperties.map(_.nameColonTypeInEntity).mkString(",")})
+  case class ${model.modelName}(id: ${model.idModelName}, ref:${model.modelName}Ref, data: ${model.dataModelName}, timestamp: Timestamp)
+  #else
+  case class ${model.modelName}(id: ${model.idModelName}, data: ${model.dataModelName}, timestamp: Timestamp)
+  #end
+
+#end
+
+  trait ${module.name}Syntax {
+
+#for (model <- metamodels.entityModels)
+
+  #if (model.hasReferenceModel)
+    implicit object ${model.modelName}Identity
+      extends IdentifiableEntityData[${model.modelName}, ${model.idModelName}, RefData[${model.refModelName}, ${model.dataModelName}]]
+      with    Stringify[${model.idModelName}] {
+      def parse(stringId: String): Try[${model.idModelName}] = Success(${model.idModelName}(stringId))
+      def stringify(id: ${model.idModelName}): String = id.value
+      def id(instance: ${model.modelName}): ${model.idModelName} = instance.id
+      def asResource(id: ${model.idModelName}): Resource = Resource(ResourceId(id.value), ${module.name}Models.${model.modelName.camelCase}ResourceType)
+      #if(model.hasParent)
+      override def parentResourceId(instance: ${model.modelName}): Option[ResourceId] = Some(ResourceId(instance.ref.${model.parentIdProperty.propertyName}.value))
+      #end
+      def data(instance: ${model.modelName}): RefData[${model.refModelName}, ${model.dataModelName}] = RefData(instance.ref, instance.data)
+      def instance(refdata: RefData[${model.refModelName}, ${model.dataModelName}]): ${model.modelName} =
+        ${model.modelName}(${model.idModelName}(generateStringId), refdata.ref, refdata.data, Timestamp(DateTime.now, DateTime.now))
+      def combine(id: ${model.idModelName}, refdata: RefData[${model.refModelName}, ${model.dataModelName}]): ${model.modelName} =
+        ${model.modelName}(id, refdata.ref, refdata.data, Timestamp(DateTime.now(), DateTime.now()))
+      def combineWithTimestamp(id: ${model.idModelName}, refdata: RefData[${model.refModelName}, ${model.dataModelName}], timestamp: Timestamp): ${model.modelName} =
+        ${model.modelName}(id, refdata.ref, refdata.data, timestamp)
+      def touch(instance: ${model.modelName}): ${model.modelName} =
+        instance.copy(timestamp = instance.timestamp.copy(updatedAt = new DateTime))
+    }
+  #else
+    implicit object ${model.modelName}Identity
+      extends IdentifiableEntityData[${model.modelName}, ${model.idModelName}, ${model.dataModelName}]
+      with    Stringify[${model.idModelName}] {
+        def parse(stringId: String): Try[${model.idModelName}] = Success(${model.idModelName}(stringId))
+        def stringify(id: ${model.idModelName}): String = id.value
+        def id(instance: ${model.modelName}): ${model.idModelName} = instance.id
+        def asResource(id: ${model.idModelName}): Resource = Resource(ResourceId(id.value), ${module.name}Models.${model.modelName.camelCase}ResourceType)
+        def data(instance: ${model.modelName}): ${model.dataModelName} = instance.data
+        def instance(data: ${model.dataModelName}): ${model.modelName} =
+          ${model.modelName}(${model.idModelName}(generateStringId), data, Timestamp(DateTime.now, DateTime.now))
+        def combine(id: ${model.idModelName}, data: ${model.dataModelName}): ${model.modelName} =
+          ${model.modelName}(id, data, Timestamp(DateTime.now(), DateTime.now()))
+        def combineWithTimestamp(id: ${model.idModelName}, data: ${model.dataModelName}, timestamp: Timestamp): ${model.modelName} =
+          ${model.modelName}(id, data, timestamp)
+        def touch(instance: ${model.modelName}): ${model.modelName} =
+          instance.copy(timestamp = instance.timestamp.copy(updatedAt = new DateTime))
+    }
+  #end
+
+#end
+  }
+
+  object ${module.name}Syntax extends ${module.name}Syntax
+

@@ -1,0 +1,41 @@
+---
+
+- name: pull nodejs image
+  docker:
+    image: "{{docker.node.base_image_name}}"
+    state: present
+
+- name: synchronize node app directory
+  # the ending '/' in the source is important
+  synchronize: src=node/ dest="{{docker.node.src}}/" recursive=yes
+
+- name: generate Dockerfile for node-app
+  template: src="Dockerfile-node-app.j2" dest="{{docker.node.src}}/Dockerfile"
+
+- name: remove node app container
+  docker:
+    image: "{{docker.node.image.name}}"
+    name: "{{docker.node.container.name}}"
+    state: absent
+
+- name: remove node app image
+  docker_image: name="{{docker.node.image.name}}" state=absent
+
+- name: create node app image
+  docker_image: path="{{docker.node.src}}/" name="{{docker.node.image.name}}" state=present
+
+- name: run node app container
+  docker:
+    image: "{{docker.node.image.name}}"
+    name: "{{docker.node.container.name}}"
+    state: reloaded
+    detach: True
+    links:
+      - "{{docker.haproxy.container.name}}:{{docker.haproxy.container.name}}"
+    env:
+      NODE_ENV: production
+      FACEBOOK_CALLBACK_URL: "{{docker.node.facebook_callback_url}}"
+
+- name: get node-app container ip
+  shell: "{{docker.cmd.ip}} {{docker.node.container.name}}"
+  register: node_app_ip

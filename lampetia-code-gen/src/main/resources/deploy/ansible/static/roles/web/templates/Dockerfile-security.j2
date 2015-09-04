@@ -1,0 +1,11 @@
+FROM java
+
+COPY {{docker.security.package.name}}-{{docker.security.package.version}}.tgz {{docker.security.package.path}}/
+
+ADD start-service.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/start-service.sh
+
+EXPOSE {{docker.security.container.port}}
+
+ENTRYPOINT ["/usr/local/bin/start-service.sh"]

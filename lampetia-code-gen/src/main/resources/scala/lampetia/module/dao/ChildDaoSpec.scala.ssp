@@ -1,0 +1,88 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val model: Entity %>
+<%@ val module: Module %>
+<%@ val metamodels: Seq[Model] %>
+<%@ val config: Config%>
+package ${module.basePackage}.dao
+
+import ${module.basePackage}.di._
+import ${module.basePackage}.model._
+import ${module.basePackage}.spec.${module.name}InstanceFactory._
+import lampetia.dao.ChildDaoSpec
+import lampetia.specs2.Specs2Spec
+import org.specs2.mutable.Specification
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+
+
+class ${model.modelName}DaoSpec extends Specification with ChildDaoSpec with Specs2Spec  {
+
+  def specName = "${model.modelName}Dao"
+
+  type Id = ${model.idModelName}
+  type E = ${model.modelName}
+  type Data = ${model.modelName}Data
+  type Reference = ${model.modelName}Ref
+
+  val module = ${module.name}TestModule
+  import module._
+  import ${module.name}Syntax._
+
+  import ${model.modelName}NonSecureOps._
+
+
+  #{
+    def prop(p: Property) =
+      if (p.optional)
+        s"${p.propertyName} = Some(insert${p.tpe.modelName}())"
+      else
+        s"${p.propertyName} = insert${p.tpe.modelName}()"
+
+    val insertInstances = model.referenceModel.properties.map(prop).mkString(", ")
+  }#
+  def insertReference(): Reference =
+    ${model.refModelName}(
+      ${insertInstances}
+    )
+
+
+  def createData: ${model.modelName}Data = create${model.modelName}Data
+
+  override def beforeDelete(id: ${model.idModelName}): Unit =
+    store.run(beforeDelete${model.modelName}(id))
+
+
+  specName should {
+    insertWithValidId.apply { r =>
+      val (data, result) = r
+      result.data must_== data
+    }
+
+    findInstanceById.apply { r =>
+      val (out, instance) = r
+      (out must beSome[E]) and (out.get.id must_== instance.id)
+    }
+
+    findAllNotEmpty.apply { r =>
+      val (_, findAllResult) = r
+      findAllResult must not be empty
+    }
+
+    deleteInstanceById.apply { r =>
+      val (deleted, found) = r
+      (deleted must be > 0) and (found must beEmpty)
+    }
+
+  }
+
+}

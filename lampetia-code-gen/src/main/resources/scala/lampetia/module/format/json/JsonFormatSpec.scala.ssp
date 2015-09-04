@@ -1,0 +1,44 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.format.json
+
+import lampetia.model._
+import ${module.basePackage}.model._
+import org.joda.time.DateTime
+import org.specs2.mutable.Specification
+import play.api.libs.json.{JsValue, Json}
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+class ${module.name}JsonFormatSpec extends Specification {
+
+object ${module.name}JsonFormat extends ${module.name}JsonFormat
+
+  "${module.name}JsonFormatSpec" should {
+#for (model <- metamodels.entityModels.jsonModels)
+
+
+    "perform round-trip ${model.modelName} json formating" in {
+      import ${module.name}JsonFormat._
+      val instance = ${model.generateInstance}
+      val json: JsValue = Json.toJson(instance)
+      val roundtrip: Option[${model.modelName}] = Json.fromJson[${model.modelName}](json).asOpt
+
+      roundtrip must beSome(instance)
+    }
+
+
+#end
+  }
+}

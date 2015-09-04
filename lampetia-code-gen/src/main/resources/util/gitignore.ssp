@@ -1,0 +1,48 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+# Mac
+.DS_Store
+
+# Java
+*.class
+*.log
+
+# Ansible
+*.tgz
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+
+# Intellij
+.idea
+.idea_modules
+
+# Vagrant
+.vagrant
+
+# Node
+node_modules
+${module.name.lispCase}-deploy/ansible/roles/web/files/node/
+
+
+

@@ -1,0 +1,68 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+package ${module.basePackage}.store.postgresql
+
+import ${module.basePackage}.module.${module.name}Module
+import ${module.basePackage}.model._
+import ${module.basePackage}.format.json.${module.name}JsonFormat
+import ${module.basePackage}.format.sql.${module.name}SqlFormat
+#if (module.secure)
+import lampetia.security.store.postgresql.PostgresqlSecurityModule
+#else
+import lampetia.store.postgresql.PostgresqlModule
+#end
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+trait Postgresql${module.name}Module
+  extends ${module.name}Module
+#if (module.secure)
+     with PostgresqlSecurityModule
+#else
+     with PostgresqlModule
+#end
+     with ${module.name}JsonFormat
+     with ${module.name}SqlFormat { module =>
+
+  val statelessGenericDao = createStatelessDao
+  val statelessGenericService = createStatelessEntityService
+
+
+  // Module Daos
+#for(model <- metamodels.entityModels)
+
+  val ${model.modelName.camelCase}Dao: ${model.modelName}Dao = new ${model.modelName}Dao with StatefulDao[${model.modelName}] {
+      type D = Dao
+      val statelessDao: D = module.statelessGenericDao
+    }
+
+#end
+
+  // Module Services
+#for(model <- metamodels.entityModels)
+
+  val ${model.modelName.camelCase}Service: ${model.modelName}Service = new ${model.modelName}Service with StatefulEntityService[${model.modelName}] {
+      type S = EntityService
+      val statelessService: S = module.statelessGenericService
+    }
+
+#if (module.secure)
+  object ${model.modelName}Ops extends SecureEntityOps[${model.modelName}, ${model.modelName.camelCase}SlickEntity.type](${model.modelName.camelCase}SlickEntity)
+#else
+  object ${model.modelName}Ops extends EntityOps[${model.modelName}, ${model.modelName.camelCase}SlickEntity.type](${model.modelName.camelCase}SlickEntity)
+#end
+
+#end
+}

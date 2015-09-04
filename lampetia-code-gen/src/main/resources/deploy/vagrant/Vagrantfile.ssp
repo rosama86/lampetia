@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+# Vagrant base box
+config.vm.box = '${config.getString("cg.generator.deploy.vagrant.box")}'
+
+# RAM and CPU settings for this vm
+config.vm.provider "virtualbox" do |v|
+  v.memory = ${config.getString("cg.generator.deploy.vagrant.ram")}
+  v.cpus = ${config.getString("cg.generator.deploy.vagrant.cpus")}
+end
+
+# create a private network, so we can connect from vagrant host
+# any port needs to be published from docker first before being made available to vagrant host
+# make sure the port is routed to vagrant host using "forwarded_port" configuration as below
+# so, basically, we need to do: container-port -> vm-port -> host-port
+
+config.vm.network :private_network, ip: "${config.getString("cg.generator.deploy.vagrant.ip")}"
+
+
+# Nginx
+# forward nginx port to vagrant host
+config.vm.network "forwarded_port", guest: 80, host: 8080
+
+# Postgres
+# forward posgtres port
+config.vm.network "forwarded_port", guest: 5432, host: 5432
+
+end
+

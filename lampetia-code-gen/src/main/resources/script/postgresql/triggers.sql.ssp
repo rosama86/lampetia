@@ -1,0 +1,34 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+
+#for (model <- metamodels.entityModels)
+
+
+-- ## Table ${model.sqlName.toUpperCase} ## BEGIN ## --
+drop trigger if exists tr_${model.sqlName}_cascade_del_security on ${module.databaseSchema}.${model.sqlName};
+drop function if exists ${module.databaseSchema}.fn_${model.sqlName}_cascade_del_security();
+
+create or replace function ${module.databaseSchema}.fn_${model.sqlName}_cascade_del_security() returns trigger as $$
+  begin
+    delete
+    from lampetia.security_subject_grant
+    where resource_id = old.id;
+    return old;
+  end;
+$$ language plpgsql;
+
+create trigger tr_${model.sqlName}_cascade_del_security
+after delete on music.music_artist
+for each row execute procedure music.fn_${model.sqlName}_cascade_del_security();
+-- ## Table ${model.sqlName.toUpperCase} ## END ## --
+
+
+#end

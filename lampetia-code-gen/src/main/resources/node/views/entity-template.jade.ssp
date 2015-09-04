@@ -1,0 +1,21 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val model: Model%>
+<%@ val config: Config%>
+.row
+  .col-sm-12
+    #accordion.panel-group
+      .panel.panel-default(ng-repeat="instance in model")
+        .panel-heading
+          h4.panel-title
+            a(href="javascript:;", data-toggle="collapse", data-parent="#accordion", data-target="#collapse{{$index}}") ${model.modelName} - {{instance.id}}
+        div(id="collapse{{$index}}").panel-collapse.collapse
+          .panel-body
+            pre {{ instance | json }}

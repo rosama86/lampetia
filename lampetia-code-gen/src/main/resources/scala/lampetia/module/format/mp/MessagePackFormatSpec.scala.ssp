@@ -1,0 +1,45 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.format.mp
+
+import lampetia.model._
+import ${module.basePackage}.model._
+import org.joda.time.DateTime
+import org.specs2.mutable.Specification
+import play.api.libs.json.Json
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+class ${module.name}MessagePackFormatSpec extends Specification {
+
+  object ${module.name}MessagePackFormat extends ${module.name}MessagePackFormat
+  import ${module.name}MessagePackFormat._
+
+"${module.name}MessagePackFormatSpec" should {
+#for (model <- metamodels.entityModels.messagePackModels)
+
+
+  "perform round-trip ${model.modelName} message-pack formating" in {
+    val instance = ${model.generateInstance}
+    val message: Bytes = instance.pack
+    val roundtrip: ${model.modelName} = message.unpack[${model.modelName}]
+
+    roundtrip mustEqual instance
+
+  }
+
+
+#end
+}
+}

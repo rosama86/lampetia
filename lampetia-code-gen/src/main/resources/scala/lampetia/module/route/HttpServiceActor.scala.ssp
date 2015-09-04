@@ -1,0 +1,38 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.route
+
+import ${module.basePackage}.conf.Default${module.name}Module
+import spray.routing.Route
+import Default${module.name}Module._
+
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+class ${module.name}HttpServiceActor extends HttpServiceActor { service =>
+
+
+#for (model <- metamodels.entityModels)
+  val ${model.modelName.camelCase}Route = new ${model.modelName}Route {}
+#end
+
+  def originalRoute: Route =
+    pathPrefix(prefix) {
+      <%=metamodels.entityModels.map(m => s"${m.modelName.camelCase}Route.mainRoute").mkString("~\n")%>
+    }
+
+
+  def mainRoute: Route = originalRoute
+
+}

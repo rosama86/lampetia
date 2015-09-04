@@ -1,0 +1,13 @@
+#import(com.typesafe.config.Config)
+<%@ val config: Config%>
+vagrant-host ansible_ssh_host=${config.getString("cg.generator.deploy.vagrant.ip")}
+
+[webservers]
+vagrant-host
+
+[dbservers]
+vagrant-host
+
+[local:children]
+webservers
+dbservers

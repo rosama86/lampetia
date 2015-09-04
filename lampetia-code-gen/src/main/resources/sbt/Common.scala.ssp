@@ -1,0 +1,69 @@
+#import(lampetia.cg.cartridge.sbt.SbtProject)
+#import(lampetia.extensions.Strings)
+#import(com.typesafe.config.Config)
+#import(net.ceedubs.ficus.Ficus)
+#import(Strings._)
+#import(Ficus._)
+<%@ val project: SbtProject %>
+<%@ val config: Config%>
+
+package lampetia.sbt
+
+import sbt._
+
+object Common {
+
+  val organization = "${config.as[String]("cg.template.sbt.default-organization")}"
+  val version = "${config.as[String]("cg.template.sbt.default-version")}"
+
+  object Versions {
+    val scalaVersion = "2.11.7"
+    val ficusVersion = "1.1.2"
+    val akkaVersion = "2.3.10"
+    val sprayVersion = "1.3.3"
+    val slickVersion = "3.0.0"
+    val playVersion = "2.3.9"
+    val logbackVersion = "1.1.3"
+    val postgresqlJdbcVersion = "9.4-1201-jdbc41"
+    val hikariVersion = "2.3.7"
+    val rediscalaVersion = "1.4.1"
+    val specs2Version = "2.3.13"
+  }
+
+  object Resolvers {
+    val typesafe = Resolver.typesafeRepo("releases")
+    val sonatype = Resolver.sonatypeRepo("releases")
+    val all = Seq(typesafe,sonatype)
+  }
+
+  object Settings {
+    val scalacOptions = Seq("-unchecked", "-deprecation", "-feature")
+  }
+
+  object Dependencies {
+    import Versions._
+
+    val ficus = "net.ceedubs" %% "ficus" % ficusVersion
+    val logback = "ch.qos.logback" % "logback-classic" % logbackVersion
+    val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
+    val akkaKernel = "com.typesafe.akka" % "akka-kernel_2.11" % akkaVersion
+    val sprayCan = "io.spray" %% "spray-can" % sprayVersion
+    val sprayRouting = "io.spray" %% "spray-routing-shapeless2" % sprayVersion
+    val slick = "com.typesafe.slick" %% "slick" % slickVersion
+    val playJson = "com.typesafe.play" %% "play-json" % playVersion
+    val postgresql = "org.postgresql" % "postgresql" % postgresqlJdbcVersion
+    val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
+    val rediscala = "com.etaty.rediscala" %% "rediscala" % rediscalaVersion
+
+    val sprayTestkit = "io.spray" %% "spray-testkit" % sprayVersion % "test"
+    val sprayUtil = "io.spray" %% "spray-util" % sprayVersion % "test"
+    val specs2Core = "org.specs2" %% "specs2-core" % specs2Version % "test"
+
+    val serviceDependencies =
+      Seq(
+        ficus,logback,akkaKernel,akkaActor,sprayCan,sprayRouting,slick,playJson,postgresql,hikari,rediscala,
+        sprayTestkit,sprayUtil,specs2Core)
+
+  }
+
+}

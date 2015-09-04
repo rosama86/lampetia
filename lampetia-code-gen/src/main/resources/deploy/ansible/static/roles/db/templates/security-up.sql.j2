@@ -1,0 +1,130 @@
+
+CREATE SCHEMA {{docker.postgres.db.schema}};
+
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_user" (
+  "id" VARCHAR NOT NULL PRIMARY KEY
+);
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_profile" (
+  "provider_id"           VARCHAR NOT NULL,
+  "provider_user_id"      VARCHAR NOT NULL,
+  "user_id"               VARCHAR NOT NULL,
+  "first_name"            VARCHAR,
+  "last_name"             VARCHAR,
+  "full_name"             VARCHAR,
+  "email"                 VARCHAR,
+  "avatar_url"            VARCHAR,
+  "authentication_method" VARCHAR NOT NULL,
+  "oauth1_info"           JSONB,
+  "oauth2_info"           JSONB,
+  "password_info"         JSONB
+);
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_profile" ADD CONSTRAINT "profile_pk" PRIMARY KEY ("provider_id", "provider_user_id");
+CREATE UNIQUE INDEX "profile_provider_id_email" ON "{{docker.postgres.db.schema}}"."security_profile" ("provider_id", "email");
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_role" (
+  "id"         VARCHAR NOT NULL PRIMARY KEY,
+  "name"       VARCHAR NOT NULL,
+  "permission" BIT(32) NOT NULL
+);
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_application" (
+  "id"       VARCHAR NOT NULL PRIMARY KEY,
+  "name"     VARCHAR NOT NULL,
+  "settings" VARCHAR NOT NULL
+);
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_group" (
+  "id"             VARCHAR NOT NULL PRIMARY KEY,
+  "group_owner_id" VARCHAR NOT NULL,
+  "name"           VARCHAR NOT NULL
+);
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_group_member" (
+  "group_id"  VARCHAR NOT NULL,
+  "member_id" VARCHAR NOT NULL
+);
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_group_member" ADD CONSTRAINT "pk_security_group_member" PRIMARY KEY ("group_id", "member_id");
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_subject_grant" (
+  "id"                 VARCHAR NOT NULL PRIMARY KEY,
+  "subject_id"         VARCHAR NOT NULL,
+  "subject_type"       VARCHAR NOT NULL,
+  "resource_id"        VARCHAR NOT NULL,
+  "resource_type"      VARCHAR NOT NULL,
+  "parent_resource_id" VARCHAR,
+  "permission"         BIT(32) NOT NULL
+);
+CREATE UNIQUE INDEX "uidx_ssg" ON "{{docker.postgres.db.schema}}"."security_subject_grant" ("subject_id", "resource_id");
+CREATE TABLE "{{docker.postgres.db.schema}}"."security_subject_grant_role" (
+  "subject_grant_id" VARCHAR NOT NULL,
+  "role_id"          VARCHAR NOT NULL
+);
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_subject_grant_role" ADD CONSTRAINT "pk_security_subject_grant_role" PRIMARY KEY ("subject_grant_id", "role_id");
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_profile" ADD CONSTRAINT "profile_user_id_ref_user_user_id" FOREIGN KEY ("user_id") REFERENCES "{{docker.postgres.db.schema}}"."security_user" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_group" ADD CONSTRAINT "fk_sgm_ref_owner_user_id" FOREIGN KEY ("group_owner_id") REFERENCES "{{docker.postgres.db.schema}}"."security_user" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_group_member" ADD CONSTRAINT "fk_sgm_ref_group_id" FOREIGN KEY ("group_id") REFERENCES "{{docker.postgres.db.schema}}"."security_group" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_group_member" ADD CONSTRAINT "fk_sgm_ref_user_id" FOREIGN KEY ("member_id") REFERENCES "{{docker.postgres.db.schema}}"."security_user" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_subject_grant_role" ADD CONSTRAINT "fk_ssgr_ref_role_id" FOREIGN KEY ("role_id") REFERENCES "{{docker.postgres.db.schema}}"."security_role" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+ALTER TABLE "{{docker.postgres.db.schema}}"."security_subject_grant_role" ADD CONSTRAINT "fk_ssgr_ref_subject_grant_id" FOREIGN KEY ("subject_grant_id") REFERENCES "{{docker.postgres.db.schema}}"."security_subject_grant" ("id") ON UPDATE NO ACTION ON DELETE CASCADE;
+
+-- returns the number of records that prove `p_subject_id` has permission `p_mask` on a resource with id `p_resource_id`
+CREATE OR REPLACE FUNCTION {{docker.postgres.db.schema}}.has_permission(p_subject_id TEXT, p_resource_id TEXT, p_mask BIT(32))
+  RETURNS INTEGER AS
+  $$
+  SELECT 1
+  FROM
+    {{docker.postgres.db.schema}}.security_subject_grant ssg
+    INNER JOIN (
+                 WITH RECURSIVE r AS (
+                   SELECT
+                     id,
+                     resource_id,
+                     parent_resource_id
+                   FROM {{docker.postgres.db.schema}}.security_subject_grant
+                   WHERE subject_id = p_subject_id
+                         AND resource_id = p_resource_id
+
+                   UNION ALL
+
+                   SELECT
+                     p.id,
+                     p.resource_id,
+                     p.parent_resource_id
+                   FROM {{docker.postgres.db.schema}}.security_subject_grant p JOIN r ON r.parent_resource_id = p.resource_id
+                 ) SELECT id
+                 FROM r
+               ) ssgr ON ssg.id = ssgr.id
+    LEFT OUTER JOIN {{docker.postgres.db.schema}}.security_subject_grant_role sgr ON ssg.id = sgr.subject_grant_id
+    LEFT OUTER JOIN {{docker.postgres.db.schema}}.security_role sr ON sgr.role_id = sr.id
+  WHERE (ssg.permission | coalesce(sr.permission, 0 :: BIT(32))) & (p_mask :: BIT(32)) = p_mask :: BIT(32)
+
+  UNION
+
+  SELECT 1
+  FROM
+    {{docker.postgres.db.schema}}.security_subject_grant ssg
+    INNER JOIN (
+                 WITH RECURSIVE r AS (
+                   SELECT
+                     id,
+                     resource_id,
+                     parent_resource_id
+                   FROM {{docker.postgres.db.schema}}.security_subject_grant
+                   WHERE resource_id = p_resource_id
+
+                   UNION ALL
+
+                   SELECT
+                     p.id,
+                     p.resource_id,
+                     p.parent_resource_id
+                   FROM {{docker.postgres.db.schema}}.security_subject_grant p JOIN r ON r.parent_resource_id = p.resource_id
+                 ) SELECT id
+                 FROM r
+               ) ssgr ON ssg.id = ssgr.id
+    INNER JOIN {{docker.postgres.db.schema}}.security_group_member sgm
+      ON (ssg.subject_id = sgm.group_id AND sgm.member_id = p_subject_id)
+    LEFT OUTER JOIN {{docker.postgres.db.schema}}.security_subject_grant_role sgr
+      ON (ssg.id = sgr.subject_grant_id)
+    LEFT OUTER JOIN {{docker.postgres.db.schema}}.security_role sr
+      ON (sr.id = sgr.role_id)
+  WHERE (ssg.permission | coalesce(sr.permission, 0 :: BIT(32))) & (p_mask :: BIT(32)) = p_mask :: BIT(32)
+
+  $$ LANGUAGE SQL;
+
+

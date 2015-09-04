@@ -1,0 +1,41 @@
+#import(lampetia.cg.cartridge.sbt.SbtProject)
+#import(lampetia.extensions.Strings)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+<%@ val project: SbtProject %>
+<%@ val config: Config%>
+
+import lampetia.sbt.Common
+import Common.Dependencies._
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import com.typesafe.sbt.SbtScalariform.scalariformSettings
+
+import scalariform.formatter.preferences._
+
+name := "${project.name.lispCase}"
+
+unmanagedSourceDirectories in Compile <++= baseDirectory { base =>
+  Seq(
+    base / "src/generated/scala",
+    base / "src/generated/java"
+  )
+}
+
+unmanagedResourceDirectories in Compile <++= baseDirectory { base =>
+  Seq(
+    base / "src/generated/resources"
+  )
+}
+
+
+libraryDependencies ++= Seq(logback,specs2Core)
+
+libraryDependencies ++= Seq(${project.libraries.mkString(",\n")})
+
+scalariformSettings
+
+ScalariformKeys.preferences := ScalariformKeys.preferences.value
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(AlignSingleLineCaseStatements.MaxArrowIndent, 100)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(PreserveDanglingCloseParenthesis, true)

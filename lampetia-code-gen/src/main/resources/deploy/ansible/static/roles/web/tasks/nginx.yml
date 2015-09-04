@@ -1,0 +1,29 @@
+---
+
+- name: create nginx conf directory
+  command: mkdir -p /etc/nginx creates=/etc/nginx
+
+- name: create nginx logging directory
+  command: mkdir -p /var/log/nginx creates=/var/log/nginx
+
+- name: create nginx html directory
+  command: mkdir -p /usr/share/nginx/html creates=/usr/share/nginx/html
+
+- name: generate nginx conf file
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+
+- name: run nginx container, expose port on host
+  docker:
+    image: "{{docker.nginx.image.name}}"
+    name: "{{docker.nginx.container.name}}"
+    state: restarted
+    ports:
+      - "{{docker.nginx.host.port}}:{{docker.nginx.container.port}}"
+    detach: True
+    links:
+      - "{{docker.haproxy.container.name}}:{{docker.haproxy.container.name}}"
+      - "{{docker.node.container.name}}:{{docker.node.container.name}}"
+    volumes:
+      - /etc/nginx:/etc/nginx
+      - /var/log/nginx:/var/log/nginx
+      - /usr/share/nginx/html:/usr/share/nginx/html

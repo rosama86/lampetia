@@ -1,0 +1,163 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val model: Entity %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+package ${module.basePackage}.route
+
+import ${module.basePackage}.di.${module.name}TestModule._
+import ${module.basePackage}.model._
+import lampetia.model._
+import spray.httpx.PlayJsonSupport._
+import org.joda.time.DateTime
+import org.specs2.mutable.Specification
+import spray.http.StatusCodes
+import spray.testkit.Specs2RouteTest
+#if (module.secure)
+  import spray.http.OAuth2BearerToken
+  import spray.routing.AuthenticationFailedRejection
+  import spray.http.HttpHeaders.Authorization
+  import lampetia.security.route.Authenticator
+#end
+import lampetia.Tests._
+import scala.concurrent.Future
+import ${module.basePackage}.spec.${module.name}InstanceFactory._
+<%@val imports: Seq[String] %>
+#for (i <- imports)
+  import ${i}
+#end
+
+
+class ${model.modelName}RouteSpec extends Specification with Specs2RouteTest {
+
+  import ${module.name}Syntax._
+#if (module.secure)
+  import ${model.modelName}SecureOps._
+#else
+  import ${model.modelName}NonSecureOps._
+#end
+
+  def specName = "${model.modelName}Route"
+
+  def createInstance: ${model.modelName}Data = create${model.modelName}Data
+
+  val ${model.modelName.camelCase}Route = new ${model.modelName}Route {}
+
+  val service = ${model.modelName.camelCase}Service
+
+  val route = ${model.modelName.camelCase}Route.mainRoute
+
+
+
+  #{
+    def prop(p: Property) =
+      if (p.optional)
+        s"${p.propertyName} = Some(insert${p.tpe.modelName}())"
+      else
+        s"${p.propertyName} = insert${p.tpe.modelName}()"
+
+    def refprop(p: Property) =
+      if (p.optional)
+        s"${p.propertyName}=$${ref.${p.propertyName}.get.value}"
+      else
+        s"${p.propertyName}=$${ref.${p.propertyName}.value}"
+
+    val refProperties = model.referenceModel.properties.map(prop).mkString(", ")
+    val queryParams = model.referenceModel.properties.map(refprop).mkString("&")
+    val principle = if (module.secure) "withPrinciple userId" else ""
+   }#
+  specName should {
+#if (module.secure)
+    "fail when POSTing ${model.modelName} instance without a bearer token" in {
+      val instanceData = createInstance
+      val ref = ${model.refModelName}(${refProperties})
+      Post(s"/${model.modelName.lispCase}?${queryParams}", instanceData) ~> route ~> check {
+        val rs: List[Int] = rejections collect {
+          case AuthenticationFailedRejection(_, _) => 1
+          case _                                   => 0
+        }
+        rs.sum must beGreaterThanOrEqualTo(1)
+      }
+    }
+#end
+
+    "POST ${model.modelName} instance and return a Resource" in {
+      val instanceData = createInstance
+      val ref = ${model.refModelName}(${refProperties})
+#if (module.secure)
+      val userId = createUserId
+      val token = Authenticator.compact(userId.value)
+      val header = Authorization(OAuth2BearerToken(token))
+      val headers = List(header)
+#end
+#if (module.secure)
+      Post(s"/${model.modelName.lispCase}?${queryParams}", instanceData).withHeaders(headers) ~> route ~> check {
+#else
+      Post(s"/${model.modelName.lispCase}?${queryParams}", instanceData) ~> route ~> check {
+#end
+
+        val resourceId = responseAs[Resource].id.value
+        val expectedId = ${model.idModelName}(resourceId)
+        val future: Future[Option[${model.modelName}]] = service.findOne(${model.idModelName}(resourceId) ${principle})
+
+        val stored: Option[${model.modelName}] = resultOf(future)
+
+        (status must_== StatusCodes.Created) and
+        (stored.map(_.id) must beSome(expectedId)) and
+        (stored.map(_.ref) must beSome(ref)) and
+        (stored.map(_.data) must beSome(instanceData))
+      }
+    }
+
+#if (module.secure)
+    "fail when GETing ${model.modelName} without a bearer token" in {
+      val instanceData = createInstance
+      val userId = createUserId
+      val ref = ${model.refModelName}(${refProperties})
+      val id = resultOf(service.insert(RefData(ref, instanceData) withPrinciple userId)).id
+      Get(s"/${model.modelName.lispCase}/<%="${id.value}"%>") ~> route ~> check {
+        val rs: List[Int] = rejections collect {
+          case AuthenticationFailedRejection(_, _) => 1
+          case _                                   => 0
+        }
+        rs.sum must beGreaterThanOrEqualTo(1)
+      }
+    }
+#end
+
+    "GET ${model.modelName} instance by id" in {
+      val instanceData = createInstance
+#if (module.secure)
+      val userId = createUserId
+#end
+      val ref = ${model.refModelName}(${refProperties})
+      val id = resultOf(service.insert(RefData(ref, instanceData) ${principle})).id
+#if (module.secure)
+      val token = Authenticator.compact(userId.value)
+      val header = Authorization(OAuth2BearerToken(token))
+      val headers = List(header)
+#end
+#if (module.secure)
+      Get(s"/${model.modelName.lispCase}/<%="${id.value}"%>").withHeaders(headers) ~> route ~> check {
+#else
+      Get(s"/${model.modelName.lispCase}/<%="${id.value}"%>") ~> route ~> check {
+#end
+
+         val response = responseAs[${model.modelName}]
+
+         (status must_== StatusCodes.OK) and
+         (response.id must_== id) and
+         (response.ref must_== ref) and
+         (response.data must_== instanceData)
+      }
+    }
+
+  }
+
+}

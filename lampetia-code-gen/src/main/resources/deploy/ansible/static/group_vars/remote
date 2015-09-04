@@ -1,0 +1,9 @@
+---
+
+remote:
+  user: root
+  volume: /home
+  locale: "en_US.UTF-8"
+  env: production
+
+ansible_ssh_user: root

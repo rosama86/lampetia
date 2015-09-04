@@ -1,0 +1,27 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+<%@ val model: Model %>
+
+#match (model.properties.length)
+#case (1)
+  #{val p = model.properties(0)}#
+  implicit lazy val consume${model.modelName}: Consume[${model.modelName}] =
+    consume[${p.typeName}] andThen ${model.modelName}
+#otherwise
+  implicit lazy val consume${model.modelName}: Consume[${model.modelName}] =
+  (<%=model.properties.map(p => s"consume[${p.typeName}]").mkString(" ~ ")%>)(${model.modelName})
+#end
+
+  implicit lazy val produce${model.modelName}: Produce[${model.modelName}] =
+    a => <%=model.properties.map(p => s"produce(a.${p.propertyName})").mkString(" andThen ")%>
+
+implicit lazy val ${model.modelName.camelCase}MessagePackFormat: BinaryFormat[${model.modelName}] = messagePackFormat[${model.modelName}]

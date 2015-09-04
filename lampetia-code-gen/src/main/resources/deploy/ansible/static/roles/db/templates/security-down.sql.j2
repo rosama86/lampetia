@@ -1,0 +1,17 @@
+alter table "{{docker.postgres.db.schema}}"."security_subject_grant_role" drop constraint "fk_ssgr_ref_role_id";
+alter table "{{docker.postgres.db.schema}}"."security_subject_grant_role" drop constraint "fk_ssgr_ref_subject_grant_id";
+alter table "{{docker.postgres.db.schema}}"."security_group_member" drop constraint "fk_sgm_ref_group_id";
+alter table "{{docker.postgres.db.schema}}"."security_group_member" drop constraint "fk_sgm_ref_user_id";
+alter table "{{docker.postgres.db.schema}}"."security_group" drop constraint "fk_sgm_ref_owner_user_id";
+alter table "{{docker.postgres.db.schema}}"."security_profile" drop constraint "profile_user_id_ref_user_user_id";
+alter table "{{docker.postgres.db.schema}}"."security_subject_grant_role" drop constraint "pk_security_subject_grant_role";
+drop table "{{docker.postgres.db.schema}}"."security_subject_grant_role";
+drop table "{{docker.postgres.db.schema}}"."security_subject_grant";
+alter table "{{docker.postgres.db.schema}}"."security_group_member" drop constraint "pk_security_group_member";
+drop table "{{docker.postgres.db.schema}}"."security_group_member";
+drop table "{{docker.postgres.db.schema}}"."security_group";
+drop table "{{docker.postgres.db.schema}}"."security_application";
+drop table "{{docker.postgres.db.schema}}"."security_role";
+alter table "{{docker.postgres.db.schema}}"."security_profile" drop constraint "profile_pk";
+drop table "{{docker.postgres.db.schema}}"."security_profile";
+drop table "{{docker.postgres.db.schema}}"."security_user";

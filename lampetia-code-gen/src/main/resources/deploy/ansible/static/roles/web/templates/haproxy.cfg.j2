@@ -1,0 +1,26 @@
+defaults
+    maxconn  4000
+    retries  3
+    timeout  connect 5s
+    timeout  client  1m
+    timeout  server  1m
+    balance  roundrobin
+
+backend security
+    mode http
+    server security           {{security_ip.stdout}}:{{docker.security.container.port}}
+
+backend service
+    mode http
+    server service            {{service_ip.stdout}}:{{docker.service.container.port}}
+
+frontend {{app.name}}
+    mode http
+    bind *:{{docker.haproxy.container.port}}
+
+    acl is-security-api         path_dir      /api/s/
+    acl is-service-api          path_dir      /api/
+
+    use_backend security       if is-security-api
+    use_backend service        if is-service-api
+
