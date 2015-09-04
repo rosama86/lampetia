@@ -28,6 +28,9 @@ object Strings {
     def dollar = s"$${$s}"
 
     def packageToDir = s.replaceAll("\\.", "/")
-  }
 
+    def toJavaIdentifier = {
+        s.split("-").map(ss => s"${ss.charAt(0).toUpper}${ss.substring(1)}").reduceLeft(  _ + _)
+    }
+  }
 }

@@ -10,31 +10,16 @@
 <%@ val module: Module%>
 <%@ val config: Config%>
 package ${module.basePackage}.format
+<%--
 
 import lampetia.format.JsonFormat
 import ${module.basePackage}.model._
 import play.api.libs.json._
+--%>
 
-trait ${module.name}JsonFormat extends JsonFormat {
-#for (model <- metamodels.jsonModels)
-  #match (model)
-  #case (m: Id)
-    Id ${m.modelName}
-    ${render("IdModelJsonFormat.ssp", Map("model" -> m))}
-  #case (m: Enum)
-    enum ${m.modelName}
-    ${render("EnumModelJsonFormat.ssp", Map("model" -> m))}
-  #case (m: Value)
-    value  ${m.modelName}
-    ${render("ValueModelJsonFormat.ssp", Map("model" -> m))}
-  #case (m: Composite)
-    composite
-    ${render("CompositeModelJsonFormat.ssp", Map("model" -> m))}
-  #case (m: Entity)
-    entity  ${m.modelName}
-    ${render("EntityModelJsonFormat.ssp", Map("model" -> m))}
-  #otherwise
-    // WARNING: Model ${model.modelName} was not generated
-  #end
-#end
+trait ${module.name.toJavaIdentifier}JsonFormat extends JsonFormat {
+<%--#for (m <- metamodels.jsonModels)
+    implicit lazy val ${m.modelName.camelCase}JsonFormat: Format[${m.modelName}] =
+      valueTypeFormat[${m.modelName}](${m.modelName})(_.value)
+#end--%>
 }

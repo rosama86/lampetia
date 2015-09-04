@@ -15,7 +15,7 @@ object BankModule extends App {
   val module = Module("Bank", base, "bank")
 
   val CustomerTypeModel =
-    enum("CustomerType")("Individual", "Organization").withDiscriminator("customerType".string) <+ commonFeatures
+    enum("CustomerType")("Individual".ecase, "Organization".ecase).withDiscriminator("customerType".string) <+ commonFeatures
 
   val CountryModel =
     entity("Country")("name".name) <+ commonFeatures
@@ -41,7 +41,7 @@ object BankModule extends App {
       "customerType" of CustomerTypeModel,
       ("branch" of BranchModel) << (flatten() in Sql),
       ("building" of BuildingModel) << (jsonbComposite in Sql),
-      "comments".json).withResourceType(s"$base.bank:1.0") <+ commonFeatures
+      "comments".jsond).withResourceType(s"$base.bank:1.0") <+ commonFeatures
 
 
 

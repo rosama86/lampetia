@@ -12,7 +12,7 @@ object OrganizationModule extends  App {
 
   //Table: OrganizationType
   val LanguageModel =
-    enum("Language")("English", "Arabic", "French", "Germany")
+    enum("Language")("English".ecase, "Arabic".ecase, "French".ecase, "Germany".ecase)
       .withDiscriminator("language".string) <+ commonFeatures
 
   val TextInLanguageModel =
@@ -37,11 +37,11 @@ object OrganizationModule extends  App {
   //Table: Organization
 
   val OrganizationPackageModel =
-    enum("OrganizationPackage")("Public", "Private", "Enterprise")
+    enum("OrganizationPackage")("Public".ecase, "Private".ecase, "Enterprise".ecase)
       .withDiscriminator("packageCode".string) <+ commonFeatures
 
   val OrganizationStateModel =
-    enum("OrganizationState")("OrganizationCreating", "OrganizationEditing", "OrganizationActive", "OrganizationSuspended", "OrganizationArchived", "OrganizationDeleted")
+    enum("OrganizationState")("OrganizationCreating".ecase, "OrganizationEditing".ecase, "OrganizationActive".ecase, "OrganizationSuspended".ecase, "OrganizationArchived".ecase, "OrganizationDeleted".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
   val CountryModel = value("Country")("code".string) <+ commonFeatures  //to implement as service link to other site

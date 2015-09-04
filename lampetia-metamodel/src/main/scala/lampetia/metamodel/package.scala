@@ -131,16 +131,30 @@ package object metamodel {
     def features: Seq[Feature] = Nil
   }
 
+  case object Jsonp extends JsonType {
+    type Self = Jsonp.type
+    def modelName = "Json"
+    def <<(fs: Feature*): Jsonp.type = this
+  }
+
   case object JsonData extends JsonType {
     type Self = JsonData.type
     def modelName = "JsonData"
     def <<(fs: Feature*): JsonData.type = this
   }
+
   case class JsonProperty
   (propertyName: String, features: Seq[Feature] = Nil, optional: Boolean = false, list: Boolean = false) extends Property {
     type Self = JsonProperty
-    def tpe: Model = JsonData
+    def tpe: Model = Jsonp
     def <<(fs: Feature*): JsonProperty = copy(features = fs ++ features)
+  }
+
+  case class JsondProperty
+  (propertyName: String, features: Seq[Feature] = Nil, optional: Boolean = false, list: Boolean = false) extends Property {
+    type Self = JsondProperty
+    def tpe: Model = JsonData
+    def <<(fs: Feature*): JsondProperty = copy(features = fs ++ features)
   }
 
   case object JsonbData extends JsonType {
@@ -188,6 +202,12 @@ package object metamodel {
     type Self = DateTimeLiteral.type
     def literalTypeName = "DateTime"
     def <<(fs: Feature*): DateTimeLiteral.type = this
+  }
+
+  case object JsValueLiteral extends LiteralType {
+    type Self = JsValueLiteral.type
+    def literalTypeName = "JsValue"
+    def <<(fs: Feature*): JsValueLiteral.type = this
   }
 
   case class LiteralProperty
@@ -262,23 +282,27 @@ package object metamodel {
 
   case class Enum(
                    modelName: String,
-                   cases: Seq[String],
-                   generalCase: Option[String] = None,
+                   cases: Seq[EnumCase],
+                   generalCase: Option[EnumCase] = None,
                    discriminator: LiteralProperty = LiteralProperty("name", StringLiteral),
                    features: Seq[Feature]) extends Model {
 
     type Self = Enum
     def withDiscriminator(property: LiteralProperty): Enum = this.copy(discriminator = property)
-    def withGeneralCase(gcase: String): Enum = this.copy(generalCase = Some(gcase))
+    def withGeneralCase(gcase: EnumCase): Enum = this.copy(generalCase = Some(gcase))
     def properties = Nil
     def <<(fs: Feature*): Enum = copy(features = fs ++ features)
   }
+
+  case class EnumCase(name: String, value: String)
 
   case class EnumProperty
   (propertyName: String, tpe: Enum, features: Seq[Feature], optional: Boolean = false, list: Boolean = false) extends Property {
     type Self = EnumProperty
     def <<(fs: Feature*): EnumProperty = copy(features = fs ++ features)
   }
+
+
 
 
 

@@ -9,7 +9,7 @@ object LogsBoxModule extends App { // <-- extends App
   val UrlModel = value("Url")("address".string) <+ commonFeatures
 
   val AdressingTitle =
-    enum("AdressingTitle")("Mr", "Ms","Mrs")
+    enum("AdressingTitle")("Mr".ecase, "Ms".ecase,"Mrs".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
   val PublicTag = composite("PublicTag")(
@@ -85,7 +85,7 @@ object LogsBoxModule extends App { // <-- extends App
   ) <+ commonFeatures
 
   val DeliveryMethod =
-    enum("DeliveryMethod")("Mail", "Telephone","Fax","LogsBoxDelivery")
+    enum("DeliveryMethod")("Mail".ecase, "Telephone".ecase,"Fax".ecase,"LogsBoxDelivery".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
   val LogClientInfo = composite("LogClientInfo")(
@@ -132,7 +132,7 @@ object LogsBoxModule extends App { // <-- extends App
     )
   */
   val LogType =
-    enum("LogType")("In", "Out")
+    enum("LogType")("In".ecase, "Out".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
 
@@ -143,7 +143,7 @@ object LogsBoxModule extends App { // <-- extends App
   )
 
   val LogAction =
-    enum("LogAction")("Drafting", "Sent","Deleted","Hold","Rejected","Closed","InProgress","Replied")
+    enum("LogAction")("Drafting".ecase, "Sent".ecase,"Deleted".ecase,"Hold".ecase,"Rejected".ecase,"Closed".ecase,"InProgress".ecase,"Replied".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
   val AttachmentModel = composite("AttachmentModel")(

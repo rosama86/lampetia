@@ -45,11 +45,11 @@ object AboutMeModule extends  App {
     ) <+ commonFeatures
 
   val AboutMeStateModel =
-    enum("AboutMeState")("Inserted", "Editing", "Active", "Deleted")
+    enum("AboutMeState")("Inserted".ecase, "Editing".ecase, "Active".ecase, "Deleted".ecase)
       .withDiscriminator("state".string) <+ commonFeatures
 
   val MaritalStatusModel =
-    enum("MaritalStatus")("Single", "Married").withDiscriminator("state".string) <+ commonFeatures
+    enum("MaritalStatus")("Single".ecase, "Married".ecase).withDiscriminator("state".string) <+ commonFeatures
 
   val AboutMeInfoModel =
     composite("AboutMeInfo")(

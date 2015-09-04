@@ -14,7 +14,7 @@ import lampetia.metamodel.Module
 object OrganizationPageModule extends  App {
 
   val YesNoModel =
-    enum("YesNo")("Yes", "No")
+    enum("YesNo")("Yes".ecase, "No".ecase)
       .withDiscriminator("value".string) <+ commonFeatures
 
   // reference Organization
@@ -28,16 +28,16 @@ object OrganizationPageModule extends  App {
   val UrlModel = value("Url")("address".string) <+ commonFeatures
 
   val OrganizationPackageModel =
-    enum("OrganizationPackage")("Public", "Private", "Enterprise")
+    enum("OrganizationPackage")("Public".ecase, "Private".ecase, "Enterprise".ecase)
       .withDiscriminator("packageCode".string) <+ commonFeatures
 
 
   val PageTemplateStateModel =
-    enum("PageTemplateState")("TemplateCreating", "TemplateActive", "TemplateSuspended" , "TemplateDeleted")
+    enum("PageTemplateState")("TemplateCreating".ecase, "TemplateActive".ecase, "TemplateSuspended".ecase , "TemplateDeleted".ecase)
       .withDiscriminator("templateState".string) <+ commonFeatures
 
   val PageDirectionModel =
-    enum("PageDirection")("Default", "LTR", "RTL")
+    enum("PageDirection")("Default".ecase, "LTR".ecase, "RTL".ecase)
       .withDiscriminator("direction".string) <+ commonFeatures
 
 
@@ -65,7 +65,7 @@ object OrganizationPageModule extends  App {
 
   //Table OrganizationPage
   val PageStateModel =
-    enum("PageState")("PageCreating", "PageActive", "PageSuspended" , "PageArchived", "PageDeleted")
+    enum("PageState")("PageCreating".ecase, "PageActive".ecase, "PageSuspended".ecase , "PageArchived".ecase, "PageDeleted".ecase)
       .withDiscriminator("pageState".string) <+ commonFeatures
 
   val KeywordModel =
@@ -100,11 +100,11 @@ object OrganizationPageModule extends  App {
 
   // Post
   val PostStateModel =
-    enum("PostState")("PostCreating", "PostActive", "PostSuspended" , "PostDeleted")
+    enum("PostState")("PostCreating".ecase, "PostActive".ecase, "PostSuspended".ecase, "PostDeleted".ecase)
       .withDiscriminator("postState".string) <+ commonFeatures
 
   val PostLineTypeModel =
-    enum("PostLineType")("UrlPostLine", "PicPostLine", "TextPostLine")
+    enum("PostLineType")("UrlPostLine".ecase, "PicPostLine".ecase, "TextPostLine".ecase)
       .withDiscriminator("lineType".string) <+ commonFeatures
 
   val PostLineModel =
@@ -153,11 +153,11 @@ object OrganizationPageModule extends  App {
 
   //Organization Events (Calendar Based)
   val EventStateModel =
-    enum("EventState")("EventCreating", "EventActive", "EventSuspended" , "EventDeleted")
+    enum("EventState")("EventCreating".ecase, "EventActive".ecase, "EventSuspended".ecase , "EventDeleted".ecase)
       .withDiscriminator("eventState".string) <+ commonFeatures
 
   val EventOccurTypeModel =
-    enum("EventOccurType")("Onetime", "Recurring")
+    enum("EventOccurType")("Onetime".ecase, "Recurring".ecase)
       .withDiscriminator("occurType".string) <+ commonFeatures
 
   val EventAddressModel =
@@ -174,7 +174,7 @@ object OrganizationPageModule extends  App {
     ) <+ commonFeatures
 
   val WeekdayModel =
-    enum("Weekday")("SU", "MO" , "TU", "WE", "TH", "FR", "SA")
+    enum("Weekday")("SU".ecase, "MO".ecase, "TU".ecase, "WE".ecase, "TH".ecase, "FR".ecase, "SA".ecase)
       .withDiscriminator("weekday".string) <+ commonFeatures
 
   val RecurringEventLineModel =
@@ -199,7 +199,7 @@ object OrganizationPageModule extends  App {
     ) <+ commonFeatures << (jsonbComposite in Sql)
 
   val EventSubscriberStateModel =
-    enum("EventSubscriberState")("SubscriberSent", "SubscriberConfirmed", "SubscriberTentative" , "SubscriberRejected")
+    enum("EventSubscriberState")("SubscriberSent".ecase, "SubscriberConfirmed".ecase, "SubscriberTentative".ecase , "SubscriberRejected".ecase)
       .withDiscriminator("eventSubscriberState".string) <+ commonFeatures
 
   val EventSubscriberModel =

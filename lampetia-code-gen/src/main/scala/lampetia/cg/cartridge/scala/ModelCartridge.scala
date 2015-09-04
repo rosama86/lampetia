@@ -46,44 +46,25 @@ trait ModelCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "json-format",
-      CFile(s"${module.name}JsonFormat.scala"),
-      CDir(s"${scalaDir(module)}/format/json"),
+      CFile(s"${module.name.toJavaIdentifier}JsonFormat.scala"),
+      CDir(s"${scalaDir(module)}/format"),
       m => Seq(
         s"${m.basePackage}.model._",
-        s"${m.basePackage}.format.json.${m.name}JsonFormat._"))
-
-  def messagePackFormat(module: Module) =
-    CommonScalaFileGenerationTask(
-      module,
-      "messagepack-format",
-      CFile(s"${module.name}MessagePackFormat.scala"),
-      CDir(s"${scalaDir(module)}/format/mp"),
-      m => Seq(
-        s"${m.basePackage}.model._",
-        s"${m.basePackage}.format.mp.${m.name}MessagePackFormat._"))
+        s"${m.basePackage}.format.json.${m.name.toJavaIdentifier}JsonFormat._"))
 
   def jsonFormatSpec(module: Module) =
     CommonScalaFileGenerationTask(
       module,
       "json-format-spec",
-      CFile(s"${module.name}JsonFormatSpec.scala"),
-      CDir(s"${scalaTestDir(module)}/format/json"),
+      CFile(s"${module.name.toJavaIdentifier}JsonFormatSpec.scala"),
+      CDir(s"${scalaTestDir(module)}/format"),
       m => Seq(s"${m.basePackage}.model._"))
-
-  def messagePackFormatSpec(module: Module) =
-    CommonScalaFileGenerationTask(
-      module,
-      "messagepack-format-spec",
-      CFile(s"${module.name}MessagePackFormatSpec.scala"),
-      CDir(s"${scalaTestDir(module)}/format/mp"),
-      m => Seq(s"${m.basePackage}.model._"))
-
 }
 
 class DefaultModelCartridge(val config: Config) extends ModelCartridge {
 
   def tasksFor(module: Module): Seq[Task] =
-    Seq(packageObject _, jsonFormat _, jsonFormatSpec _, messagePackFormat _, messagePackFormatSpec _)
+    Seq(packageObject _, jsonFormat _, jsonFormatSpec _)
       .map(_(module))
 
 }

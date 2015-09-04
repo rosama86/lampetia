@@ -11,18 +11,16 @@
 
 package ${module.basePackage}.model
 
+import lampetia.meta._
+import lampetia.meta.feature._
 import lampetia.model._
 import org.joda.time.DateTime
-import scala.util.{Try, Success}
+import play.api.libs.json.JsValue
+import play.libs.Json
+import scala.util.{Success, Try}
 <%@val imports: Seq[String] %>
 #for (i <- imports)
   import ${i}
-#end
-
-
-#for (model <- metamodels.idModels)
-  // Id model for Entity ${model.entity.modelName}
-  case class ${model.modelName}(value: String) extends AnyVal
 #end
 
 #for (model <- metamodels.enumModels)
@@ -30,14 +28,14 @@ import scala.util.{Try, Success}
     val pname = model.discriminator.propertyName
     val ptpe = model.discriminator.tpe.literalTypeName
   }#
-  // Enum ${model.modelName}
-  sealed trait ${model.modelName} {
+
+  sealed trait ${model.modelName} extends Any {
     def ${pname}: ${ptpe}
   }
 
   #for (cs <- model.cases )
-  case object ${cs} extends ${model.modelName} {
-    def ${pname} = "${cs}"
+  case object ${cs.name} extends ${model.modelName} {
+    val ${pname} = "${cs.value}"
   }
   #end
 
@@ -45,14 +43,11 @@ import scala.util.{Try, Success}
   case class ${gc}(${pname}: ${ptpe}) extends ${model.modelName}
   #end
 
-  object ${model.modelName} {
-    def from${ptpe}(${pname}: ${ptpe}): ${model.modelName} = ${pname} match {
-  #for (cs <- model.cases)
-      case "${cs}"  => ${cs}
-  #end
-  #for (gc <- model.generalCase)
-      case _             => ${gc}(${pname})
-  #end
+  object ${model.modelName}{
+    def apply(value: ${ptpe}): ${model.modelName}  = value match {
+    #for (cs <- model.cases)
+      case s if s == ${cs.name}.${pname} => ${cs.name}
+    #end
     }
   }
 
@@ -60,85 +55,97 @@ import scala.util.{Try, Success}
 
 #for (model <- metamodels.valueModels)
 
-  // Value ${model.modelName}
   case class ${model.modelName}(${model.valueProperty.propertyName}: ${model.valueProperty.typeName}) extends AnyVal
 
 #end
 
 #for (model <- metamodels.compositeModels)
 
-
-  // Composite ${model.modelName}
   case class ${model.modelName}(${model.properties.map(_.nameColonTypeInEntity).mkString(",")})
 
 
 #end
 
-  object ${module.name}Models {
-  #for (model <- metamodels.entityModels)
-    val ${model.modelName.camelCase}ResourceType = ResourceType("${model.resourceType}")
-  #end
-  }
-
 #for (model <- metamodels.entityModels)
-  // Entity ${model.modelName}
-  case class ${model.dataModelName}(${model.entityDataProperties.map(_.nameColonTypeInEntity).mkString(",")})
-  #if (model.hasReferenceModel)
-  case class ${model.modelName}Ref(${model.entityRefProperties.map(_.nameColonTypeInEntity).mkString(",")})
-  case class ${model.modelName}(id: ${model.idModelName}, ref:${model.modelName}Ref, data: ${model.dataModelName}, timestamp: Timestamp)
-  #else
-  case class ${model.modelName}(id: ${model.idModelName}, data: ${model.dataModelName}, timestamp: Timestamp)
-  #end
+
+    <% val hasId = metamodels.idEntity.contains(model)%>
+    #if ( hasId )
+    case class ${model.idModelName}(value: String) extends AnyVal
+    #end
+
+    #if (model.hasData)
+    case class ${model.dataModelName}(${model.entityDataProperties.map(_.nameColonTypeInEntity).mkString(",\n\t\t")})
+    #end
+
+    #if (model.hasReferenceModel)
+    case class ${model.modelName}Ref(${model.entityRefProperties.map(_.nameColonTypeInEntity).mkString(",")})
+    #end
+
+    <%
+    val id = if(hasId) "id: "+ model.idModelName else ""
+    val ref = if(model.hasReferenceModel) "ref: " + model.modelName + "Ref" else ""
+    val data = if(model.hasData) "data: " + model.dataModelName else ""
+    val prop = List(id, ref,data).filter(_ != "").mkString(", ")
+    %>
+    case class ${model.modelName}(${prop})
 
 #end
 
-  trait ${module.name}Syntax {
+  trait ${module.name.toJavaIdentifier}Model {
+
+    def schema: String
 
 #for (model <- metamodels.entityModels)
 
-  #if (model.hasReferenceModel)
-    implicit object ${model.modelName}Identity
-      extends IdentifiableEntityData[${model.modelName}, ${model.idModelName}, RefData[${model.refModelName}, ${model.dataModelName}]]
-      with    Stringify[${model.idModelName}] {
-      def parse(stringId: String): Try[${model.idModelName}] = Success(${model.idModelName}(stringId))
-      def stringify(id: ${model.idModelName}): String = id.value
-      def id(instance: ${model.modelName}): ${model.idModelName} = instance.id
-      def asResource(id: ${model.idModelName}): Resource = Resource(ResourceId(id.value), ${module.name}Models.${model.modelName.camelCase}ResourceType)
-      #if(model.hasParent)
-      override def parentResourceId(instance: ${model.modelName}): Option[ResourceId] = Some(ResourceId(instance.ref.${model.parentIdProperty.propertyName}.value))
+   <% val hasId = metamodels.idEntity.contains(model)%>
+  implicit object ${model.modelName}Model
+      extends Model[${model.modelName}]
+      #if (hasId)
+      with HasId[${model.modelName}, ${model.modelName}Id]
       #end
-      def data(instance: ${model.modelName}): RefData[${model.refModelName}, ${model.dataModelName}] = RefData(instance.ref, instance.data)
-      def instance(refdata: RefData[${model.refModelName}, ${model.dataModelName}]): ${model.modelName} =
-        ${model.modelName}(${model.idModelName}(generateStringId), refdata.ref, refdata.data, Timestamp(DateTime.now, DateTime.now))
-      def combine(id: ${model.idModelName}, refdata: RefData[${model.refModelName}, ${model.dataModelName}]): ${model.modelName} =
-        ${model.modelName}(id, refdata.ref, refdata.data, Timestamp(DateTime.now(), DateTime.now()))
-      def combineWithTimestamp(id: ${model.idModelName}, refdata: RefData[${model.refModelName}, ${model.dataModelName}], timestamp: Timestamp): ${model.modelName} =
-        ${model.modelName}(id, refdata.ref, refdata.data, timestamp)
-      def touch(instance: ${model.modelName}): ${model.modelName} =
-        instance.copy(timestamp = instance.timestamp.copy(updatedAt = new DateTime))
-    }
-  #else
-    implicit object ${model.modelName}Identity
-      extends IdentifiableEntityData[${model.modelName}, ${model.idModelName}, ${model.dataModelName}]
-      with    Stringify[${model.idModelName}] {
-        def parse(stringId: String): Try[${model.idModelName}] = Success(${model.idModelName}(stringId))
-        def stringify(id: ${model.idModelName}): String = id.value
-        def id(instance: ${model.modelName}): ${model.idModelName} = instance.id
-        def asResource(id: ${model.idModelName}): Resource = Resource(ResourceId(id.value), ${module.name}Models.${model.modelName.camelCase}ResourceType)
-        def data(instance: ${model.modelName}): ${model.dataModelName} = instance.data
-        def instance(data: ${model.dataModelName}): ${model.modelName} =
-          ${model.modelName}(${model.idModelName}(generateStringId), data, Timestamp(DateTime.now, DateTime.now))
-        def combine(id: ${model.idModelName}, data: ${model.dataModelName}): ${model.modelName} =
-          ${model.modelName}(id, data, Timestamp(DateTime.now(), DateTime.now()))
-        def combineWithTimestamp(id: ${model.idModelName}, data: ${model.dataModelName}, timestamp: Timestamp): ${model.modelName} =
-          ${model.modelName}(id, data, timestamp)
-        def touch(instance: ${model.modelName}): ${model.modelName} =
-          instance.copy(timestamp = instance.timestamp.copy(updatedAt = new DateTime))
-    }
-  #end
+      #if (model.hasReferenceModel)
+      with HasRef[${model.modelName}, ${model.modelName}Ref]
+      #end
+      #if (model.hasData)
+      with HasData[${model.modelName}, ${model.modelName}Data]
+      #end
+      #if (hasId)
+      with CanGenerate[${model.modelName}Id]
+      with CanParse[${model.modelName}Id]
+      with UUIDGenerator #end {
+          val modelName: String = "${model.modelName}"
+          #if (hasId)
+          val id = property[${model.modelName}Id]("id")
+          def generate: ${model.modelName}Id = ${model.modelName}Id(generateStringId)
+          def parse(stringId: String): Try[${model.modelName}Id] = Success(${model.modelName}Id(stringId))
+          #end
+          #if (model.hasReferenceModel)
+          object ref extends RefModel[${model.modelName}Ref] {
+           #for (refProps <- model.entityRefProperties)
+          val ${refProps.propertyName} = property[${refProps.propertyTypeInEntity}]("${refProps.propertyName.snakeCase}")
+            #end
+          val properties = Seq(${model.entityRefProperties.map(_.propertyName).mkString(", ")})
+          }
+          #end
+          #if (model.hasData)
+          object data extends DataModel[${model.modelName}Data] {
+          #for (dataProp <- model.entityDataProperties)
+          val ${dataProp.propertyName} = property[${dataProp.propertyTypeInEntity}]("${dataProp.propertyName.snakeCase}")
+          #end
+          val properties = Seq(${model.entityDataProperties.map(_.propertyName).mkString(", ")})
+          }
+          #end
+
+          override lazy val features: Seq[Feature] = Seq(
+          sql.schema(schema),
+          sql.name("${model.modelName.snakeCase}")#if (hasId),
+          sql.primaryKey("${model.modelName.snakeCase}_pk")(${model.modelName}Model.id)#end #if (model.hasReferenceModel),
+          #for (refProps <- model.entityRefProperties)
+          sql.foreignKey("${model.modelName.snakeCase}_${refProps.tpe.entity.modelName.snakeCase}_ref_${refProps.propertyName.snakeCase}")(ref.${refProps.propertyName})(${refProps.tpe.entity.modelName}Model, ${refProps.tpe.entity.modelName}Model.id)
+          #end
+          #end
+  )
+      }
 
 #end
   }
-
-  object ${module.name}Syntax extends ${module.name}Syntax
-

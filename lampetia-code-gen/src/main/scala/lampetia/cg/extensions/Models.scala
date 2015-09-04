@@ -66,6 +66,9 @@ trait Models {
 
     def idModels: Seq[Id] =
       models.collect { case m: Id => m }
+
+    def idEntity: Seq[Entity] =
+      models.collect { case m: Id => m }.map(_.entity)
   }
 
   implicit class ModelEx[M <: Model](model: M) {
@@ -76,7 +79,7 @@ trait Models {
       case m: Value => s"${m.modelName}(${m.valueProperty.tpe.generateInstance})"
       case m: Composite => CompositeEx(m).generateInstance
       case m: Entity => EntityEx(m).generateInstance
-      case m: Enum => m.cases(Random.nextInt(m.cases.length))
+      case m: Enum => EnumEx(m).generateInstance
       case m: LiteralType => m.literalTypeName match {
         case "String" => Random.alphanumeric.take(10).toList.foldLeft("")(_ + _).qoute
         case "Int" => Random.nextInt().toString
@@ -152,13 +155,13 @@ trait Models {
       }.getOrElse(property.propertyName)
 
     def sqlType: String = property match {
-      case p: JsonProperty => postgresqlJsonMappedType
+      case p: JsondProperty => postgresqlJsonMappedType
       case p: JsonbProperty => postgresqlJsonbMappedType
       case _ => property.propertyTypeInEntity
     }
 
     def sqlRecordProperty = property match {
-      case p: JsonProperty => s"${property.propertyName}: $postgresqlJsonMappedType"
+      case p: JsondProperty => s"${property.propertyName}: $postgresqlJsonMappedType"
       case p: JsonbProperty => s"${property.propertyName}: $postgresqlJsonbMappedType"
       case p => s"${p.sqlFlattenName}: ${p.propertyTypeInEntity}"
     }
@@ -195,7 +198,7 @@ trait Models {
       }.getOrElse("")
 
     def sqlColumnProperty(m: Model) = property match {
-      case _: JsonProperty =>
+      case _: JsondProperty =>
         s"""val $sqlFlattenName = column[${mkType(postgresqlJsonMappedType)}](${m.metaName}.${property.propertyName}, O.SqlType("$postgresqlJsonType"))"""
 
       case _: JsonbProperty =>
@@ -386,6 +389,13 @@ trait Models {
 
   }
 
+  implicit class EnumEx(enum: Enum) {
+
+    def generateInstance: String = {
+      enum.cases.map(_.name).reduce(_ + ", " +  _)
+    }
+  }
+
   implicit class EntityEx(model: Entity) {
 
     def entityRefProperties: Seq[RefProperty] =
@@ -441,6 +451,8 @@ trait Models {
     def referenceType = refModelName
 
     def hasReferenceModel = entityRefProperties.nonEmpty
+
+    def hasData = entityDataProperties.nonEmpty
 
     def hasParent = entityRefProperties.exists(_.parent)
 
@@ -593,7 +605,7 @@ trait Models {
                 s"$prefix.${p.propertyName}.${nonComposite.sqlFlattenName}"
             }.mkString(",\n")
             //p.tpe.properties.map(inner => s"$prefix.${p.propertyName}.${inner.sqlFlattenName}")
-          case p: JsonProperty =>
+          case p: JsondProperty =>
             s"$postgresqlJsonMappedType($prefix.${p.propertyName})"
           case p: JsonbProperty =>
             s"$postgresqlJsonbMappedType($prefix.${p.propertyName})"
@@ -636,7 +648,7 @@ trait Models {
                   s"$prefix.${inner.sqlFlattenName}"
               }.mkString(", ")
             Seq(s"${p.tpe.modelName}($cps)")
-          case p: JsonProperty =>
+          case p: JsondProperty =>
             Seq(s"$prefix.${p.propertyName}.value")
           case p: JsonbProperty =>
             Seq(s"$prefix.${p.propertyName}.value")

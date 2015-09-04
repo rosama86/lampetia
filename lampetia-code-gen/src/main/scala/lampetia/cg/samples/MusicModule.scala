@@ -11,7 +11,7 @@ import lampetia.cg.extensions.Models._
 object MusicModule extends App {
 
   val Genre =
-    enum("Genre")("Jazz", "Flamenco", "Classic").withDiscriminator("name".string) <+
+    enum("Genre")("Jazz".ecase, "Flamenco".ecase, "Classic".ecase).withDiscriminator("name".string) <+
       commonFeatures <<
       (named("music_genre") in Sql)
 

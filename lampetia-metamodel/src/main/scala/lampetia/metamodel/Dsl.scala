@@ -81,7 +81,9 @@ trait Dsl {
     def int = LiteralProperty(s, IntLiteral)
     def boolean = LiteralProperty(s, BooleanLiteral)
     def dateTime = LiteralProperty(s, DateTimeLiteral)
+    def jsvalue = LiteralProperty(s, JsValueLiteral)
     def json = JsonProperty(s)
+    def jsond = JsondProperty(s)
     def jsonb = JsonbProperty(s)
   }
 
@@ -113,8 +115,15 @@ trait Dsl {
   }
 
 
-  def enum(name: String)(cases: String*): Enum = Enum(name, cases = cases, features = Nil)
-  def enum(cases: String*): String => Enum = enum(_)(cases:_*)
+  def enum(name: String)(cases: EnumCase*): Enum = Enum(name, cases = cases, features = Nil)
+  def enum(cases: EnumCase*): String => Enum = enum(_)(cases:_*)
+
+  def enumCase(name: String): EnumCase = EnumCase(name, name.toUpperCase)
+  def enumCase(name: String, value: String): EnumCase = EnumCase(name, value)
+
+  implicit class enumCaseBuilder(s: String) {
+    def ecase = EnumCase(s, s.toUpperCase)
+  }
 
   implicit val enumPropertyBuilder = new PropertyBuilder[Enum, EnumProperty] {
     def build(name: String, model: Enum, optional: Boolean = false, list: Boolean = false): EnumProperty =
