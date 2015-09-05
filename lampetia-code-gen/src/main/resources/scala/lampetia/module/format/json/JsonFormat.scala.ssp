@@ -10,16 +10,35 @@
 <%@ val module: Module%>
 <%@ val config: Config%>
 package ${module.basePackage}.format
-<%--
 
 import lampetia.format.JsonFormat
 import ${module.basePackage}.model._
 import play.api.libs.json._
---%>
 
 trait ${module.name.toJavaIdentifier}JsonFormat extends JsonFormat {
-<%--#for (m <- metamodels.jsonModels)
-    implicit lazy val ${m.modelName.camelCase}JsonFormat: Format[${m.modelName}] =
-      valueTypeFormat[${m.modelName}](${m.modelName})(_.value)
-#end--%>
+#for (model <- metamodels.jsonModels)
+    #match (model)
+    #case (m: Enum)
+        implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+            valueTypeFormat[${model.modelName}](${model.modelName}.apply)(_.value)
+    #case (m: Id)
+        implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+            valueTypeFormat[${model.modelName}](${model.modelName})(_.value)
+    #case (m: Entity)
+        #if (m.hasData)
+        implicit lazy val ${model.modelName}DataJsonFormat: Format[${model.modelName}Data] =
+            Json.format[${model.modelName}Data]
+        #end
+        #if (m.hasReferenceModel)
+        implicit lazy val ${model.modelName}RefJsonFormat: Format[${model.modelName}Ref] =
+            Json.format[${model.modelName}Ref]
+        #end
+        implicit lazy val ${model.modelName}JsonFormat: Format[${model.modelName}] =
+            Json.format[${model.modelName}]
+    #otherwise
+        // WARNING: Model ${model.modelName} was not generated
+    #end
+
+
+#end
 }
