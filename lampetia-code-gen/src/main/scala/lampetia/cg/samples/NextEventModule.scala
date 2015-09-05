@@ -2,7 +2,7 @@ package lampetia.cg.samples
 
 import lampetia.cg.CodeGenerator
 import lampetia.metamodel.Dsl._
-import lampetia.metamodel.{Entity, Module}
+import lampetia.metamodel.{Secure, Entity, Module}
 
 /**
  * @author Radwa Osama
@@ -12,7 +12,7 @@ object NextEventModule extends App {
 
   val base = "nxt.event"
 
-  val module = Module("nxt-event", base, "nxt-event", mn = Some("Event"))
+  val module = Module("nxt-event", base, "nxt-event",  options = Seq(Secure), mn = Some("Event"))
 
   val EventStateModel =
     enum("EventState")(
@@ -57,6 +57,9 @@ object NextEventModule extends App {
   val sessionModel: Entity =
     entity("Session")("name".string, "description".string, "contactInfo".json, "photoUrl".string)
 
+  val user: Entity =
+    entity("User")()
+
   val eventModel: Entity =
     entity("Event")(
       "title".string,
@@ -79,7 +82,7 @@ object NextEventModule extends App {
     )
 
   val eventAttendeeModel: Entity =
-    entity("EventAttendee")("eventId" ref eventModel.id /*, "attendeeId" ref UserId*/)
+    entity("EventAttendee")("eventId" ref eventModel.id /*, "attendeeId" ref user.id*/)
 
   val models = Seq(
     EventStateModel,
@@ -94,5 +97,5 @@ object NextEventModule extends App {
     sessionModel.id.tpe,
     sessionModel)
 
-  CodeGenerator.modelGenerator(module, models).generate()
+  CodeGenerator.serviceGenerator(module, models).generate()
 }

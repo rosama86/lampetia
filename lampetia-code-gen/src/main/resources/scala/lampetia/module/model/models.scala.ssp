@@ -141,7 +141,7 @@ import scala.util.{Success, Try}
           sql.name("${model.modelName.snakeCase}")#if (hasId),
           sql.primaryKey("${model.modelName.snakeCase}_pk")(${model.modelName}Model.id)#end #if (model.hasReferenceModel),
           #for (refProps <- model.entityRefProperties)
-          sql.foreignKey("${model.modelName.snakeCase}_${refProps.tpe.entity.modelName.snakeCase}_ref_${refProps.propertyName.snakeCase}")(ref.${refProps.propertyName})(${refProps.tpe.entity.modelName}Model, ${refProps.tpe.entity.modelName}Model.id)
+          sql.foreignKey("${model.modelName.snakeCase}_ref_${refProps.propertyName.snakeCase}")(ref.${refProps.propertyName})(${refProps.tpe.entity.modelName}Model, ${refProps.tpe.entity.modelName}Model.id)
           #end
           #end
   )

@@ -66,14 +66,14 @@ trait ServiceCartridge extends ScalaCartridge {
       CommonScalaFileGenerationTask(
         module,
         "http-service-actor",
-        CFile(s"${module.name}HttpServiceActor.scala"),
+        CFile(s"${module.modelName}HttpServiceActor.scala"),
         CDir(s"${scalaDir(module)}/route"))
 
     def sprayService: FileGenerationTask =
       CommonScalaFileGenerationTask(
         module,
         "spray-service",
-        CFile(s"${module.name}SprayService.scala"),
+        CFile(s"${module.modelName}SprayService.scala"),
         CDir(s"${scalaDir(module)}/route"))
 
     def route(entity: Entity): FileGenerationTask =
@@ -126,7 +126,7 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "module",
-      CFile(s"${module.name}Module.scala"),
+      CFile(s"${module.modelName}Module.scala"),
       CDir(s"${scalaDir(module)}/module")
     )
 
@@ -134,14 +134,14 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "configuration",
-      CFile(s"${module.name}Configuration.scala"),
+      CFile(s"${module.modelName}Configuration.scala"),
       CDir(s"${scalaDir(module)}/conf"))
 
   def testConfiguration(module: Module) =
     CommonScalaFileGenerationTask(
       module,
       "test-configuration",
-      CFile(s"${module.name}TestConfiguration.scala"),
+      CFile(s"${module.modelName}TestConfiguration.scala"),
       CDir(s"${scalaTestDir(module)}/di"))
 
   /*def scalaFormat(module: Module) =
@@ -155,7 +155,7 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "sql-format",
-      CFile(s"${module.name}SqlFormat.scala"),
+      CFile(s"${module.modelName}SqlFormat.scala"),
       CDir(s"${scalaDir(module)}/format/sql"),
       m => Seq(
         s"${m.basePackage}.model._",
@@ -165,7 +165,7 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "spec-instance-factory",
-      CFile(s"${module.name}InstanceFactory.scala"),
+      CFile(s"${module.modelName}InstanceFactory.scala"),
       CDir(s"${scalaTestDir(module)}/spec"),
       m => Seq(
         s"${m.basePackage}.model._",
@@ -175,7 +175,7 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "postgresql-module",
-      CFile(s"Postgresql${module.name}Module.scala"),
+      CFile(s"Postgresql${module.modelName}Module.scala"),
       CDir(s"${scalaDir(module)}/store/postgresql"))
 
 
@@ -183,7 +183,7 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "ddl",
-      CFile(s"${module.name}DDL.scala"),
+      CFile(s"${module.modelName}DDL.scala"),
       CDir(s"${scalaDir(module)}/store/postgresql"))
 
   def dao(module: Module) = DaoFileGenerationTask(module)
@@ -198,8 +198,8 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
     Seq(
       configuration _,
       moduleTask _,
-      testConfiguration _,
-      referenceConf _,
+      //testConfiguration _,
+      referenceConf _/*,
       logbackXml _,
       //scalaFormat _,
       sqlFormat _,
@@ -207,6 +207,6 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
       postgresqlModule _,
       instanceFactory _,
       spray _,
-      ddl _)
+      ddl _*/)
       .map(_(module))
 }

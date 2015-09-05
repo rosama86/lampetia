@@ -12,36 +12,40 @@
 
 package ${module.basePackage}.module
 
-#if(module.secure)
-import lampetia.security.module.SecurityModule
-#else
-import lampetia.module.{ ModuleRoutes, ModuleServices, ModuleDaos, Module }
-#end
-import ${module.basePackage}.model._
+import lampetia.conf.Configuration
+import ${module.basePackage}.format.{${module.modelName}JsonFormat, ${module.modelName}SqlFormat}
+import lampetia.sql.dialect.postgresql.{PostgresqlConfiguration, Postgresql}
+import ${module.basePackage}.conf.${module.modelName}Configuration
+import ${module.basePackage}.model.${module.modelName}Model
 <%@val imports: Seq[String] %>
 #for (i <- imports)
   import ${i}
 #end
 
-#if(module.secure)
-trait ${module.name}Module extends SecurityModule {
-#else
-trait ${module.name}Module extends Module with ModuleDaos with ModuleServices with ModuleRoutes {
-#end
+trait ${module.modelName}Module {
 
-  // Module Daos
-#for(model <- metamodels.entityModels)
+    object json extends ${module.modelName}JsonFormat
 
-  trait ${model.modelName}Dao extends StatefulDao[${model.modelName}]
-  def ${model.modelName.camelCase}Dao: ${model.modelName}Dao
+  object sql extends Postgresql with ${module.modelName}Model with ${module.modelName}SqlFormat {
+    val schema = configuration.schema
 
-#end
+    implicit lazy val context: sql.ConnectionSource = sql.hikari(
+      configuration.pgJdbcDataSourceClassName,
+      configuration.pgHost,
+      configuration.pgPort,
+      configuration.pgDatabase,
+      configuration.pgUser,
+      configuration.pgPassword,
+      configuration.pgMaximumPoolSize,
+      configuration.pgLeakDetectionThreshold)
+  }
 
-  // Module Services
-#for(model <- metamodels.entityModels)
-
-  trait ${model.modelName}Service extends StatefulEntityService[${model.modelName}]
-  def ${model.modelName.camelCase}Service: ${model.modelName}Service
-
-#end
+  object configuration
+    extends Configuration
+      with ${module.modelName}Configuration
+      with PostgresqlConfiguration {
+    def close(): Unit = sql.context.shutdown()
+  }
 }
+
+object ${module.modelName}Module extends ${module.modelName}Module

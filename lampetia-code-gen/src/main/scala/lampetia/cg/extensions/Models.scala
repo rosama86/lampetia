@@ -85,6 +85,7 @@ trait Models {
         case "Int" => Random.nextInt().toString
         case "Boolean" => Random.nextBoolean().toString
         case "DateTime" => "DateTime.now"
+        case "JsValue" => "JsValue"
       }
       case m: JsonType =>
         s"""JsonData(Json.obj("id" -> "some-id", "data" -> List("something", "something else")))"""
