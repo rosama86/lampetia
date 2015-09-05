@@ -15,7 +15,7 @@ import lampetia.format.JsonFormat
 import ${module.basePackage}.model._
 import play.api.libs.json._
 
-trait ${module.name.toJavaIdentifier}JsonFormat extends JsonFormat {
+trait ${module.modelName}JsonFormat extends JsonFormat {
 #for (model <- metamodels.jsonModels)
     #match (model)
     #case (m: Enum)

@@ -11,6 +11,8 @@ object Strings {
 
     def camelCase = s"${s.charAt(0).toLower}${s.substring(1)}"
 
+    def CamelCase = s"${s.charAt(0).toUpper}${s.substring(1)}"
+
     def snakeCase = {
       val r = """((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))""".r
       r.replaceAllIn(s, "_$1").toLowerCase

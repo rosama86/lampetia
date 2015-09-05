@@ -91,7 +91,7 @@ import scala.util.{Success, Try}
 
 #end
 
-  trait ${module.name.toJavaIdentifier}Model {
+  trait ${module.modelName}Model {
 
     def schema: String
 

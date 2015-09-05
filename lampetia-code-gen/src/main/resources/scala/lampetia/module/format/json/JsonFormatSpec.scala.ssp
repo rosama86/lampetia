@@ -17,6 +17,6 @@ import org.scalatest.{Matchers, FlatSpec}
   import ${i}
 #end
 
-class ${module.name.toJavaIdentifier}JsonFormatSpec extends FlatSpec with Matchers {
+class ${module.modelName}JsonFormatSpec extends FlatSpec with Matchers {
 
 }

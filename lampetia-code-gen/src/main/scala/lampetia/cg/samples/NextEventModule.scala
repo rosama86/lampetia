@@ -12,7 +12,7 @@ object NextEventModule extends App {
 
   val base = "nxt.event"
 
-  val module = Module("nxt-event", base, "nxt-event")
+  val module = Module("nxt-event", base, "nxt-event", mn = Some("Event"))
 
   val EventStateModel =
     enum("EventState")(

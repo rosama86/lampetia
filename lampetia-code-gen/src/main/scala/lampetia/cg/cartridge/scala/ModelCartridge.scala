@@ -46,17 +46,17 @@ trait ModelCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "json-format",
-      CFile(s"${module.name.toJavaIdentifier}JsonFormat.scala"),
+      CFile(s"${module.modelName}JsonFormat.scala"),
       CDir(s"${scalaDir(module)}/format"),
       m => Seq(
         s"${m.basePackage}.model._",
-        s"${m.basePackage}.format.json.${m.name.toJavaIdentifier}JsonFormat._"))
+        s"${m.basePackage}.format.json.${m.modelName}JsonFormat._"))
 
   def jsonFormatSpec(module: Module) =
     CommonScalaFileGenerationTask(
       module,
       "json-format-spec",
-      CFile(s"${module.name.toJavaIdentifier}JsonFormatSpec.scala"),
+      CFile(s"${module.modelName}JsonFormatSpec.scala"),
       CDir(s"${scalaTestDir(module)}/format"),
       m => Seq(s"${m.basePackage}.model._"))
 }
