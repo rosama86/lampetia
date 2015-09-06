@@ -1,11 +1,9 @@
 package lampetia.sql.dialect.mysql
 
+import lampetia.meta.Property
 import lampetia.sql.ast._
 import lampetia.sql.dialect.Dialect
 
-/**
- * Created by rhelal on 8/11/15.
- */
 trait MysqlDsl extends Dsl with Dialect {
 
   trait MysqlQueryNodeBuilder extends QueryNodeBuilder {
@@ -41,6 +39,33 @@ trait MysqlDsl extends Dsl with Dialect {
     val operands: Seq[Operand] = Seq(operand, typeNode)
     val sqlString: String = s"CAST(${operand.sqlString} AS ${typeNode.sqlString})"
   }
+
+  trait MysqlOperandOps[V <: Operand] extends OperandOps[V]
+
+  trait MysqlOperatorOps[V <: Operator] extends OperatorOps[Operator] with MysqlOperandOps[Operator]
+
+  trait SymbolsDsl extends MysqlOperandOps[Operand] {
+    def symbol: Symbol
+    def asIdentifier(implicit b: IdentifierNodeBuilder): IdentifierNode = b(symbol.name)
+    def ?(implicit b: NamedParameterNodeBuilder): NamedParameterNode = b(symbol.name)
+  }
+
+  implicit class Symbols(val symbol: Symbol) extends SymbolsDsl {
+    def value: Operand = asIdentifier
+  }
+
+  trait PropertyLifterDsl[A] extends MysqlOperandOps[Operand] {
+    def property: Property[A]
+    def asColumnIdentifier(implicit b: ColumnIdentifierNodeBuilder): ColumnIdentifierNode[A] = b[A](property)
+  }
+
+  implicit class PropertyLifter[A](val property: Property[A]) extends PropertyLifterDsl[A] {
+    def value: Operand = asColumnIdentifier
+  }
+
+  implicit class OperandOpsEx[A <: Operand](val value: A) extends MysqlOperandOps[A]
+
+  implicit class OperatorOpsEx[A <: Operator](val value: A) extends MysqlOperatorOps[A]
 
 }
 

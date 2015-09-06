@@ -49,22 +49,24 @@ with    Ops {
 
 trait MysqlConfiguration extends Lifecycle { self: Configuration =>
 
+  def mysqlConfigurationKey = "lampetia.module.mysql"
+
   lazy val mysqlJdbcDataSourceClassName: String =
-    config.getString("lampetia.module.mysql.data-source-class-name")
+    config.getString(s"$mysqlConfigurationKey.data-source-class-name")
   lazy val mysqlHost: String =
-    config.getString("lampetia.module.mysql.host")
+    config.getString(s"$mysqlConfigurationKey.host")
   lazy val mysqlPort: Int =
-    config.getInt("lampetia.module.mysql.port")
+    config.getInt(s"$mysqlConfigurationKey.port")
   lazy val mysqlDatabase: String =
-    config.getString("lampetia.module.mysql.database")
+    config.getString(s"$mysqlConfigurationKey.database")
   lazy val mysqlUser: String =
-    config.getString("lampetia.module.mysql.user")
+    config.getString(s"$mysqlConfigurationKey.user")
   lazy val mysqlPassword: String =
-    config.getString("lampetia.module.mysql.password")
+    config.getString(s"$mysqlConfigurationKey.password")
   lazy val mysqlMaximumPoolSize: Int =
-    config.getInt("lampetia.module.mysql.maximum-pool-size")
+    config.getInt(s"$mysqlConfigurationKey.maximum-pool-size")
   lazy val mysqlLeakDetectionThreshold: Int =
-    config.getInt("lampetia.module.mysql.leak-detection-threshold")
+    config.getInt(s"$mysqlConfigurationKey.leak-detection-threshold")
 
   def close(): Unit
 

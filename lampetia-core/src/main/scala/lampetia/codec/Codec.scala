@@ -1,5 +1,7 @@
 package lampetia.codec
 
+import org.joda.time.DateTime
+
 import scala.language.{higherKinds, implicitConversions}
 import play.api.libs.functional.syntax._
 import play.api.libs.functional._
@@ -64,6 +66,9 @@ trait PrimitiveCodecs { self: Codec =>
 
   implicit def consumeDouble: Consume[Double]
   implicit def produceDouble: Produce[Double]
+
+  implicit def consumeDateTime: Consume[DateTime]
+  implicit def produceDateTime: Produce[DateTime]
 }
 
 trait OptionCodecs { self: Codec =>
