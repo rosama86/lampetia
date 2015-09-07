@@ -50,6 +50,10 @@ object Build extends sbt.Build {
     Project("lampetia-sql", file("lampetia-sql"))
       .dependsOn(`lampetia-core`)
 
+  lazy val `lampetia-message-pack` =
+    Project("lampetia-message-pack", file("lampetia-message-pack"))
+      .dependsOn(`lampetia-core`)
+
   lazy val `lampetia-postgresql` =
     Project("lampetia-postgresql", file("lampetia-postgresql"))
       .dependsOn(`lampetia-sql`)
