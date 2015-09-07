@@ -83,7 +83,7 @@ import scala.util.{Success, Try}
 
     <%
     val id = if(hasId) "id: "+ model.idModelName else ""
-    val ref = if(model.hasReferenceModel) "ref: " + model.modelName + "Ref" else ""
+    val ref = if(model.hasReferenceModel) "ref: " + model.refModelName else ""
     val data = if(model.hasData) "data: " + model.dataModelName else ""
     val prop = List(id, ref,data).filter(_ != "").mkString(", ")
     %>

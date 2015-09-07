@@ -111,8 +111,8 @@ trait ServiceCartridge extends ScalaCartridge {
   def referenceConf(module: Module) =
     CommonScalaFileGenerationTask(
       module,
-      "reference-conf",
-      CFile("reference.conf"),
+      "application-conf",
+      CFile("application.conf"),
       CDir(s"${resourceDir(module)}"))
 
   def logbackXml(module: Module) =
@@ -156,7 +156,7 @@ trait ServiceCartridge extends ScalaCartridge {
       module,
       "sql-format",
       CFile(s"${module.modelName}SqlFormat.scala"),
-      CDir(s"${scalaDir(module)}/format/sql"),
+      CDir(s"${scalaDir(module)}/format"),
       m => Seq(
         s"${m.basePackage}.model._",
         s"${m.basePackage}.format.sql.${m.name}SqlFormat._"))
@@ -199,10 +199,10 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
       configuration _,
       moduleTask _,
       //testConfiguration _,
-      referenceConf _/*,
+      referenceConf _,
+      sqlFormat _/*,
       logbackXml _,
       //scalaFormat _,
-      sqlFormat _,
       dao _,
       postgresqlModule _,
       instanceFactory _,
