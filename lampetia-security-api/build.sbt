@@ -1,6 +1,6 @@
 import dependencies._
 
-name := "lampetia-security-spray"
+name := "lampetia-security-api"
 
 val bootable = "lampetia.security.spray.service.SecurityHttpService"
 
@@ -13,7 +13,6 @@ fullRunTask(service, Runtime, bootable)
 fork in service := true
 
 libraryDependencies ++= Seq(
-  "io.jsonwebtoken" % "jjwt" % "0.5",
   ficus,
   jodaConvert,
   jodaTime,
@@ -21,5 +20,6 @@ libraryDependencies ++= Seq(
   akkaActor,
   sprayCan,
   sprayRoute,
+  jjwt,
   scalaTest,
   sprayTest)

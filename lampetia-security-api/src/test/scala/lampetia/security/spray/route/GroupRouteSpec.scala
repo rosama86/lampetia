@@ -5,8 +5,8 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import lampetia.model.{Code, Email}
 import lampetia.security.model._
-import lampetia.security.spray.module.SecurityTestModule
-import lampetia.security.module.SecurityModule.configuration
+import lampetia.security.module.SecurityTestModule
+import lampetia.security.module.SecurityTestModule.configuration
 import lampetia.security.service.{UserService, GroupService}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures

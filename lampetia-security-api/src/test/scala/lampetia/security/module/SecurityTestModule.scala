@@ -1,9 +1,7 @@
-package lampetia.security.spray.module
-
-import lampetia.security.module.SecurityModule
+package lampetia.security.module
 
 /**
- * @author rhelal
+ * @author Hossam Karim
  */
 object SecurityTestModule extends SecurityModule {
 
@@ -13,5 +11,4 @@ object SecurityTestModule extends SecurityModule {
       configuration.shutdown()
     }
   })
-
 }
