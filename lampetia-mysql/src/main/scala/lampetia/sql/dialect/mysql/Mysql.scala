@@ -2,7 +2,6 @@ package lampetia.sql.dialect.mysql
 
 import lampetia.conf.{Configuration, Lifecycle}
 import lampetia.meta._
-import lampetia.model._
 import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql._
 import language.implicitConversions
@@ -42,7 +41,8 @@ with    Ops {
 
 }
 
-object MySql extends Mysql
+object Mysql extends Mysql
+
 
 trait MysqlConfiguration extends Lifecycle { self: Configuration =>
 
