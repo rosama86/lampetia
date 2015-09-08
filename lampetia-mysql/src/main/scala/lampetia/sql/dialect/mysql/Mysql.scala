@@ -7,9 +7,6 @@ import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql._
 import language.implicitConversions
 
-/**
- * Created by rhelal on 8/11/15.
- */
 trait Mysql extends MysqlDsl
 with    SqlCodec
 with    SqlIO
@@ -43,9 +40,9 @@ with    Ops {
 
   implicit def modelOps[E](model: Model[E]): ModelOps[E] = new ModelOpsEx[E](model)
 
-
-
 }
+
+object MySql extends Mysql
 
 trait MysqlConfiguration extends Lifecycle { self: Configuration =>
 

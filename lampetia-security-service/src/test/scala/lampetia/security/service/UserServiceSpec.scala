@@ -11,6 +11,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class UserServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
+  import sql._
   implicit val ec = configuration.concurrent.executionContext
 
   val service = new UserService {}

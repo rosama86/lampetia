@@ -2,7 +2,6 @@ package lampetia.sql.dialect.postgresql
 
 import lampetia.conf.{Configuration, Lifecycle}
 import lampetia.meta._
-import lampetia.model._
 import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql._
 import language.implicitConversions
@@ -47,6 +46,8 @@ trait Postgresql
 
 
 }
+
+object Postgresql extends Postgresql
 
 trait PostgresqlConfiguration extends Lifecycle { self: Configuration =>
 

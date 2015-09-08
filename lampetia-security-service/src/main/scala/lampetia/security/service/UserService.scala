@@ -4,7 +4,6 @@ import lampetia.model.Email
 import lampetia.security.model._
 
 
-
 /**
  * @author Hossam Karim
  */
@@ -12,6 +11,7 @@ import lampetia.security.model._
 trait UserService {
 
   import lampetia.security.module.SecurityModule.sql._
+  import lampetia.security.module.SecurityModule.dialect._
 
   protected def insertUser(user: User): IO[Int] = {
     val m = UserModel

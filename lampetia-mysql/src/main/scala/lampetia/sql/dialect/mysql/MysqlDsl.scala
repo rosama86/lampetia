@@ -1,10 +1,10 @@
 package lampetia.sql.dialect.mysql
 
 import lampetia.meta.Property
+import lampetia.sql.NodeBuilders
 import lampetia.sql.ast._
-import lampetia.sql.dialect.Dialect
 
-trait MysqlDsl extends Dsl with Dialect {
+trait MysqlDsl extends Dsl with NodeBuilders {
 
   trait MysqlQueryNodeBuilder extends QueryNodeBuilder {
     type N = MysqlQueryNode
