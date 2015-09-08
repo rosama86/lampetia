@@ -2,6 +2,8 @@ import dependencies._
 
 name := "lampetia-security-api"
 
+enablePlugins(JavaServerAppPackaging)
+
 val bootable = "lampetia.security.spray.service.SecurityHttpService"
 
 mainClass in Compile := Some(bootable)
