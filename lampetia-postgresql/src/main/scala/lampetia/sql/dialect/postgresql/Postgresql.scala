@@ -26,7 +26,7 @@ trait Postgresql
       case DoubleProperty => "float"
       case LongProperty => "long"
       case StringProperty => "varchar"
-      case DateProperty  => "date"
+      case DateProperty  => "timestamp"
       case DefaultProperty => "text"
     }
   }
