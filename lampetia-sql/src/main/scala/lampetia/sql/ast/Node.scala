@@ -487,7 +487,7 @@ trait UpdatePairNode extends Operator {
 
 case class DefaultUpdatePairNode(lhs: Operand, rhs: Operand) extends UpdatePairNode {
   val operands: Seq[Operand] = Seq(lhs, rhs)
-  val sqlString: String = s"set ${lhs.sqlString} = ${rhs.sqlString}"
+  val sqlString: String = s"${lhs.sqlString} = ${rhs.sqlString}"
 }
 
 case class Update(table: Operand) {
@@ -510,7 +510,7 @@ trait UpdateNode extends DMLNode {
 
 case class DefaultUpdateNode(table: Operand, pairs: Seq[UpdatePairNode]) extends UpdateNode {
   val operands: Seq[Operand] = Seq(table) ++ pairs
-  val sqlString: String = s"update ${table.sqlString} ${pairs.map(_.sqlString).mkString(",")}"
+  val sqlString: String = s"update ${table.sqlString} set ${pairs.map(_.sqlString).mkString(",")}"
 }
 
 trait UpdateWhereNodeBuilder {
