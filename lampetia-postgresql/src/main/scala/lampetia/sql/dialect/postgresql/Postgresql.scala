@@ -24,7 +24,7 @@ trait Postgresql
     def name(propertyType: PropertyType[_]): String = propertyType match {
       case IntProperty => "integer"
       case FloatProperty => "float"
-      case DoubleProperty => "double"
+      case DoubleProperty => "float"
       case LongProperty => "long"
       case StringProperty => "varchar"
       case DateProperty  => "date"
