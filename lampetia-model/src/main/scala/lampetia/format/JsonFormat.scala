@@ -31,6 +31,21 @@ trait JsonFormat {
   implicit lazy val resourceTypeFormat: Format[ResourceUri] =
     stringValueTypeFormat[ResourceUri](ResourceUri)(_.value)
 
+  implicit lazy val nameJsonFormat: Format[Name] =
+    stringValueTypeFormat[Name](Name)(_.value)
+
+  implicit lazy val titleJsonFormat: Format[Title] =
+    stringValueTypeFormat[Title](Title)(_.value)
+
+  implicit lazy val urlJsonFormat: Format[Url] =
+    stringValueTypeFormat[Url](Url)(_.value)
+
+  implicit lazy val localeJsonFormat: Format[Locale] =
+    stringValueTypeFormat[Locale](Locale)(_.value)
+
+  implicit lazy val phoneJsonFormat: Format[Phone] =
+    stringValueTypeFormat[Phone](Phone)(_.value)
+
 
 
 }
