@@ -18,6 +18,12 @@ trait SprayConfiguration {
   def apiVersion: String =
     configuration.config.getString(s"$moduleConfigurationPrefix.spray.api.version")
 
+  def internalApiPrefix: String =
+    configuration.config.getString(s"$moduleConfigurationPrefix.spray.internal-api.prefix")
+
+  def internalApiVersion: String =
+    configuration.config.getString(s"$moduleConfigurationPrefix.spray.internal-api.version")
+
   def serviceHost: String =
     configuration.config.getString(s"$moduleConfigurationPrefix.spray.service.host")
 
