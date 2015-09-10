@@ -2,6 +2,7 @@ package lampetia.security.module
 
 import lampetia.conf.{Configuration => LampetiaConfiguration}
 import lampetia.security.format.{SecurityJsonFormat, SecuritySqlFormat}
+import lampetia.sql.{ConnectionSource, ConnectionSourceFactories, JdbcConnectionSource}
 import lampetia.sql.dialect.postgresql.{PostgresqlConfiguration, Postgresql}
 import lampetia.security.conf.SecurityConfiguration
 import lampetia.security.model.SecurityModel
@@ -15,7 +16,7 @@ trait SecurityModule {
   val dialect: Postgresql
 
   trait Configuration extends LampetiaConfiguration with SecurityConfiguration with PostgresqlConfiguration {
-    def close(): Unit = sql.context.shutdown()
+    def close(): Unit = connectionSource.shutdown()
   }
   def configuration: Configuration
 
@@ -24,17 +25,11 @@ trait SecurityModule {
 
   trait Sql extends SecurityModel with SecuritySqlFormat {
     def schema = configuration.schema
-    implicit lazy val context: dialect.ConnectionSource = dialect.hikari(
-      configuration.pgJdbcDataSourceClassName,
-      configuration.pgHost,
-      configuration.pgPort,
-      configuration.pgDatabase,
-      configuration.pgUser,
-      configuration.pgPassword,
-      configuration.pgMaximumPoolSize,
-      configuration.pgLeakDetectionThreshold)
+
   }
   def sql: Sql
+
+  def connectionSource: JdbcConnectionSource
 }
 
 object SecurityModule extends SecurityModule {
@@ -46,5 +41,17 @@ object SecurityModule extends SecurityModule {
   object json extends super.Json
 
   object sql extends super.Sql
+
+  def connectionSourceFactories = new ConnectionSourceFactories {}
+
+  lazy val connectionSource = connectionSourceFactories.hikari(
+    configuration.pgJdbcDataSourceClassName,
+    configuration.pgHost,
+    configuration.pgPort,
+    configuration.pgDatabase,
+    configuration.pgUser,
+    configuration.pgPassword,
+    configuration.pgMaximumPoolSize,
+    configuration.pgLeakDetectionThreshold)
 
 }

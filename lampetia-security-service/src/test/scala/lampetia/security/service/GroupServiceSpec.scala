@@ -4,7 +4,7 @@ import java.util.UUID
 
 import lampetia.model._
 import lampetia.security.model._
-import lampetia.security.module.SecurityTestModule._
+import lampetia.security.module.SecurityTestModule
 import lampetia.test.LampetiaFutures
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
@@ -14,10 +14,11 @@ import org.scalatest.{FlatSpec, Matchers}
  */
 class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
-  import dialect._
-  import sql._
+  import SecurityTestModule.dialect._
+  import SecurityTestModule.sql._
 
-  implicit val ec = configuration.concurrent.executionContext
+  implicit val ec = SecurityTestModule.configuration.concurrent.executionContext
+  implicit val connectionSource = SecurityTestModule.connectionSource
 
   val service = new GroupService {}
   val userService = new UserService {}

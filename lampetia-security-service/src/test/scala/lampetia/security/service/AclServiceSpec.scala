@@ -4,7 +4,7 @@ import java.util.UUID
 
 import lampetia.model._
 import lampetia.security.model._
-import lampetia.security.module.SecurityTestModule._
+import lampetia.security.module.SecurityTestModule
 import lampetia.test.LampetiaFutures
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, GivenWhenThen, Matchers}
@@ -14,9 +14,10 @@ import org.scalatest.{FlatSpec, GivenWhenThen, Matchers}
  */
 class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
-  import sql._
+  import SecurityTestModule.sql._
 
-  implicit val ec = configuration.concurrent.executionContext
+  implicit val ec = SecurityTestModule.configuration.concurrent.executionContext
+  implicit val connectionSource = SecurityTestModule.connectionSource
 
   val service = new AclService {}
   val groupService = new GroupService {}

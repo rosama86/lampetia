@@ -2,7 +2,7 @@ package lampetia.security.service
 
 import lampetia.model.Code
 import lampetia.security.model.RoleData
-import lampetia.security.module.SecurityTestModule._
+import lampetia.security.module.SecurityTestModule
 import lampetia.test.LampetiaFutures
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
@@ -12,9 +12,10 @@ import org.scalatest.{FlatSpec, Matchers}
  */
 class RoleServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
 
-  import  sql._
+  import SecurityTestModule.sql._
 
-  implicit val ec = configuration.concurrent.executionContext
+  implicit val ec = SecurityTestModule.configuration.concurrent.executionContext
+  implicit val connectionSource = SecurityTestModule.connectionSource
 
   val service = new RoleService {}
 

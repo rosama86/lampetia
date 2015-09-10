@@ -12,12 +12,16 @@ import scala.util.{Failure, Success, Try}
  * @author Hossam Karim
  */
 
-trait JdbcIO extends SqlIO { codec: JdbcCodec =>
+trait JdbcConnectionSource extends ConnectionSource {
+  type Connection = java.sql.Connection
+}
+
+trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
 
   private val log = LoggerFactory.getLogger("jdbc-io")
 
-  type Connection = java.sql.Connection
   type Result[A] = Try[A]
+  type Connection = java.sql.Connection
 
   // monadic result
   object resultM extends super.ResultM {
@@ -47,7 +51,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   case class ReadPlainSqlQ[R](plainSql: PlainSql, consumer: Consume[R]) extends ReadPlainSql[R] {
 
-    def execute(cm: ConnectionSource): Try[Seq[R]] = {
+    def execute(cm: JdbcConnectionSource): Try[Seq[R]] = {
       var ps: PreparedStatement = null
       var rs: ResultSet = null
       val connection = cm.connection
@@ -81,7 +85,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   case class WritePlainSqlQ(plainSql: PlainSql) extends WritePlainSql {
 
-    def execute(cm: ConnectionSource): Try[Int] = {
+    def execute(cm: JdbcConnectionSource): Try[Int] = {
       var ps: PreparedStatement = null
       val connection = cm.connection
       try {
@@ -104,7 +108,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   case class ReadParameterizedSqlQ[R](parameterizedSql: ParameterizedSql, consumer: Consume[R]) extends ReadParameterizedSql[R] {
 
-    def execute(cm: ConnectionSource): Try[Seq[R]] = {
+    def execute(cm: JdbcConnectionSource): Try[Seq[R]] = {
       var ps: PreparedStatement = null
       var rs: ResultSet = null
       val connection = cm.connection
@@ -143,7 +147,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   case class WriteParameterizedSqlQ(parameterizedSql: ParameterizedSql) extends WriteParameterizedSql {
 
-    def execute(cm: ConnectionSource): Try[Int] = {
+    def execute(cm: JdbcConnectionSource): Try[Int] = {
       var ps: PreparedStatement = null
       val connection = cm.connection
       try {
@@ -169,7 +173,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
     WriteParameterizedSqlQ(parameterizedSql)
 
   // this proxy will always return the same connection
-  private case class ConnectionSourceProxy(cm: ConnectionSource) extends ConnectionSource {
+  private case class ConnectionSourceProxy(cm: JdbcConnectionSource) extends JdbcConnectionSource {
     // always return the same connection
     lazy val connection: Connection = cm.connection
     // we are not closing the connection here
@@ -179,7 +183,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
   }
 
   case class TransactionalSqlIOQ[A](sqlIO: IO[A]) extends TransactionalIO[A] {
-    def execute(cm: ConnectionSource): Try[A] = {
+    def execute(cm: JdbcConnectionSource): Try[A] = {
 
       // check if there has been another transaction opened
       val (proxy, transactionEntryPoint) = cm match {
@@ -223,7 +227,7 @@ trait JdbcIO extends SqlIO { codec: JdbcCodec =>
 
   def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R] = TransactionalSqlIOQ(sqlIO)
 
-  def run[A](io: IO[A])(implicit ec: ExecutionContext, source: ConnectionSource): Future[A] = {
+  def run[A](io: IO[A])(implicit ec: ExecutionContext, source: JdbcConnectionSource): Future[A] = {
     //val source = connectionSource
     Future {
       io.execute(source) match {

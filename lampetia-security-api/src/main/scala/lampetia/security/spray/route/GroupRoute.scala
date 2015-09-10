@@ -15,7 +15,6 @@ trait GroupRoute extends HttpService with SecureRoute {
   import lampetia.security.module.SecurityModule
 
   import SecurityModule.json._
-  import SecurityModule.sql._
 
   /*
   POST      /group  --> create new group without parent
@@ -30,11 +29,12 @@ trait GroupRoute extends HttpService with SecureRoute {
    */
 
   implicit val executionContext = SecurityModule.configuration.concurrent.executionContext
+  implicit val connectionSource = SecurityModule.connectionSource
 
   val groupService = new GroupService {}
 
   def postGroup(owner: UserId, parentGroupId: Option[String], data: GroupData) = {
-    val ref = GroupRef(owner, parentGroupId.map(GroupId(_)))
+    val ref = GroupRef(owner, parentGroupId.map(GroupId))
     groupService.createGroup(ref, data).run
   }
 

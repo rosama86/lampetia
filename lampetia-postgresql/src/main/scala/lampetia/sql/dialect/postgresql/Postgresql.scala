@@ -11,11 +11,8 @@ import language.implicitConversions
  */
 trait Postgresql
   extends PostgresqlDsl
-  with    SqlCodec
-  with    SqlIO
   with    JdbcCodec
   with    JdbcIO
-  with    ConnectionSourceFactories
   with    Ops {
 
   implicit val sqlTypes: SqlTypes = new SqlTypes {

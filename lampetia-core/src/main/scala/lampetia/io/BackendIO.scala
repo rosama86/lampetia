@@ -7,12 +7,10 @@ import scala.concurrent.{ExecutionContext, Future}
  * @author Hossam Karim
  */
 
-trait BackendIO { self =>
+trait BackendIO[C] { self =>
 
   // the result type of all io actions
   type Result[A]
-  // the input type for all io actions
-  type Context
 
   // monadic result
   trait ResultM {
@@ -26,8 +24,8 @@ trait BackendIO { self =>
   def resultM: ResultM
 
   trait IO[A] {
-    def execute(context: Context): Result[A]
-    def run(implicit ec: ExecutionContext, context: Context): Future[A] = self.run(this)
+    def execute(context: C): Result[A]
+    def run(implicit ec: ExecutionContext, context: C): Future[A] = self.run(this)
   }
   object IO {
     def pure[A](a: A): IO[A] = IOPure(a)
@@ -36,30 +34,30 @@ trait BackendIO { self =>
     def sequence[A](c: IO[A]*): IO[Seq[A]] = IOSeq(c)
   }
 
-  def run[R](io: IO[R])(implicit ec: ExecutionContext, context: Context): Future[R]
+  def run[R](io: IO[R])(implicit ec: ExecutionContext, context: C): Future[R]
 
   protected case class IOPure[A](result: A) extends IO[A] {
-    def execute(context: Context): Result[A] = resultM.pure(result)
+    def execute(context: C): Result[A] = resultM.pure(result)
   }
 
   protected case class IOFailed[A](exception: Throwable) extends IO[A] {
-    def execute(context: Context): Result[A] = resultM.fail[A](exception)
+    def execute(context: C): Result[A] = resultM.fail[A](exception)
   }
 
   protected case class IOFlatMap[A, B](fa: IO[A], f: A => IO[B]) extends IO[B] {
-    def execute(context: Context): Result[B] =
+    def execute(context: C): Result[B] =
       resultM.flatMap(fa.execute(context))(a => f(a).execute(context))
   }
 
   protected case class IOSeq[A](seq: Seq[IO[A]]) extends IO[Seq[A]] {
-    def execute(context: Context): Result[Seq[A]] =
+    def execute(context: C): Result[Seq[A]] =
       seq.foldLeft(resultM.pure(Seq.empty[A])) { (rseq, io) =>
         resultM.flatMap(rseq)(seq => resultM.map(io.execute(context))(a => seq :+ a))
       }
   }
 
   protected case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
-    def execute(context: Context): Result[A] =
+    def execute(context: C): Result[A] =
       resultM.withFilter(fa.execute(context))(f)
   }
 

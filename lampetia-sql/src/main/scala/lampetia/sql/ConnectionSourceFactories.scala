@@ -10,15 +10,15 @@ import com.zaxxer.hikari.HikariDataSource
  */
 
 
-trait ConnectionSourceFactories { self: JdbcIO =>
+trait ConnectionSourceFactories {
 
-  private class FromDataSource(dataSource: DataSource) extends ConnectionSource {
+  private class FromDataSource(dataSource: DataSource) extends JdbcConnectionSource {
     def connection: sql.Connection = dataSource.getConnection
     def done(connection: sql.Connection): Unit = connection.close()
     def shutdown(): Unit = ()
   }
 
-  def connectionSource(dataSource: DataSource): ConnectionSource = new FromDataSource(dataSource)
+  def connectionSource(dataSource: DataSource): JdbcConnectionSource = new FromDataSource(dataSource)
 
   private class HikariConnectionSourceFromDataSource(
     dataSourceClassName: String,
@@ -28,7 +28,7 @@ trait ConnectionSourceFactories { self: JdbcIO =>
     user: String,
     password: String,
     maximumPoolSize: Int,
-    leakDetectionThreshold: Int) extends ConnectionSource {
+    leakDetectionThreshold: Int) extends JdbcConnectionSource {
 
     lazy val dataSource = {
       val ds = new HikariDataSource()
@@ -57,7 +57,7 @@ trait ConnectionSourceFactories { self: JdbcIO =>
     user: String,
     password: String,
     maximumPoolSize: Int,
-    leakDetectionThreshold: Int) extends ConnectionSource {
+    leakDetectionThreshold: Int) extends JdbcConnectionSource {
 
     lazy val dataSource = {
       val ds = new HikariDataSource()
@@ -84,7 +84,7 @@ trait ConnectionSourceFactories { self: JdbcIO =>
              user: String,
              password: String,
              maximumPoolSize: Int,
-             leakDetectionThreshold: Int): ConnectionSource =
+             leakDetectionThreshold: Int): JdbcConnectionSource =
     new HikariConnectionSourceFromDataSource(
       dataSourceClassName,
       serverName,
@@ -100,7 +100,7 @@ trait ConnectionSourceFactories { self: JdbcIO =>
              user: String,
              password: String,
              maximumPoolSize: Int,
-             leakDetectionThreshold: Int): ConnectionSource =
+             leakDetectionThreshold: Int): JdbcConnectionSource =
     new HikariConnectionSourceFromJdbcUrl(
       jdbcUrl,
       user,

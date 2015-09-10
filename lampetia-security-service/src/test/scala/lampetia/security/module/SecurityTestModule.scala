@@ -1,5 +1,6 @@
 package lampetia.security.module
 
+import lampetia.sql.ConnectionSourceFactories
 import lampetia.sql.dialect.postgresql.Postgresql
 
 /**
@@ -14,6 +15,18 @@ object SecurityTestModule extends SecurityModule {
   object json extends super.Json
 
   object sql extends super.Sql
+
+  def connectionSourceFactories = new ConnectionSourceFactories {}
+
+  lazy val connectionSource = connectionSourceFactories.hikari(
+    configuration.pgJdbcDataSourceClassName,
+    configuration.pgHost,
+    configuration.pgPort,
+    configuration.pgDatabase,
+    configuration.pgUser,
+    configuration.pgPassword,
+    configuration.pgMaximumPoolSize,
+    configuration.pgLeakDetectionThreshold)
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
