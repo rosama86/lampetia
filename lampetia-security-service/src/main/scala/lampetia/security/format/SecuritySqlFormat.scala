@@ -160,4 +160,19 @@ trait SecuritySqlFormat {
   implicit lazy val consumeRole: Consume[Role] = (consume[RoleId] ~ consume[RoleData])(Role)
   implicit lazy val produceRole: Produce[Role] = a => produce(a.id) andThen produce(a.data)
 
+  /** todo move this to lampetia model ??? **/
+  implicit lazy val consumeUrl: Consume[Url] = consume[String].fmap(Url.apply)
+  implicit lazy val produceUrl: Produce[Url] = a => produce(a.value)
+
+  implicit lazy val consumeTitle: Consume[Title] = consume[String].fmap(Title.apply)
+  implicit lazy val produceTitle: Produce[Title] = a => produce(a.value)
+  
+  implicit lazy val consumeLocale: Consume[Locale] = consume[String].fmap(Locale.apply)
+  implicit lazy val produceLocale: Produce[Locale] = a => produce(a.value)
+  
+  implicit lazy val consumePhone: Consume[Phone] = consume[String].fmap(Phone.apply)
+  implicit lazy val producePhone: Produce[Phone] = a => produce(a.value)
+  
+  implicit lazy val consumeName: Consume[Name] = consume[String].fmap(Name.apply)
+  implicit lazy val produceName: Produce[Name] = a => produce(a.value)
 }

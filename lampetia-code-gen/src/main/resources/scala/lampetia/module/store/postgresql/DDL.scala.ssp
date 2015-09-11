@@ -8,47 +8,24 @@
 <%@ val metamodels: Seq[Model] %>
 <%@ val module: Module%>
 <%@ val config: Config%>
-package ${module.basePackage}.store.postgresql
+package  ${module.basePackage}.util
 
-import lampetia.store.postgresql.DDL
-import lampetia.format.sql.ExtendedPostgresDriver
-import ExtendedPostgresDriver.api._
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-<%@val imports: Seq[String] %>
-#for (i <- imports)
-  import ${i}
-#end
+import ${module.basePackage}.module. ${module.modelName}Module
+import  ${module.modelName}Module.dialect._
+import  ${module.modelName}Module.sql._
 
-import ${module.basePackage}.conf.Default${module.name}Module._
-
-trait ${module.name}DDL extends DDL {
-  def ddl = <%=metamodels.entityModels.map(m => s"${m.modelName.camelCase}Table.schema").mkString(" ++\n ")%>
-}
-
-object ${module.name}DDLPrinter extends ${module.name}DDL {
-
-  def main(args: Array[String]) {
-
-    dropStatements.foreach(println)
-    createStatements.foreach(println)
-
-  }
+trait DDL {
+  def ddl =
+    s"create schema $schema".sql +: (
+    <%=metamodels.entityModels.map(m => s"${m.modelName}Model.createSql").mkString(" ++\n ")%>
+    )
 
 }
 
-object ${module.name}DDLCreate extends ${module.name}DDL {
+object DDLPrinter extends DDL {
 
   def main(args: Array[String]): Unit = {
-    Await.result(store.run(ddl.create), Duration.Inf)
-    configuration.shutdown()
+    ddl.map(sql => s"<%="${sql.sqlString};"%>").foreach(println)
   }
-}
 
-object ${module.name}DDLDrop extends ${module.name}DDL {
-
-  def main(args: Array[String]): Unit = {
-    Await.result(store.run(ddl.drop), Duration.Inf)
-    configuration.shutdown()
-  }
 }

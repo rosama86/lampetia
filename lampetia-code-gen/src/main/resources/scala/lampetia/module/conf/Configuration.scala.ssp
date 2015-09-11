@@ -10,15 +10,17 @@
 package ${module.basePackage}.conf
 
 import lampetia.conf.{Configuration, Lifecycle}
-import scala.concurrent.ExecutionContext
 
 trait ${module.modelName}Configuration extends Lifecycle { self: Configuration =>
 
   lazy val schema: String =
-    config.getString("lampetia.module.${module.modelName.camelCase}.schema")
+    config.getString("${module.basePackage}.module.${module.modelName.camelCase}.schema")
 
-  lazy val jwtKey: String =
-    config.getString("lampetia.module.${module.modelName.camelCase}.jwt.key")
+  #if (module.secure)
+    lazy val securitySchema: String =
+      config.getString("${module.basePackage}.module.${module.modelName.camelCase}.security-schema")
+  #end
+
 
   abstract override def shutdown(): Unit = {
     logger.info(s"[${module.modelName.camelCase}] shutdown sequence: begin")

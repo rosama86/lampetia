@@ -9,16 +9,42 @@
 <%@ val config: Config%>
 package ${module.basePackage}.format
 
-import lampetia.codec.{OptionCodecs, PrimitiveCodecs, Codec}
 import lampetia.model._
 import ${module.basePackage}.model._
+import org.joda.time.DateTime
 import play.api.libs.json.Json
+#if (module.secure)
+import lampetia.security.format.SecuritySqlFormat
+import lampetia.security.model._
+#end
 <%@val imports: Seq[String] %>
 #for (i <- imports)
   import ${i}
 #end
 
-trait ${module.modelName}SqlFormat { self: Codec with PrimitiveCodecs with OptionCodecs =>
+trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlFormat  #end{
+
+  import ${module.basePackage}.module.${module.modelName}Module.dialect._
+  import nxt.event.module.EventModule.json._
+
+#for (model <- metamodels.seqProperties)
+  implicit lazy val consume${model.modelName}Seq: Consume[Seq[${model.modelName}]] = consume[String].fmap(Json.parse).fmap(Json.fromJson[Seq[${model.modelName}]](_)).fmap(_.get)
+  implicit lazy val produce${model.modelName}Seq: Produce[Seq[${model.modelName}]] = a => produce(Json.stringify(Json.toJson(a)))
+
+#end
+
+#for (model <- metamodels.optionalProperties)
+  #match (model)
+  #case (v: Value)
+  implicit lazy val consume${model.modelName}Option: Consume[Option[${model.modelName}]] = consume[Option[String]].fmap(_.map(${model.modelName}))  
+  implicit lazy val produce${model.modelName}Option: Produce[Option[${model.modelName}]] = a => produce(a.map(_.value))
+
+  #otherwise
+  implicit lazy val consume${model.modelName}Option: Consume[Option[${model.modelName}]] = consume[Option[String]].fmap(_.map(Json.parse).map(Json.fromJson[${model.modelName}](_)).map(_.get))
+  implicit lazy val produce${model.modelName}Option: Produce[Option[${model.modelName}]] = a => produce(a.map(Json.toJson(_)).map(Json.stringify(_)))
+
+  #end
+#end
 
 #for (model <- metamodels.valueModels)
   <%val name = model.modelName%>
@@ -52,7 +78,10 @@ trait ${module.modelName}SqlFormat { self: Codec with PrimitiveCodecs with Optio
     val cid = if(hasId) cprefix + model.idModelName + cpostfix else ""
     val cref = if(model.hasReferenceModel) cprefix + model.refModelName + cpostfix else ""
     val cdata = if(model.hasData) cprefix  + model.dataModelName + cpostfix else ""
-    val consume = List(cid, cref,cdata).filter(_ != "").mkString(" ~ ")
+    val consume = List(cid, cref,cdata).filter(_ != "") match {
+        case h :: Nil =>  h + ".fmap"
+        case l => "(" + l.mkString(" and ") + ")"
+    }
 
     // produce
     val pprefix = "produce(a."
@@ -62,51 +91,61 @@ trait ${module.modelName}SqlFormat { self: Codec with PrimitiveCodecs with Optio
     val pdata = if(model.hasData) pprefix  + "data" + ppostfix else ""
     val produce = List(pid, pref, pdata).filter(_ != "").mkString(" andThen ")
   %>
-  implicit lazy val consume${name}: Consume[${name}] =
-    (${consume})(${name})
-  implicit lazy val produce${name}: Produce[${name}] =
-    a => ${produce}
+  implicit lazy val consume${name}: Consume[${name}] = ${consume}(${name})
+  implicit lazy val produce${name}: Produce[${name}] = a => ${produce}
 
   <%
-
-    def producer(f:Property => String )(prefix: String, postfix: String)(props: Seq[Property], pp: List[String]): List[String] = props match {
+    def producer(f:Property => String )(props: Seq[Property], pp: List[String]): List[String] = props match {
       case Nil  => pp
       case hp :: t =>
-        val np: String =  prefix + f(hp) + postfix
-        producer(f)(prefix, postfix)(t, pp :+ np)
+        val np: String =  f(hp)
+        producer(f)(t, pp :+ np)
     }
 
-    val consumeData =  producer(p =>  p.tpe.modelName)(cprefix, cpostfix)(model.dataModel.properties.toList, Nil).mkString(" ~ ")
-    val produceData =  producer(p =>  p.propertyName)(pprefix, ppostfix)(model.dataModel.properties.toList, Nil).mkString(" andThen ")
+    def consumeProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
+      case jp: JsonType => prefix + "String" + postfix + ".fmap(Json.parse)"
+      case _ => prefix + p.typeName + postfix
+    }
 
+    def produceProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
+      case jp: JsonType => "produce(Json.stringify(a.json))"
+      case _ => prefix + p.propertyName + postfix
+    }
   %>
+
   #if (model.hasData)
-    implicit lazy val consume${model.dataModelName}: Consume[${model.dataModelName}] =
-      (${consumeData})(${model.dataModelName})
-    implicit lazy val produce${model.dataModelName}: Produce[${model.dataModelName}] =
-      a => ${produceData}
+  <%
+  val consumeData =
+    producer(p => consumeProperty(p, cprefix, cpostfix))(model.dataModel.properties.toList, Nil) match {
+    case h :: Nil =>  h + ".fmap"
+      case l => "(" + l.mkString(" and ") + ")"
+  }
+
+  val produceData =
+    producer(p => produceProperty(p, pprefix, ppostfix))(model.dataModel.properties.toList, Nil).mkString(" andThen ")
+  %>
+
+    implicit lazy val consume${model.dataModelName}: Consume[${model.dataModelName}] = ${consumeData}(${model.dataModelName})
+    implicit lazy val produce${model.dataModelName}: Produce[${model.dataModelName}] = a => ${produceData}
 
   #end
 
-  <%
-    val consumeRef =  producer(p =>  p.tpe.modelName)(cprefix, cpostfix)(model.entityRefProperties.toList, Nil).mkString(" ~ ")
-    val produceRef =  producer(p =>  p.propertyName)(pprefix, ppostfix)(model.entityRefProperties.toList, Nil).mkString(" andThen ")
-
-  %>
   #if (model.hasReferenceModel)
-    implicit lazy val consume${model.refModelName}: Consume[${model.refModelName}] =
-      (${consumeRef}).fmap(${model.refModelName})
-    implicit lazy val produce${model.refModelName}: Produce[${model.refModelName}] =
-      a => ${produceRef}
+    <%
+    val consumeRef =
+      producer(p => consumeProperty(p, cprefix, cpostfix))(model.entityRefProperties.toList, Nil) match {
+        case h :: Nil =>  h + ".fmap"
+        case l => "(" + l.mkString(" and ") + ")"
+      }
+
+    val produceRef =
+      producer(p => produceProperty(p, pprefix, ppostfix))(model.entityRefProperties.toList, Nil).mkString(" andThen ")
+
+    %>
+
+    implicit lazy val consume${model.refModelName}: Consume[${model.refModelName}] = ${consumeRef}(${model.refModelName})
+    implicit lazy val produce${model.refModelName}: Produce[${model.refModelName}] = a => ${produceRef}
+
   #end
 #end
 }
-
-<!--
-
-handle js value
-implicit lazy val consumeProviderResponse: Consume[ProviderResponse] =
-consume[String].fmap(Json.parse).fmap(ProviderResponse)
-implicit lazy val produceProviderResponse: Produce[ProviderResponse] =
-a => produce(Json.stringify(a.json))
--->

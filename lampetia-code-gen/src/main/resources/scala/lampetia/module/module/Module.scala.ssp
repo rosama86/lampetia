@@ -12,10 +12,10 @@
 
 package ${module.basePackage}.module
 
-import lampetia.conf.Configuration
-import ${module.basePackage}.format.{${module.modelName}JsonFormat, ${module.modelName}SqlFormat}
+import lampetia.conf.{Configuration => LampetiaConfiguration}
 import lampetia.sql.dialect.postgresql.{PostgresqlConfiguration, Postgresql}
 import ${module.basePackage}.conf.${module.modelName}Configuration
+import ${module.basePackage}.format.{${module.modelName}SqlFormat, ${module.modelName}JsonFormat}
 import ${module.basePackage}.model.${module.modelName}Model
 <%@val imports: Seq[String] %>
 #for (i <- imports)
@@ -24,12 +24,20 @@ import ${module.basePackage}.model.${module.modelName}Model
 
 trait ${module.modelName}Module {
 
-    object json extends ${module.modelName}JsonFormat
+  val dialect: Postgresql
 
-  object sql extends Postgresql with ${module.modelName}Model with ${module.modelName}SqlFormat {
-    val schema = configuration.schema
+  trait Configuration extends LampetiaConfiguration with ${module.modelName}Configuration with PostgresqlConfiguration {
+    def close(): Unit = sql.context.shutdown()
+  }
+  def configuration: Configuration
 
-    implicit lazy val context: sql.ConnectionSource = sql.hikari(
+  trait Json extends ${module.modelName}JsonFormat
+  def json: Json
+
+  trait Sql extends ${module.modelName}Model with ${module.modelName}SqlFormat {
+    def schema = configuration.schema
+    val securitySchema = configuration.securitySchema
+    implicit lazy val context: dialect.ConnectionSource = dialect.hikari(
       configuration.pgJdbcDataSourceClassName,
       configuration.pgHost,
       configuration.pgPort,
@@ -39,13 +47,16 @@ trait ${module.modelName}Module {
       configuration.pgMaximumPoolSize,
       configuration.pgLeakDetectionThreshold)
   }
-
-  object configuration
-    extends Configuration
-      with ${module.modelName}Configuration
-      with PostgresqlConfiguration {
-    def close(): Unit = sql.context.shutdown()
-  }
+  def sql: Sql
 }
 
-object ${module.modelName}Module extends ${module.modelName}Module
+object ${module.modelName}Module extends ${module.modelName}Module {
+
+  val dialect = Postgresql
+
+  object configuration extends super.Configuration
+
+  object json extends super.Json
+
+  object sql extends super.Sql
+}

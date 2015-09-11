@@ -26,7 +26,7 @@ trait ServiceCartridge extends ScalaCartridge {
       name = s"${module.name}Service",
       dependencies = dependencies,
       libraries = libs,
-      plugins = Seq("AkkaAppPackaging"),
+      plugins = Seq.empty[String],
       extraModels = Map("module" -> module),
       customTemplate = Some("service-build")
     )
@@ -183,8 +183,8 @@ trait ServiceCartridge extends ScalaCartridge {
     CommonScalaFileGenerationTask(
       module,
       "ddl",
-      CFile(s"${module.modelName}DDL.scala"),
-      CDir(s"${scalaDir(module)}/store/postgresql"))
+      CFile("DDL.scala"),
+      CDir(s"${scalaDir(module)}/util"))
 
   def dao(module: Module) = DaoFileGenerationTask(module)
 
@@ -198,15 +198,16 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
     Seq(
       configuration _,
       moduleTask _,
-      //testConfiguration _,
       referenceConf _,
-      sqlFormat _/*,
+      sqlFormat _,
+      ddl _/*,
+      //testConfiguration _,
       logbackXml _,
       //scalaFormat _,
       dao _,
       postgresqlModule _,
       instanceFactory _,
       spray _,
-      ddl _*/)
+      */)
       .map(_(module))
 }

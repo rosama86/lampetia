@@ -46,7 +46,7 @@ package object metamodel {
       if (optional)
         s"Option[${tpe.modelName}]"
       else if (list)
-        s"List[${tpe.modelName}]"
+        s"Seq[${tpe.modelName}]"
       else
         tpe.modelName
   }
@@ -193,6 +193,12 @@ package object metamodel {
     def <<(fs: Feature*): IntLiteral.type = this
   }
 
+  case object DoubleLiteral extends LiteralType {
+    type Self = DoubleLiteral.type
+    def literalTypeName = "Double"
+    def <<(fs: Feature*): DoubleLiteral.type = this
+  }
+
   case object BooleanLiteral extends LiteralType {
     type Self = BooleanLiteral.type
     def literalTypeName = "Boolean"
@@ -279,6 +285,12 @@ package object metamodel {
     def properties = Seq(id) ++ refAndDataProperties
     def withResourceType(rt: String) = copy(resourceType = rt)
     def <<(fs: Feature*): Entity = copy(features = fs ++ features)
+  }
+
+  case class EntityProperty
+  (propertyName: String, tpe: Entity, features: Seq[Feature] = Nil, optional: Boolean = false, list: Boolean = false) extends Property {
+    type Self = EntityProperty
+    def <<(fs: Feature*): EntityProperty = copy(features = fs ++ features)
   }
 
   case class Enum(

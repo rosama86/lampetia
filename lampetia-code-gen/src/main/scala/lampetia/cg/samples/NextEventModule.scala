@@ -2,7 +2,7 @@ package lampetia.cg.samples
 
 import lampetia.cg.CodeGenerator
 import lampetia.metamodel.Dsl._
-import lampetia.metamodel.{Secure, Entity, Module}
+import lampetia.metamodel._
 
 /**
  * @author Radwa Osama
@@ -12,90 +12,166 @@ object NextEventModule extends App {
 
   val base = "nxt.event"
 
-  val module = Module("nxt-event", base, "nxt-event",  options = Seq(Secure), mn = Some("Event"))
+  val module = Module("nxt-event", base, "nxt-event", options = Seq(Secure), mn = Some("Event"))
+
+  val SponsorshipTypeModel: Value = value("SponsorshipType")("value".string) <+ commonFeatures
 
   val EventStateModel =
     enum("EventState")(
-      enumCase("EventLive", "LIVE"), enumCase("EventDraft", "DRAFT"), enumCase("EventPast", "PAST"))
+      enumCase("EventLive", "LIVE"),
+      enumCase("EventDraft", "DRAFT"),
+      enumCase("EventCanceled", "CANCELED"),
+      enumCase("EventArchived", "ARCHIVED"))
       .withDiscriminator("value".string) <+ commonFeatures
 
-  val EventPrivacyModel =
-    enum("EventPrivacy")(
-      enumCase("EventPublic", "PUBLIC"), enumCase("EventPrivate", "PRIVATE"))
+  val TrackTypeModel =
+    enum("TrackType")(
+      enumCase("SingleTrack", "SingleTrack"),
+      enumCase("MultipleTrack", "MultipleTrack"))
       .withDiscriminator("value".string) <+ commonFeatures
 
-  val employeePartialModel = entity("Employee")()
+  val UrlModel = value("Url")("address".string) <+ commonFeatures
 
-  val departmentModel: Entity =
-    entity("Department")(
-      "name".name,
-      "manager" ref employeePartialModel.id)
+  val NameModel = entity("Name")() <+ commonFeatures
 
-  val agreement =
-    composite("Agreement")("percentage".int, "vesting".string)
+  val TitleModel = entity("Title")() <+ commonFeatures
 
-  val employeeStockOptions =
-    composite("StockOptions")(
-      ("agreement" of agreement) << (flatten() in Sql),
-      "bank".name,
-      "degree".int,
-      "since".dateTime)
+  val GroupModel = entity("Group")() <+ commonFeatures
 
-  val employeeModel: Entity =
-    extend(employeePartialModel)(
-      "name".name,
-      "salary".int,
-      "department" optionalRef departmentModel.id,
-      ("options" of employeeStockOptions) << (flatten() in Sql))
+  val LocaleModel = entity("Locale")() <+ commonFeatures
 
-  val organizerModel: Entity =
-    entity("Organizer")("name".string, "description".string, "contactInfo".json, "photoUrl".string)
+  val LinkModel: Entity = entity("Link")("site".string, "link" of UrlModel) <+ commonFeatures
 
-  val speakerModel: Entity =
-    entity("Speaker")("name".string, "description".string, "contactInfo".json, "photoUrl".string)
+  val PhoneModel: Value = value("Phone")("value".string) <+ commonFeatures
 
-  val sessionModel: Entity =
-    entity("Session")("name".string, "description".string, "contactInfo".json, "photoUrl".string)
+  val OrganizerModel: Entity =
+    entity("Organizer")(
+      "name" of NameModel,
+      "description" optionOf StringLiteral,
+      "socialLinks" listOf LinkModel,
+      "primaryUrl" optionOf UrlModel,
+      "externalLinks" listOf LinkModel,
+      "phones" listOf PhoneModel,
+      "photoUrl" optionOf UrlModel)
 
-  val user: Entity =
-    entity("User")()
+  val TrackModel: Value = value("Track")("value".string) <+ commonFeatures
 
-  val eventModel: Entity =
-    entity("Event")(
-      "title".string,
+  val SessionLocationModel: Value = value("SessionLocation")("value".string) <+ commonFeatures
+
+  val TracksModel: Entity = entity("Tracks")("value" listOf TrackModel)
+
+  val SponsorModel: Entity =
+    entity("Sponsor")("name" of NameModel,
+      "description" optionOf StringLiteral,
+      "socialLinks" listOf LinkModel,
+      "primaryUrl" optionOf UrlModel,
+      "externalLinks" listOf LinkModel,
+      "phones" listOf PhoneModel,
+      "photoUrl" optionOf UrlModel,
+      "sponsorshipType" optionOf SponsorshipTypeModel)
+
+  val PartialEventModel: Entity = entity("Event")()
+
+  val EventTicketModel: Entity =
+    entity("EventTicket")(
+      "ticketType".string, "availableQuantity".int, "price".double,
+      "currency".string, "description" optionOf StringLiteral,
+      "channelUrl" optionOf UrlModel,
+      "eventId" ref PartialEventModel.id) <+ commonFeatures
+
+  val UserModel: Entity = entity("User")()
+
+  val EventModel: Entity =
+    extend(PartialEventModel)(
+      "title" of TitleModel,
       "about".string,
-      "description".string,
-      "agenda".string,
-      "sessions".string,
-      "location".string,
-      "address".string,
-      "place".string,
-      "startDate".dateTime,
-      "endDate".dateTime,
-      "bannerUrl".string,
-      "timezone".string,
+      "description" optionOf StringLiteral,
+      "locationLatitude" optionOf StringLiteral,
+      "locationLongitude" optionOf StringLiteral,
+      "locationCity".string,
+      "locationAddress".string,
+      "locationName".string,
+      "locationUrl" optionOf UrlModel,
+      "locationPhotoUrl" optionOf UrlModel,
+      "startDateTime".dateTime,
+      "endDateTime".dateTime,
+      "bannerUrl" optionOf UrlModel,
+      "timezone" of LocaleModel,
       "eventState" of EventStateModel,
-      "eventPrivacy" of EventPrivacyModel,
-      "url".string,
-      "ticketInformation".jsvalue,
-      "organizerId" ref organizerModel.id
+      ("socialLinks" listOf LinkModel) << (jsonbComposite in Sql),
+      ("externalLinks" listOf LinkModel) << (jsonbComposite in Sql),
+      ("phones" listOf PhoneModel) << (jsonbComposite in Sql),
+      ("ticketInformation" listOf EventTicketModel) << (jsonbComposite in Sql),
+      ("organizers" listOf OrganizerModel) << (jsonbComposite in Sql),
+      ("sponsors" listOf SponsorModel) << (jsonbComposite in Sql),
+      ("sponsorshipTypes" listOf SponsorshipTypeModel) << (jsonbComposite in Sql),
+      "groupId" ref GroupModel.id
     )
 
-  val eventAttendeeModel: Entity =
-    entity("EventAttendee")("eventId" ref eventModel.id /*, "attendeeId" ref user.id*/)
+  val SpeakerModel: Entity =
+    entity("Speaker")(
+      "name" of NameModel,
+      "title" optionOf StringLiteral,
+      "about" optionOf StringLiteral,
+      "company" optionOf StringLiteral,
+      ("socialLinks" listOf LinkModel) << (jsonbComposite in Sql),
+      ("externalLinks" listOf LinkModel) << (jsonbComposite in Sql),
+      "photoUrl" optionOf UrlModel,
+      "eventId" ref EventModel.id)
+
+  val SessionModel: Entity =
+    entity("Session")(
+      "name" of NameModel,
+      "description" optionOf StringLiteral,
+      "startDateTime".dateTime,
+      "endDateTime".dateTime,
+      "location" optionOf SessionLocationModel,
+      "track" optionOf TracksModel,
+      "eventId" ref EventModel.id)
+
+  val SessionSpeakerModel: Entity =
+    entity("SessionSpeaker")(
+      "sessionId" ref SessionModel.id,
+      "speakerId" ref SpeakerModel.id)
+
+  val AgendaRowModel: Entity =
+    entity("AgendaRow")(
+      "time".dateTime, "trackType" of TrackTypeModel, "agendaCells" listOf SessionModel)
+
+  val AgendaDayModel: Entity =
+    entity("AgendaDay")(
+      "day".dateTime, "tracks" of TracksModel, "agendaRows" listOf AgendaRowModel)
+
+  val AgendaModel: Entity =
+    entity("Agenda")("agendaDays" listOf AgendaDayModel, "eventId" ref EventModel.id)
 
   val models = Seq(
+    LinkModel,
+    SponsorshipTypeModel,
     EventStateModel,
-    EventPrivacyModel,
-    eventModel.id.tpe,
-    eventModel,
-    eventAttendeeModel,
-    organizerModel.id.tpe,
-    organizerModel,
-    speakerModel.id.tpe,
-    speakerModel,
-    sessionModel.id.tpe,
-    sessionModel)
+    EventModel.id.tpe,
+    EventModel,
+    EventTicketModel.id.tpe,
+    EventTicketModel,
+    OrganizerModel.id.tpe,
+    OrganizerModel,
+    SponsorModel.id.tpe,
+    SponsorModel,
+    SpeakerModel.id.tpe,
+    SpeakerModel,
+    SessionModel.id.tpe,
+    SessionModel,
+    SessionSpeakerModel,
+    TrackTypeModel,
+    TrackModel,
+    SessionLocationModel,
+    TracksModel,
+    AgendaRowModel.id.tpe,
+    AgendaRowModel,
+    AgendaDayModel.id.tpe,
+    AgendaDayModel,
+    AgendaModel.id.tpe,
+    AgendaModel)
 
   CodeGenerator.serviceGenerator(module, models).generate()
 }

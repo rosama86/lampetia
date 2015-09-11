@@ -14,31 +14,36 @@ package ${module.basePackage}.format
 import lampetia.format.JsonFormat
 import ${module.basePackage}.model._
 import play.api.libs.json._
+#if (module.secure)
+import lampetia.security.format.SecurityJsonFormat
+#end
 
-trait ${module.modelName}JsonFormat extends JsonFormat {
+trait ${module.modelName}JsonFormat extends JsonFormat #if (module.secure) with SecurityJsonFormat #end {
 #for (model <- metamodels.jsonModels)
     #match (model)
     #case (m: Enum)
-        implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
-            valueTypeFormat[${model.modelName}](${model.modelName}.apply)(_.value)
+    implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+        stringValueTypeFormat[${model.modelName}](${model.modelName}.apply)(_.value)
     #case (m: Id)
-        implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
-            valueTypeFormat[${model.modelName}](${model.modelName})(_.value)
+    implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+        stringValueTypeFormat[${model.modelName}](${model.modelName})(_.value)
+     #case (v: Value)
+    implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+        stringValueTypeFormat[${model.modelName}](${model.modelName})(_.value)
     #case (m: Entity)
-        #if (m.hasData)
-        implicit lazy val ${model.modelName}DataJsonFormat: Format[${model.modelName}Data] =
-            Json.format[${model.modelName}Data]
-        #end
-        #if (m.hasReferenceModel)
-        implicit lazy val ${model.modelName}RefJsonFormat: Format[${model.modelName}Ref] =
-            Json.format[${model.modelName}Ref]
-        #end
-        implicit lazy val ${model.modelName}JsonFormat: Format[${model.modelName}] =
-            Json.format[${model.modelName}]
+    #if (m.hasData)
+    implicit lazy val ${model.modelName.camelCase}DataJsonFormat: Format[${model.modelName}Data] =
+        Json.format[${model.modelName}Data]
+    #end
+    #if (m.hasReferenceModel)
+    implicit lazy val ${model.modelName.camelCase}RefJsonFormat: Format[${model.modelName}Ref] =
+        Json.format[${model.modelName}Ref]
+    #end
+    implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+        Json.format[${model.modelName}]
     #otherwise
         // WARNING: Model ${model.modelName} was not generated
     #end
-
 
 #end
 }

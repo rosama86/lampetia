@@ -13,4 +13,7 @@ libraryDependencies ++= Seq(
   lampetiaModel,
   lampetiaCore,
   lampetiaPostgresql,
+#if (module.secure)
+  lampetiaSecurityService,
+#end
   scalaTest)

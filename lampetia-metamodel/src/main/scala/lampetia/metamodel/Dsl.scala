@@ -79,6 +79,7 @@ trait Dsl {
   implicit class StringToLiteralProperty(s: String) {
     def string = LiteralProperty(s, StringLiteral)
     def int = LiteralProperty(s, IntLiteral)
+    def double = LiteralProperty(s, DoubleLiteral)
     def boolean = LiteralProperty(s, BooleanLiteral)
     def dateTime = LiteralProperty(s, DateTimeLiteral)
     def jsvalue = LiteralProperty(s, JsValueLiteral)
@@ -136,6 +137,11 @@ trait Dsl {
       case Some(rt) => Entity(name, properties, rt, Nil)
       case None => Entity(name, properties, s"${name.lispCase}", Nil)
     }
+
+  implicit val entityPropertyBuilder = new PropertyBuilder[Entity, EntityProperty] {
+    def build(name: String, model: Entity, optional: Boolean = false, list: Boolean = false): EntityProperty =
+      EntityProperty(name, model, Nil, optional, list)
+  }
 
   def extend(entity: Entity)(additional: Property*): Entity =
     entity.copy(refAndDataProperties = entity.refAndDataProperties ++ additional)

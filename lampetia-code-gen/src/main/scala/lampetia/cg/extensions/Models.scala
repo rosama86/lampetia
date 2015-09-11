@@ -69,6 +69,10 @@ trait Models {
 
     def idEntity: Seq[Entity] =
       models.collect { case m: Id => m }.map(_.entity)
+
+    def seqProperties: Set[Model] =models.map(_.properties).flatten.filter(_.list).map(_.tpe).filter(_.isInstanceOf[Model]).toSet
+    def optionalProperties: Set[Model] =models.map(_.properties).flatten.filter(_.optional).map(_.tpe).filter(_.isInstanceOf[Model]).toSet
+
   }
 
   implicit class ModelEx[M <: Model](model: M) {
@@ -100,7 +104,7 @@ trait Models {
     def generateNameValue = p match {
       case _ if p.list =>
         val instances = (0 to Random.nextInt(5)).map(_ => p.tpe.generateInstance)
-        s"${p.propertyName} = List(${instances.mkString(", ")})"
+        s"${p.propertyName} = Seq(${instances.mkString(", ")})"
       case _ if p.optional =>
         s"${p.propertyName} = Some(${p.tpe.generateInstance})"
       case _ =>
@@ -169,17 +173,17 @@ trait Models {
 
 
     private def defaultSqlColumnProperty(m: Model) = property match {
-      case p: LiteralProperty if p.tpe == StringLiteral =>
-        s"""val $sqlFlattenName = column[$sqlType](${m.metaName}.${property.propertyName}, O.SqlType("text"))"""
-      case p: ValueProperty if p.tpe.valueProperty.tpe == StringLiteral =>
-        s"""val $sqlFlattenName = column[$sqlType](${m.metaName}.${property.propertyName}, O.SqlType("text"))"""
+      case p if p.optional =>
+        s"""val $sqlFlattenName = property[$sqlType](\"${property.propertyName}\").set(sql.optional)"""
+      case p if p.sqlJsonb =>
+        s"""val $sqlFlattenName = property[$sqlType](\"${property.propertyName}\").set(sql.`type`("jsonb"))"""
       case _ =>
-        s"val $sqlFlattenName = column[$sqlType](${m.metaName}.${property.propertyName})"
+        s"""val $sqlFlattenName = property[$sqlType](\"${property.propertyName}\")"""
     }
 
     private def mkType(inner: String) = property match {
       case p if p.optional => s"Option[$inner]"
-      case p if p.list => s"List[$inner]"
+      case p if p.list => s"Seq[$inner]"
       case p => inner
     }
 
@@ -191,6 +195,13 @@ trait Models {
       case _ => false
     }
 
+    def sqlJsonb: Boolean = property match {
+      case _ =>
+        Sql.keywordsIn(property).collectFirst {
+          case JsonbComposite => true
+        }.getOrElse(false)
+    }
+
 
     def sqlJsonType: String =
       Sql.keywordsIn(property).collectFirst {
@@ -200,17 +211,17 @@ trait Models {
 
     def sqlColumnProperty(m: Model) = property match {
       case _: JsondProperty =>
-        s"""val $sqlFlattenName = column[${mkType(postgresqlJsonMappedType)}](${m.metaName}.${property.propertyName}, O.SqlType("$postgresqlJsonType"))"""
+        s"""val $sqlFlattenName = property[${mkType(postgresqlJsonMappedType)}](\"${property.propertyName}\"))"""
 
       case _: JsonbProperty =>
-        s"""val $sqlFlattenName = column[${mkType(postgresqlJsonbMappedType)}](${m.metaName}.${property.propertyName}, O.SqlType("$postgresqlJsonbType"))"""
+        s"""val $sqlFlattenName = property[${mkType(postgresqlJsonbMappedType)}](\"${property.propertyName}\")).set(sql.`type`("jsonb"))"""
 
       case _: CompositeProperty =>
         Sql.keywordsIn(property).collectFirst {
           case JsonComposite | JsonArrayComposite =>
-            s"""val $sqlFlattenName = column[${mkType(property.tpe.modelName)}](${m.metaName}.${property.propertyName}, O.SqlType("$postgresqlJsonType"))"""
+            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\"))"""
           case JsonbComposite | JsonbArrayComposite =>
-            s"""val $sqlFlattenName = column[${mkType(property.tpe.modelName)}](${m.metaName}.${property.propertyName}, O.SqlType("$postgresqlJsonbType"))"""
+            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\"))"""
         }.getOrElse(defaultSqlColumnProperty(m))
 
       case _ => defaultSqlColumnProperty(m)
@@ -671,33 +682,38 @@ trait Models {
        """.stripMargin
     }
 
-    def sqlFeatures: String = {
+    def sqlFeatures(hasId: Boolean = false): String = {
 
       def foreignKeys: Seq[String] = {
         model.properties.zipWithIndex.collect {
           case (rp: RefProperty, i) =>
             val ip = rp.reference
             val tpe = ip.tpe
-            val child = model.sqlName
-            val childp = rp.sqlName(model)
-            val parent = tpe.entity.sqlName
-            val parentp = ip.sqlName(tpe.entity)
-            val fkName = s"fk_${child}_${childp}_ref_${parent}_$parentp"
-            if (rp.optional) // append `.?` to the referenced pk if the fk column is optional
-              s"def fk$i = foreignKey(${fkName.qoute}, ${rp.propertyName}, ${tpe.entity.modelName.camelCase}Table)(_.$parentp.?)"
-            else
-              s"def fk$i = foreignKey(${fkName.qoute}, ${rp.propertyName}, ${tpe.entity.modelName.camelCase}Table)(_.$parentp)"
+            val child = model.sqlName.snakeCase
+            val childp = rp.sqlName(model).snakeCase
+            val parent = tpe.entity.sqlName.snakeCase
+            val parentp = ip.sqlName(tpe.entity).snakeCase
+            val fkName = s"${child}_${childp}_ref_${parent}_$parentp".qoute
+            s"sql.foreignKey(${fkName})(ref.${rp.propertyName})(${tpe.entity.modelName}Model, ${tpe.entity.modelName}Model.id)"
         }
+      }
+
+      def primaryKey: String = {
+          val mn = model.modelName.snakeCase
+          val mid = model.id.propertyName.snakeCase
+          val pkName = s"${model.modelName.snakeCase}_pk".qoute
+          s"sql.primaryKey(${pkName})(${model.modelName}Model.${model.id.propertyName})"
       }
 
       def indexes: Seq[String] = {
         Sql.keywordsIn(model).collect {
           case idx@Index(_, _) => idx
         }.zipWithIndex.map { t =>
-          val (idx, i) = t
+          /*val (idx, i) = t
           val ps = model.entitySqlProperties.filter(p => idx.picker(p.sqlName(model)))
-          val prefix = if (idx.unique) "uidx" else "idx"
-          val name = s"${prefix}_${model.sqlName}_${ps.map(_.sqlName(model)).mkString("_")}".qoute
+          val prefix = model.modelName.toLowerCase
+          val postfix = if (idx.unique) "uidx" else "idx"
+          val name = s"sql.index(${prefix}_${postfix})"
           val on = ps.toList match {
             case x :: Nil =>
               x.sqlFlattenName
@@ -706,14 +722,18 @@ trait Models {
           }
           val unique = idx.unique
           s"def idx$i = index($name, $on, unique = $unique)"
+          */
+          "todo"
         }
       }
 
-      s"""
-         |//def pk = primaryKey(s"pk_$$tableName", id)
-         |${foreignKeys.mkString("\n")}
-         |${indexes.mkString("\n")}
-       """.stripMargin
+      def basic = hasId match {
+        case true => List("sql.schema(schema)", s"sql.name(${model.modelName.snakeCase.qoute})", primaryKey)
+        case false => List("sql.schema(schema)", s"sql.name(${model.modelName.snakeCase.qoute})")
+      }
+
+
+      (basic ++ foreignKeys).mkString(",\n").stripMargin
     }
   }
 

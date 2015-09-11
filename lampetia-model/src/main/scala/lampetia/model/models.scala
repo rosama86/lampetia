@@ -11,7 +11,7 @@ trait IdGenerator {
 }
 
 trait UUIDGenerator extends IdGenerator {
-  def generateStringId: String = UUID.randomUUID.toString
+  override def generateStringId: String = UUID.randomUUID.toString
 }
 
 case class ResourceId(value: String) extends AnyVal
