@@ -8,6 +8,7 @@ import lampetia.security.model._
 trait RoleService {
 
   import lampetia.security.module.SecurityModule.sql._
+  import lampetia.security.module.SecurityModule.dialect._
 
   protected def insertRole(role: Role): IO[Int] = {
     val rm = RoleModel

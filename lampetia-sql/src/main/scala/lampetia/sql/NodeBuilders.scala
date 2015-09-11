@@ -1,14 +1,14 @@
-package lampetia.sql.dialect
+package lampetia.sql
 
-import lampetia.meta.{Property, Model}
-import lampetia.meta.feature.sql.{SqlTypes, SqlForeignKey, SqlIndex, SqlPrimaryKey}
+import lampetia.meta.feature.sql.{SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlTypes}
+import lampetia.meta.{Model, Property}
 import lampetia.sql.ast._
 
 /**
  * @author Hossam Karim
  */
 
-trait Dialect {
+trait NodeBuilders {
 
   implicit lazy val StringLiteralNodeBuilder: StringLiteralNodeBuilder = new StringLiteralNodeBuilder {
     type N = StringLiteralNode

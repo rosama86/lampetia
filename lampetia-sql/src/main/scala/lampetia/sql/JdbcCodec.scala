@@ -130,6 +130,8 @@ trait JdbcCodec extends SqlCodec { self =>
 
   implicit val stringCodecType: CodecType[String] = CodecType[String](java.sql.Types.VARCHAR)
   implicit val intCodecType: CodecType[Int] = CodecType[Int](java.sql.Types.INTEGER)
+  implicit val longCodecType: CodecType[Long] = CodecType[Long](java.sql.Types.BIGINT)
+  implicit val doubleCodecType: CodecType[Double] = CodecType[Double](java.sql.Types.DOUBLE)
 
 }
 

@@ -9,6 +9,7 @@ import lampetia.security.model._
 trait AclService {
 
   import lampetia.security.module.SecurityModule.sql._
+  import lampetia.security.module.SecurityModule.dialect._
 
   protected def insertAcl(acl: Acl): IO[Int] = {
     val aclm = AclModel

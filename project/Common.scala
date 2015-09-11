@@ -21,6 +21,8 @@ object Common {
     val mysqlJdbcVersion = "5.1.36"
     val h2Version = "1.4.187"
     val hikariVersion = "2.3.7"
+    val jjwtVersion = "0.5.1"
+    val messagePackVersion = "0.7.0-M6"
     val scalaTestVersion = "2.2.4"
     val scalateVersion = "1.7.1"
     val commonsioVersion = "1.4"
@@ -55,6 +57,8 @@ object Common {
     val mysql = "mysql" % "mysql-connector-java" % mysqlJdbcVersion
     val h2 = "com.h2database" % "h2" % h2Version
     val hikari = "com.zaxxer" % "HikariCP" % hikariVersion
+    val jjwt = "io.jsonwebtoken" % "jjwt" % jjwtVersion
+    val messagePack = "org.msgpack" % "msgpack-core" % messagePackVersion
     val scalaTest = "org.scalatest" % "scalatest_2.11" % scalaTestVersion % "test"
     val sprayTest = "io.spray" % "spray-testkit_2.11" % sprayVersion % "test"
     val scalate = "org.scalatra.scalate" %% "scalate-core" % scalateVersion

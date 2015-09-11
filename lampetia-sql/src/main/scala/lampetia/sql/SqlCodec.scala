@@ -50,5 +50,8 @@ trait SqlCodec extends Codec with PrimitiveCodecs with OptionCodecs {
   implicit val consumeDouble: Consume[Double] = _.readDouble
   implicit val produceDouble: Produce[Double] = a => p => p.writeDouble(a)
 
+  implicit val consumeDateTime: Consume[DateTime] = _.readTimestamp
+  implicit val produceDateTime: Produce[DateTime] = a => p => p.writeTimestamp(a)
+
 }
 

@@ -40,6 +40,7 @@ project/plugins/project/
 # Scala-IDE specific
 .scala_dependencies
 .worksheet
+.settings
 
 # node
 node_modules
@@ -52,3 +53,6 @@ node_modules
 .vagrant
 
 .settings
+
+# Vertex
+.vertex

@@ -1,11 +1,19 @@
-package lampetia.security.spray.module
+package lampetia.security.module
 
-import lampetia.security.module.SecurityModule
+import lampetia.sql.dialect.postgresql.Postgresql
 
 /**
- * @author rhelal
+ * @author Hossam Karim
  */
 object SecurityTestModule extends SecurityModule {
+
+  val dialect = Postgresql
+
+  object configuration extends super.Configuration
+
+  object json extends super.Json
+
+  object sql extends super.Sql
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
@@ -13,5 +21,4 @@ object SecurityTestModule extends SecurityModule {
       configuration.shutdown()
     }
   })
-
 }

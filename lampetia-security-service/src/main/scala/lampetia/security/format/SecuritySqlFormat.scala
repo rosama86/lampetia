@@ -1,6 +1,6 @@
 package lampetia.security.format
 
-import lampetia.codec.{OptionCodecs, PrimitiveCodecs, Codec}
+//import lampetia.codec.{OptionCodecs, PrimitiveCodecs, Codec}
 import lampetia.model._
 import lampetia.security.model._
 import play.api.libs.json.Json
@@ -9,7 +9,9 @@ import play.api.libs.json.Json
  * @author Hossam Karim
  */
 
-trait SecuritySqlFormat { self: Codec with PrimitiveCodecs with OptionCodecs =>
+trait SecuritySqlFormat {
+
+  import lampetia.security.module.SecurityModule.dialect._
 
   implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)

@@ -2,7 +2,6 @@ package lampetia.sql.dialect.postgresql
 
 import lampetia.conf.{Configuration, Lifecycle}
 import lampetia.meta._
-import lampetia.model._
 import lampetia.meta.feature.sql.SqlTypes
 import lampetia.sql._
 import language.implicitConversions
@@ -24,10 +23,10 @@ trait Postgresql
     def name(propertyType: PropertyType[_]): String = propertyType match {
       case IntProperty => "integer"
       case FloatProperty => "float"
-      case DoubleProperty => "double"
+      case DoubleProperty => "float"
       case LongProperty => "long"
       case StringProperty => "varchar"
-      case DateProperty  => "date"
+      case DateProperty  => "timestamp"
       case DefaultProperty => "text"
     }
   }
@@ -48,24 +47,28 @@ trait Postgresql
 
 }
 
+object Postgresql extends Postgresql
+
 trait PostgresqlConfiguration extends Lifecycle { self: Configuration =>
 
+  def postgresqlConfigurationKey = "lampetia.module.postgres"
+
   lazy val pgJdbcDataSourceClassName: String =
-    config.getString("lampetia.module.postgres.data-source-class-name")
+    config.getString(s"$postgresqlConfigurationKey.data-source-class-name")
   lazy val pgHost: String =
-    config.getString("lampetia.module.postgres.host")
+    config.getString(s"$postgresqlConfigurationKey.host")
   lazy val pgPort: Int =
-    config.getInt("lampetia.module.postgres.port")
+    config.getInt(s"$postgresqlConfigurationKey.port")
   lazy val pgDatabase: String =
-    config.getString("lampetia.module.postgres.database")
+    config.getString(s"$postgresqlConfigurationKey.database")
   lazy val pgUser: String =
-    config.getString("lampetia.module.postgres.user")
+    config.getString(s"$postgresqlConfigurationKey.user")
   lazy val pgPassword: String =
-    config.getString("lampetia.module.postgres.password")
+    config.getString(s"$postgresqlConfigurationKey.password")
   lazy val pgMaximumPoolSize: Int =
-    config.getInt("lampetia.module.postgres.maximum-pool-size")
+    config.getInt(s"$postgresqlConfigurationKey.maximum-pool-size")
   lazy val pgLeakDetectionThreshold: Int =
-    config.getInt("lampetia.module.postgres.leak-detection-threshold")
+    config.getInt(s"$postgresqlConfigurationKey.leak-detection-threshold")
 
   def close(): Unit
 

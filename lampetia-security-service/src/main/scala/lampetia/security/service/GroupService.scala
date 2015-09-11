@@ -8,6 +8,7 @@ import lampetia.security.model._
 trait GroupService {
 
   import lampetia.security.module.SecurityModule.sql._
+  import lampetia.security.module.SecurityModule.dialect._
 
   protected def insertGroup(group: Group): IO[Int] = {
     val m = GroupModel

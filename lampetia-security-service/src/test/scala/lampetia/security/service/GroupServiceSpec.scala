@@ -8,12 +8,14 @@ import lampetia.security.module.SecurityTestModule._
 import lampetia.test.LampetiaFutures
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import play.api.libs.json.Json
 
 /**
  * @author Radwa Osama
  */
 class GroupServiceSpec extends FlatSpec with Matchers with ScalaFutures with LampetiaFutures with CommonServiceSpec {
+
+  import dialect._
+  import sql._
 
   implicit val ec = configuration.concurrent.executionContext
 

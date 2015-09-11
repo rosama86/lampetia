@@ -16,6 +16,7 @@ trait SecurityRoute extends HttpService with SecureRoute {
   import lampetia.security.module.SecurityModule
 
   import SecurityModule.json._
+  import SecurityModule.sql._
   import spray.httpx.PlayJsonSupport._
 
   /*

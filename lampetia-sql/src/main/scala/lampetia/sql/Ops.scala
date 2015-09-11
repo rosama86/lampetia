@@ -2,15 +2,13 @@ package lampetia.sql
 
 import lampetia.io.BackendIO
 import lampetia.meta.{Property, Model}
-import lampetia.model._
 import lampetia.meta.feature.sql._
 import lampetia.sql.ast.{QueryNodeBuilder, Dsl, Operand, Operator}
-import lampetia.sql.dialect.Dialect
 
 /**
  * @author Hossam Karim
  */
-trait Ops { self: Dsl with Dialect with SqlIO with SqlCodec with BackendIO =>
+trait Ops { self: Dsl with NodeBuilders with SqlIO with SqlCodec with BackendIO =>
 
   implicit def sqlTypes: SqlTypes
 

@@ -5,9 +5,8 @@ import java.util.UUID
 import akka.actor.ActorSystem
 import lampetia.model.Email
 import lampetia.security.model._
-import lampetia.security.module.SecurityModule.configuration
+import lampetia.security.module.SecurityTestModule._
 import lampetia.security.service.UserService
-import lampetia.security.spray.module.SecurityTestModule
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Minutes, Span}
@@ -23,7 +22,8 @@ import spray.httpx.PlayJsonSupport._
  */
 class SecurityRouteSpec extends FlatSpec with Matchers  with ScalaFutures with ScalatestRouteTest {
 
-  import SecurityTestModule.json._
+  import sql._
+  import json._
 
   val service = new UserService {}
 

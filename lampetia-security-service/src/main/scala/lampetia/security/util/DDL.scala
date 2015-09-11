@@ -5,6 +5,7 @@ package lampetia.security.util
  */
 
 import lampetia.security.module.SecurityModule.sql._
+import lampetia.security.module.SecurityModule.dialect._
 
 trait DDL {
 

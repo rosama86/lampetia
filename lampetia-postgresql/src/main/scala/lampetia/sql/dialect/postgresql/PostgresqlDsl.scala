@@ -1,14 +1,14 @@
 package lampetia.sql.dialect.postgresql
 
 import lampetia.meta.Property
+import lampetia.sql.NodeBuilders
 import lampetia.sql.ast._
-import lampetia.sql.dialect.Dialect
 
 /**
  * @author Hossam Karim
  */
 
-trait PostgresqlDsl extends Dsl with Dialect {
+trait PostgresqlDsl extends Dsl with NodeBuilders {
 
 
 
