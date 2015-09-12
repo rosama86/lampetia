@@ -1,0 +1,113 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val model: Entity %>
+<%@ val module: Module %>
+<%@ val metamodels: Seq[Model] %>
+<%@ val config: Config%>
+package ${module.basePackage}.service
+
+import ${module.basePackage}.model._
+
+trait ${model.modelName}Service {
+
+  import  ${module.basePackage}.module.${module.modelName}Module.sql._
+  import  ${module.basePackage}.module. ${module.modelName}Module.dialect._
+
+<%
+
+val hasId = metamodels.idEntity.contains(model)
+
+val idCouple = "m.id := " + model.modelName.camelCase + ".id.bind" :: Nil
+
+val dataCouples = model.hasData match {
+  case false => Nil
+  case true =>
+    model.dataModel.properties.toList.map(p =>
+      "m.data." + p.propertyName + " := " + model.modelName.camelCase + ".data." + p.propertyName + ".bind")
+}
+
+val refCouples = model.hasReferenceModel match {
+  case false => Nil
+  case true =>
+    model.entityRefProperties.toList.map(p =>
+      "m.ref." + p.propertyName + " := " + model.modelName.camelCase + ".ref." + p.propertyName + ".bind")
+}
+
+def couples = hasId match {
+  case false => (dataCouples ++ refCouples).mkString(",\n")
+  case true => (idCouple ++ dataCouples ++ refCouples).mkString(",\n")
+}
+
+%>
+
+  protected def insert${model.modelName}(${model.modelName.camelCase}: ${model.modelName}): IO[Int] = {
+    val m = ${model.modelName}Model
+    m.insert(${couples})
+  }
+
+<%
+
+val createParamRef = "ref: " + model.modelName + "Ref"
+val createParamData = "data: " + model.modelName + "Data"
+
+val createParams = (model.hasData, model.hasReferenceModel) match {
+  case (true, true) => (createParamRef :: createParamData :: Nil).mkString(", ")
+  case (true, false) => createParamData
+  case (false, true) => createParamRef
+  case _ => ""
+}
+// complete updating params line 71
+val createModelParams =  (hasId, model.hasReferenceModel, model.hasData) match {
+case (true, true, true) => ("m.generate" :: "ref" :: "data" :: Nil).mkString(", ")
+case (true, true, false) =>  ("m.generate" :: "ref" :: Nil).mkString(", ")
+case (true, false, true) =>  ("m.generate" :: "data" :: Nil).mkString(", ")
+case (true, false, false) =>  ("m.generate" :: Nil).mkString(", ")
+case (false, true, true) =>  ("ref" :: "data" :: Nil).mkString(", ")
+case (false, true, false) =>  ("ref" :: Nil).mkString(", ")
+case (false, false, true) =>  ("data" :: Nil).mkString(", ")
+case _ => ""
+}
+%>
+
+  def create${model.modelName}(${createParams}): IO[${model.modelName}] = {
+    val m = ${model.modelName}Model
+    val ${model.modelName.camelCase} = ${model.modelName}(${createModelParams})
+    insert${model.modelName}(${model.modelName.camelCase})
+      .transactionally
+      .map(_ => ${model.modelName.camelCase})
+  }
+
+#if (hasId)
+  def findOne(id: ${model.modelName}Id): IO[Option[${model.modelName}]] = {
+    val m = ${model.modelName}Model
+    select(m.properties: _*)
+      .from(m.schemaPrefixed)
+      .where(m.id === id.bind)
+      .lifted
+      .read[${model.modelName}]
+      .map(_.headOption)
+  }
+
+#end
+
+#if (model.hasReferenceModel)
+#for (property <- model.entityRefProperties.toList)
+  def find${model.modelName}By${property.tpe.modelName}(${property.propertyName}: ${property.tpe.modelName}): Seq[${model.modelName}] = {
+   val m = ${model.modelName}Model
+    select(m.properties: _*)
+      .from(m.schemaPrefixed)
+      .where(m.ref.${property.propertyName} === ${property.propertyName}.bind)
+      .lifted
+      .read[${model.modelName}]
+  }
+
+#end
+#end
+
+}

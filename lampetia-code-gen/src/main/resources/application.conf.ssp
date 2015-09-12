@@ -1,13 +1,16 @@
-#import(lampetia.metamodel.Module)
 #import(lampetia.metamodel._)
 #import(lampetia.extensions.Strings)
 #import(Strings._)
 <%@ val module: Module%>
 <% val schema = "${?PG_SCHEMA}" %>
+<% val securitySchema = "${?PG_SECURITY_SCHEMA}" %>
 nxt {
   module {
     ${module.modelName.lispCase} {
-      schema = ${schema}
+      schema = ${schema}#if (module.secure)
+      security-schema = ${securitySchema}
+
+      #end
     }
   }
 }
