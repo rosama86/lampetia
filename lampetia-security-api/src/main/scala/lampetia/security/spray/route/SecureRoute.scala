@@ -15,7 +15,6 @@ import scala.util.{Failure, Success}
  */
 trait SecureRoute extends HttpService {
 
-  import lampetia.security.module.SecurityModule
   import AuthMagnet._
   import spray.routing.authentication._
   import spray.util._

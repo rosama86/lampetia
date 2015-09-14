@@ -2,8 +2,10 @@ package lampetia.security.spray.route
 
 import lampetia.security.model._
 import lampetia.security.service.GroupService
+import lampetia.sql.JdbcConnectionSource
 import spray.http.StatusCodes
 import spray.routing.HttpService
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 import spray.httpx.PlayJsonSupport._
 
@@ -28,8 +30,11 @@ trait GroupRoute extends HttpService with SecureRoute {
 
    */
 
-  implicit val executionContext = SecurityModule.configuration.concurrent.executionContext
-  implicit val connectionSource = SecurityModule.connectionSource
+
+
+
+  implicit def executionContext: ExecutionContext
+  implicit def connectionSource: JdbcConnectionSource
 
   val groupService = new GroupService {}
 

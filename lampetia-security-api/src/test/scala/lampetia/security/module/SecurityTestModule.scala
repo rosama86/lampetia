@@ -31,7 +31,7 @@ object SecurityTestModule extends SecurityModule {
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run(): Unit = {
-      configuration.logger.info("This test configuration should be shutting down now ...")
+      configuration.logger.info("[lampetia-security-api] This test configuration should be shutting down now ...")
       configuration.shutdown()
     }
   })

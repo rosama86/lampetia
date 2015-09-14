@@ -29,9 +29,7 @@ class GroupRouteSpec extends FlatSpec with Matchers  with ScalaFutures with Scal
 
   val service = new GroupService {}
 
-  val groupRoute = new GroupRoute {
-    def actorRefFactory: ActorSystem = SecurityTestModule.configuration.akka.defaultActorSystem
-  }
+  val groupRoute = new GroupRoute with TestRouteEnv {}
 
   val route = groupRoute.groupRoute
 

@@ -27,9 +27,7 @@ class SecurityRouteSpec extends FlatSpec with Matchers  with ScalaFutures with S
 
   val service = new UserService {}
 
-  val securityRoute = new SecurityRoute {
-    def actorRefFactory: ActorSystem = SecurityTestModule.configuration.akka.defaultActorSystem
-  }
+  val securityRoute = new SecurityRoute with TestRouteEnv {}
 
   val route = securityRoute.validateRoute
 

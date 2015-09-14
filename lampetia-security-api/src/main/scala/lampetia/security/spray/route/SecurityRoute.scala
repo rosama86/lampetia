@@ -2,10 +2,11 @@ package lampetia.security.spray.route
 
 import lampetia.security.model.{UserId, User}
 import lampetia.security.service.UserService
+import lampetia.sql.JdbcConnectionSource
 import spray.http.StatusCodes
 import spray.routing.HttpService
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
@@ -23,8 +24,8 @@ trait SecurityRoute extends HttpService with SecureRoute {
 
    */
 
-  implicit val executionContext = SecurityModule.configuration.concurrent.executionContext
-  implicit val connectionSource = SecurityModule.connectionSource
+  implicit def executionContext: ExecutionContext
+  implicit def connectionSource: JdbcConnectionSource
 
   val userService = new UserService {}
 

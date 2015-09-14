@@ -5,10 +5,13 @@ import akka.io.IO
 import lampetia.conf.Configuration
 import lampetia.security.spray.route.{SecurityRoute, GroupRoute}
 import lampetia.spray.SprayConfiguration
+import lampetia.sql.JdbcConnectionSource
 import spray.can.Http
 import spray.routing._
 import lampetia.security.module.SecurityModule
 import SecurityModule._
+
+import scala.concurrent.ExecutionContext
 
 /**
  * @author Hossam Karim
@@ -17,13 +20,15 @@ import SecurityModule._
 
 class SecurityHttpServiceActor(val conf: SprayConfiguration) extends HttpServiceActor {
 
-  val securityRoute = new SecurityRoute {
+  trait DefaultRouteEnv {
+    def executionContext: ExecutionContext = SecurityModule.configuration.concurrent.executionContext
+    def connectionSource: JdbcConnectionSource = SecurityModule.connectionSource
     def actorRefFactory: ActorSystem = configuration.akka.defaultActorSystem
   }
 
-  val groupRoute = new GroupRoute {
-    def actorRefFactory: ActorSystem = configuration.akka.defaultActorSystem
-  }
+  val securityRoute = new SecurityRoute with DefaultRouteEnv {}
+
+  val groupRoute = new GroupRoute with DefaultRouteEnv {}
 
   def route: Route = securityRoute.validateRoute ~ groupRoute.groupRoute
 
