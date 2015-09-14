@@ -282,10 +282,10 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
           d <- service.grant(subjectId, resourceUri, deletePermission)
 
           // grant permission on all  resource children
-          _ <- service.grant(AclData(acl.data.subject, acl.data.resourceUri.*, noPermission))
-          cr <- service.grant(subjectId, resourceUri.*, readPermission)
-          cu <- service.grant(subjectId, resourceUri.*, updatePermission)
-          cd <- service.grant(subjectId, resourceUri.*, deletePermission)
+          _ <- service.grant(AclData(acl.data.subject, acl.data.resourceUri.childResourcesUri, noPermission))
+          cr <- service.grant(subjectId, resourceUri.childResourcesUri, readPermission)
+          cu <- service.grant(subjectId, resourceUri.childResourcesUri, updatePermission)
+          cd <- service.grant(subjectId, resourceUri.childResourcesUri, deletePermission)
 
           // check if has permission on a resource
           hrb <- service.hasPermission(subjectId, uriPattern, readPermission)
@@ -372,10 +372,10 @@ class AclServiceSpec extends FlatSpec with Matchers with GivenWhenThen with Scal
           d <- service.grant(subjectId, resourceUri, deletePermission)
 
           // grant permission on all  resource children
-          _ <- service.grant(AclData(acl.data.subject, acl.data.resourceUri.*, noPermission))
-          cr <- service.grant(subjectId, resourceUri.*, readPermission)
-          cu <- service.grant(subjectId, resourceUri.*, updatePermission)
-          cd <- service.grant(subjectId, resourceUri.*, deletePermission)
+          _ <- service.grant(AclData(acl.data.subject, acl.data.resourceUri.childResourcesUri, noPermission))
+          cr <- service.grant(subjectId, resourceUri.childResourcesUri, readPermission)
+          cu <- service.grant(subjectId, resourceUri.childResourcesUri, updatePermission)
+          cd <- service.grant(subjectId, resourceUri.childResourcesUri, deletePermission)
 
           // check if has permission on a resource
           hrb <- service.hasPermission(subjectId, uriPattern, readPermission)

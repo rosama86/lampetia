@@ -1,5 +1,6 @@
 package lampetia.security.spray.route
 
+import lampetia.model.UserId
 import lampetia.security.model._
 import lampetia.security.service.GroupService
 import lampetia.sql.JdbcConnectionSource

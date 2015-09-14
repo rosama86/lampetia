@@ -1,6 +1,6 @@
 package lampetia.security.service
 
-import lampetia.model.Email
+import lampetia.model.{UserId, Email}
 import lampetia.security.model._
 
 

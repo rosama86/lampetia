@@ -1,6 +1,7 @@
 package lampetia.security.spray.route
 
-import lampetia.security.model.{UserId, User}
+import lampetia.model.UserId
+import lampetia.security.model.User
 import lampetia.security.service.UserService
 import lampetia.sql.JdbcConnectionSource
 import spray.http.StatusCodes

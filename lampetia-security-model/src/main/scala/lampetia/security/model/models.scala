@@ -28,7 +28,7 @@ object AccountState {
   }
 }
 
-case class UserId(value: String) extends AnyVal
+//case class UserId(value: String) extends AnyVal
 case class User(id: UserId, accountState: AccountState) {
   def isActive = accountState == AccountActive
 }
@@ -114,6 +114,16 @@ case class Permission(code: Int) extends AnyVal {
   def exists(mask: Permission): Boolean = (code & mask.code) == mask.code
 }
 
+object Permissions {
+  final val noPermission         = Permission( 0 )
+  final val createPermission     = Permission( 1 << 0 )
+  final val readPermission       = Permission( 1 << 1 )
+  final val updatePermission     = Permission( 1 << 2 )
+  final val deletePermission     = Permission( 1 << 3 )
+
+  final val rootPermission       = Permission( (1 << 31) - 1) // most significant bit
+}
+
 case class RoleId(value: String) extends AnyVal
 case class RoleData(code: Code, permission: Permission)
 case class Role(id: RoleId, data: RoleData)
@@ -125,6 +135,25 @@ case class AclRoleRef(aclId: AclId, roleId: RoleId)
 case class AclRole(ref: AclRoleRef) extends AnyVal
 
 case object NotAuthorized extends Exception("Principle not authorized to perform this action")
+
+object SecurityImplicits {
+  implicit class UserEx(user: User) {
+    def subject: Subject = Subject(SubjectId(user.id.value), SubjectUser)
+    def subjectId: SubjectId = SubjectId(user.id.value)
+  }
+  implicit class UserIdEx(userId: UserId) {
+    def subject: Subject = Subject(SubjectId(userId.value), SubjectUser)
+    def subjectId: SubjectId = SubjectId(userId.value)
+  }
+  implicit class GroupEx(group: Group) {
+    def subject: Subject = Subject(SubjectId(group.id.value), SubjectGroup)
+    def subjectId: SubjectId = SubjectId(group.id.value)
+  }
+  implicit class GroupIdEx(groupId: GroupId) {
+    def subject: Subject = Subject(SubjectId(groupId.value), SubjectGroup)
+    def subjectId: SubjectId = SubjectId(groupId.value)
+  }
+}
 
 trait SecurityModel {
 
@@ -157,6 +186,7 @@ trait SecurityModel {
   implicit object ProfileModel
     extends Model[Profile]
     with HasId[Profile, ProfileId]
+    with SecureModel[Profile, ProfileId]
     with HasRef[Profile, ProfileRef]
     with HasData[Profile, ProfileData]
     with CanGenerate[ProfileId]
@@ -193,6 +223,7 @@ trait SecurityModel {
   implicit object GroupModel
     extends Model[Group]
     with HasId[Group, GroupId]
+    with SecureModel[Group, GroupId]
     with HasRef[Group, GroupRef]
     with HasData[Group, GroupData]
     with CanGenerate[GroupId]

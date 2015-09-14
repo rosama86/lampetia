@@ -19,6 +19,9 @@ trait JsonFormat {
     Writes[A](v => JsNumber(write(v)))
   )
 
+  implicit lazy val userIdJsonFormat: Format[UserId] =
+    stringValueTypeFormat[UserId](UserId)(_.value)
+
   implicit lazy val codeJsonFormat: Format[Code] =
     stringValueTypeFormat[Code](Code)(_.value)
 
@@ -45,6 +48,11 @@ trait JsonFormat {
 
   implicit lazy val phoneJsonFormat: Format[Phone] =
     stringValueTypeFormat[Phone](Phone)(_.value)
+
+  implicit lazy val signatureJsonFormat: Format[Signature] = Json.format[Signature]
+
+  implicit lazy val traceJsonFormat: Format[Trace] = Json.format[Trace]
+
 
 
 

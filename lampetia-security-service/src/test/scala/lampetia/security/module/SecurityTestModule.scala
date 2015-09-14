@@ -6,7 +6,7 @@ import lampetia.sql.dialect.postgresql.Postgresql
 /**
  * @author Hossam Karim
  */
-object SecurityTestModule extends SecurityModule {
+object SecurityTestModule extends SecurityModule { self =>
 
   val dialect = Postgresql
 
@@ -14,7 +14,9 @@ object SecurityTestModule extends SecurityModule {
 
   object json extends super.Json
 
-  object sql extends super.Sql
+  object sql extends super.Sql {
+    val dialect = self.dialect
+  }
 
   def connectionSourceFactories = new ConnectionSourceFactories {}
 

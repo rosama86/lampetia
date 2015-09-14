@@ -1,6 +1,6 @@
 package lampetia.security.spray.route
 
-import lampetia.security.model.UserId
+import lampetia.model.UserId
 import org.slf4j.LoggerFactory
 import spray.http.HttpHeaders.Authorization
 import spray.http.OAuth2BearerToken

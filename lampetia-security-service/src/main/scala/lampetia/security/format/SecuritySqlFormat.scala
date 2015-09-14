@@ -1,6 +1,8 @@
 package lampetia.security.format
 
 //import lampetia.codec.{OptionCodecs, PrimitiveCodecs, Codec}
+
+import lampetia.format.SqlFormat
 import lampetia.model._
 import lampetia.security.model._
 import play.api.libs.json.Json
@@ -9,9 +11,9 @@ import play.api.libs.json.Json
  * @author Hossam Karim
  */
 
-trait SecuritySqlFormat {
+trait SecuritySqlFormat extends SqlFormat {
 
-  import lampetia.security.module.SecurityModule.dialect._
+  import dialect._
 
   implicit lazy val consumeSubjectId: Consume[SubjectId] = consume[String].fmap(SubjectId)
   implicit lazy val produceSubjectId: Produce[SubjectId] = a => produce(a.value)
@@ -24,9 +26,6 @@ trait SecuritySqlFormat {
 
   implicit lazy val consumeAccountState: Consume[AccountState] = consume[String].fmap(AccountState.apply)
   implicit lazy val produceAccountState: Produce[AccountState] = a => produce(a.value)
-
-  implicit lazy val consumeUserId: Consume[UserId] = consume[String].fmap(UserId)
-  implicit lazy val produceUserId: Produce[UserId] = a => produce(a.value)
 
   implicit lazy val consumeUser: Consume[User] = (consume[UserId] and consume[AccountState])(User)
   implicit lazy val produceUser: Produce[User] = a => produce(a.id) andThen produce(a.accountState)

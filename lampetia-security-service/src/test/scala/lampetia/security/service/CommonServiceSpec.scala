@@ -2,7 +2,7 @@ package lampetia.security.service
 
 import java.util.UUID
 
-import lampetia.model.Email
+import lampetia.model.{UserId, Email}
 import lampetia.security.model._
 import play.api.libs.json.Json
 

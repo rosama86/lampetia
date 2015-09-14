@@ -25,14 +25,13 @@ trait SecurityModule {
 
   trait Sql extends SecurityModel with SecuritySqlFormat {
     def schema = configuration.schema
-
   }
   def sql: Sql
 
   def connectionSource: JdbcConnectionSource
 }
 
-object SecurityModule extends SecurityModule {
+object SecurityModule extends SecurityModule { self =>
 
   val dialect = Postgresql
 
@@ -40,7 +39,9 @@ object SecurityModule extends SecurityModule {
 
   object json extends super.Json
 
-  object sql extends super.Sql
+  object sql extends super.Sql {
+    val dialect = self.dialect
+  }
 
   def connectionSourceFactories = new ConnectionSourceFactories {}
 

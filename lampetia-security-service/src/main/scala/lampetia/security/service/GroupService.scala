@@ -1,5 +1,6 @@
 package lampetia.security.service
 
+import lampetia.model.UserId
 import lampetia.security.model._
 
 /**

@@ -2,7 +2,7 @@ package lampetia.security.format
 
 import java.util.UUID
 
-import lampetia.model.{Code, Email}
+import lampetia.model.{UserId, Code, Email}
 import lampetia.security.model._
 import org.scalatest.{Matchers, FlatSpec}
 import play.api.libs.json.{JsResult, Json}

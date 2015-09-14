@@ -21,8 +21,6 @@ trait SecurityJsonFormat extends JsonFormat {
   implicit lazy val accountStateJsonFormat: Format[AccountState] =
     stringValueTypeFormat[AccountState](AccountState.apply)(_.value)
 
-  implicit lazy val userIdJsonFormat: Format[UserId] =
-    stringValueTypeFormat[UserId](UserId)(_.value)
 
   implicit lazy val userJsonFormat: Format[User] = Json.format[User]
 

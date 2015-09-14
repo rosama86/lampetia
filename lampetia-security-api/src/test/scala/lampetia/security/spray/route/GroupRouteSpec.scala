@@ -3,7 +3,7 @@ package lampetia.security.spray.route
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import lampetia.model.{Code, Email}
+import lampetia.model.{UserId, Code, Email}
 import lampetia.security.model._
 import lampetia.security.module.SecurityTestModule
 import lampetia.security.service.{UserService, GroupService}
