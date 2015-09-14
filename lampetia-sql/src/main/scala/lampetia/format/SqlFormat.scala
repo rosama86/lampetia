@@ -2,6 +2,7 @@ package lampetia.format
 
 import lampetia.model._
 import lampetia.sql.SqlCodec
+import org.joda.time.DateTime
 
 /**
  * @author Hossam Karim
@@ -32,6 +33,23 @@ trait SqlFormat {
   implicit lazy val consumePhone: Consume[Phone] = consume[String].fmap(Phone)
 
   implicit lazy val producePhone: Produce[Phone] = a => produce(a.value)
+
+  implicit lazy val consumeSignature: Consume[Signature] = (consume[UserId] and consume[DateTime])(Signature)
+  /*implicit lazy val consumeSignatureOption: Consume[Option[Signature]] =
+    (consume[Option[UserId]] and consume[Option[DateTime]]) { (byOption, atOption) =>
+      for {
+        by <- byOption
+        at <- atOption
+      } yield Signature(by, at)
+    }*/
+  implicit lazy val produceSignature: Produce[Signature] = a => produce(a.by) andThen produce(a.at)
+  /*implicit lazy val produceSignatureOption: Produce[Option[Signature]] = {
+    case Some(s) => produce(s)
+    case _ => produce(Option.empty[UserId]) andThen produce(Option.empty[DateTime])
+  }
+*/
+  implicit lazy val consumeTrace: Consume[Trace] = (consume[Signature] and consume[Signature])(Trace)
+  implicit lazy val produceTrace: Produce[Trace] = a => produce(a.created) andThen produce(a.updated)
 
 
 }

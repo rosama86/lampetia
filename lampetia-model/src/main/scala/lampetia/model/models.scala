@@ -36,4 +36,4 @@ case class Locale(value:String) extends AnyVal
 case class Phone(value: String) extends AnyVal
 
 case class Signature(by: UserId, at: DateTime)
-case class Trace(created: Signature, update: Option[Signature])
+case class Trace(created: Signature, updated: Signature)
