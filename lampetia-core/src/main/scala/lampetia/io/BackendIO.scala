@@ -30,8 +30,9 @@ trait BackendIO[C] { self =>
   object IO {
     def pure[A](a: A): IO[A] = IOPure(a)
     def failed[A](cause: Throwable): IO[A] = IOFailed[A](cause)
-    def seq[A](c: Seq[IO[A]]): IO[Seq[A]] = IOSeq(c)
-    def sequence[A](c: IO[A]*): IO[Seq[A]] = IOSeq(c)
+    def seq[A](col: Seq[IO[A]]): IO[Seq[A]] = IOSeq(col)
+    def sequence[A](col: IO[A]*): IO[Seq[A]] = IOSeq(col)
+    def ioOption[A](option: Option[IO[A]]): IO[Option[A]] = IOOption(option)
   }
 
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: C): Future[R]
@@ -54,6 +55,13 @@ trait BackendIO[C] { self =>
       seq.foldLeft(resultM.pure(Seq.empty[A])) { (rseq, io) =>
         resultM.flatMap(rseq)(seq => resultM.map(io.execute(context))(a => seq :+ a))
       }
+  }
+
+  protected case class IOOption[A](option: Option[IO[A]]) extends IO[Option[A]] {
+    def execute(context: C): Result[Option[A]] = option match {
+      case Some(io) => resultM.map(io.execute(context))(Some(_))
+      case None     => resultM.pure(Option.empty[A])
+    }
   }
 
   protected case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {

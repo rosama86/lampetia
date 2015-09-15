@@ -229,14 +229,20 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
 
   def run[A](io: IO[A])(implicit ec: ExecutionContext, source: JdbcConnectionSource): Future[A] = {
     //val source = connectionSource
-    Future {
-      io.execute(source) match {
-        case Success(result) =>
-          result
-        case Failure(e)      =>
-          throw e
-      }
+    io match {
+      case IOPure(x)    => Future.successful(x)
+      case IOFailed(ex) => Future.failed[A](ex)
+      case _            =>
+        Future {
+          io.execute(source) match {
+            case Success(result) =>
+              result
+            case Failure(e)      =>
+              throw e
+          }
+        }
     }
+
   }
 
 }
