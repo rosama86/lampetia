@@ -7,12 +7,9 @@ import lampetia.sql._
 import language.implicitConversions
 
 trait Mysql extends MysqlDsl
-with    SqlCodec
-with    SqlIO
-with    JdbcCodec
-with    JdbcIO
-with    ConnectionSourceFactories
-with    Ops {
+  with    JdbcCodec
+  with    JdbcIO
+  with    Ops {
 
   implicit val sqlTypes: SqlTypes = new SqlTypes {
 

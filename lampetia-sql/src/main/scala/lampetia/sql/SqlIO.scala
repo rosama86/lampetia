@@ -9,20 +9,17 @@ import org.slf4j.LoggerFactory
  * @author Hossam Karim
  */
 
-trait SqlIO extends BackendIO { codec: SqlCodec =>
-
-  private val log = LoggerFactory.getLogger("sql-io")
-
+trait ConnectionSource {
   // The connection type of the underlying driver
   type Connection
+  def connection: Connection
+  def done(connection: Connection)
+  def shutdown(): Unit
+}
 
-  trait ConnectionSource {
-    def connection: Connection
-    def done(connection: Connection)
-    def shutdown(): Unit
-  }
+trait SqlIO[C <: ConnectionSource] extends BackendIO[C] { codec: SqlCodec =>
 
-  type Context = ConnectionSource
+  private val log = LoggerFactory.getLogger("sql-io")
 
   trait Parameter[+A] {
     type T <: A

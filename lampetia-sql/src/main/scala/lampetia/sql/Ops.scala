@@ -1,6 +1,5 @@
 package lampetia.sql
 
-import lampetia.io.BackendIO
 import lampetia.meta.{Property, Model}
 import lampetia.meta.feature.sql._
 import lampetia.sql.ast.{QueryNodeBuilder, Dsl, Operand, Operator}
@@ -8,7 +7,7 @@ import lampetia.sql.ast.{QueryNodeBuilder, Dsl, Operand, Operator}
 /**
  * @author Hossam Karim
  */
-trait Ops { self: Dsl with NodeBuilders with SqlIO with SqlCodec with BackendIO =>
+trait Ops { self: Dsl with NodeBuilders with SqlIO[_ <: ConnectionSource] with SqlCodec =>
 
   implicit def sqlTypes: SqlTypes
 
