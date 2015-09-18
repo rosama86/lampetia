@@ -1,0 +1,36 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+<%@ val model: Entity %>
+package ${module.basePackage}.service
+
+import ${module.basePackage}.model._
+import ${module.basePackage}.module.${module.modelName}TestModule
+import org.scalatest.concurrent.ScalaFutures
+import nxt.event.module.EventTestModule.configuration
+import org.scalatest._
+
+class  ${model.modelName}ServiceSpec extends FlatSpec with Matchers with ScalaFutures {
+
+  implicit val ec = configuration.concurrent.executionContext
+  implicit val connectionSource = ${module.modelName}TestModule.connectionSource
+
+  val service = new ${model.modelName}Service {}
+
+  it should "create ${module.modelName.camelCase}" in {
+    //val user = service.createUser(testProfileData).run
+    //whenReady(user, oneMinute) { result =>
+    //  result.id.value shouldNot be('empty)
+    //}
+    true shouldNot be(false)
+  }
+
+}

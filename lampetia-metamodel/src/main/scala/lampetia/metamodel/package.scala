@@ -127,6 +127,8 @@ package object metamodel {
 
   case class DependsOn(submodule: Submodule) extends Keyword
 
+  case object External extends Keyword
+
   sealed trait JsonType extends Model {
     def properties: Seq[Property] = Nil
     def features: Seq[Feature] = Nil

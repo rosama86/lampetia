@@ -95,7 +95,13 @@ trait Models {
         s"""JsonData(Json.obj("id" -> "some-id", "data" -> List("something", "something else")))"""
     }
 
-
+    def external: Boolean =
+      model.features.collectFirst {
+        case e: ModelFeature => e.keyword match {
+          case External => true
+          case _ => false
+        }
+      }.getOrElse(false)
   }
 
   implicit class PropertyEx(p: Property) {

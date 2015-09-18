@@ -41,12 +41,29 @@ trait ServiceCartridge extends ScalaCartridge {
 
   case class ServiceFileGenerationTask(module: Module) extends FileGenerationTask {
 
+    def service(entity: Entity): FileGenerationTask =
+      CommonScalaFileGenerationTask(
+        module,
+        "service",
+        CFile(s"${entity.modelName}Service.scala"),
+        CDir(s"${scalaDir(module)}/service"),
+        _ => Nil,
+        Map("model" -> entity))
+
+    def run(models: Seq[Model]): Seq[FileGeneration] =
+      models collect { case m: Entity => m} flatMap {
+        em => service(em).run(models)
+      }
+  }
+
+  case class ServiceSpecFileGenerationTask(module: Module) extends FileGenerationTask {
+
     def serviceSpec(entity: Entity): FileGenerationTask =
       CommonScalaFileGenerationTask(
         module,
         "service-spec",
-        CFile(s"${entity.modelName}Service.scala"),
-        CDir(s"${scalaDir(module)}/service"),
+        CFile(s"${entity.modelName}ServiceSpec.scala"),
+        CDir(s"${scalaTestDir(module)}/service"),
         _ => Nil,
         Map("model" -> entity))
 
@@ -156,12 +173,13 @@ trait ServiceCartridge extends ScalaCartridge {
       CFile(s"${module.modelName}Configuration.scala"),
       CDir(s"${scalaDir(module)}/conf"))
 
-  def testConfiguration(module: Module) =
+  def testModuleTask(module: Module) =
     CommonScalaFileGenerationTask(
       module,
-      "test-configuration",
-      CFile(s"${module.modelName}TestConfiguration.scala"),
-      CDir(s"${scalaTestDir(module)}/di"))
+      "test-module",
+      CFile(s"${module.modelName}TestModule.scala"),
+      CDir(s"${scalaTestDir(module)}/module")
+    )
 
   /*def scalaFormat(module: Module) =
     CommonScalaTask(
@@ -209,6 +227,8 @@ trait ServiceCartridge extends ScalaCartridge {
   def spray(module: Module) = SprayFileGenerationTask(module)
 
   def service(module: Module) = ServiceFileGenerationTask(module)
+
+  def serviceSpec(module: Module) = ServiceSpecFileGenerationTask(module)
 }
 
 class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
@@ -220,8 +240,9 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
       referenceConf _,
       sqlFormat _,
       ddl _,
-      service _ /*,
-      //testConfiguration _,
+      service _,
+      testModuleTask _,
+      serviceSpec _ /*,
       logbackXml _,
       //scalaFormat _,
       dao _,

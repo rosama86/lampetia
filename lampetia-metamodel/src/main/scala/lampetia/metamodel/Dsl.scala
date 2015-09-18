@@ -194,6 +194,8 @@ object Dsl extends Dsl with DslKeywordBuilder {
 
   def commonFeatures = Seq(snakeCase in Sql, lispCase in Json)
 
+  def externalModelFeatures = Seq(ModelFeature(External)) ++ commonFeatures
+
   val ResourceType = value("ResourceType")("value".string)
   val ResourceId = value("ResourceId")("value".string)
   val Resource = composite("Resource")("id" of ResourceId, "resourceType" of ResourceType)

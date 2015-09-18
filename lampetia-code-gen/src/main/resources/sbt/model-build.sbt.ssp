@@ -1,7 +1,9 @@
+#import(lampetia.metamodel.Module)
 #import(lampetia.cg.cartridge.sbt.SbtProject)
 #import(lampetia.extensions.Strings)
 #import(Strings._)
 <%@ val project: SbtProject %>
+<%@ val module: Module%>
 
 import dependencies._
 
@@ -11,5 +13,7 @@ libraryDependencies ++= Seq(
     lampetiaModel,
     lampetiaCore,
     lampetiaPostgresql,
-    lampetiaSecurityModel,
+#if (module.secure)
+    nxtSecurityModel,
+#end
     scalaTest)

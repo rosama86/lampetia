@@ -25,6 +25,7 @@ trait ModelCartridge extends ScalaCartridge {
       name = s"${module.name}Model",
       dependencies = dependencies,
       libraries = libs,
+      extraModels = Map("module" -> module),
       customTemplate = Some("model-build")
     )
   }

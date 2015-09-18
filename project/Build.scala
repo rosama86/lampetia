@@ -1,25 +1,26 @@
 package lampetia
 
+import com.typesafe.sbt.SbtGit._
 import sbt.Keys._
 import sbt._
-import com.typesafe.sbt.SbtGit._
+
 import scala.Console._
 
 object Build extends sbt.Build {
 
   val buildPrompt: State => String = { state =>
-        val prompt = GitCommand.prompt(state).trim
-        val regex = """(.*)\((.*)\)>""".r
-        prompt match {
-          case regex(pname, "master") =>
-            s"""$BLUE$pname $GREEN[master]$RESET $$ """
-          case regex(pname, bname) =>
-            s"""$BLUE$pname $YELLOW[$bname]$RESET $$ """
-          case pname =>
-            s"""$BLUE$pname$RESET $$ """
-        }
+    val prompt = GitCommand.prompt(state).trim
+    val regex = """(.*)\((.*)\)>""".r
+    prompt match {
+      case regex(pname, "master") =>
+        s"""$BLUE$pname $GREEN[master]$RESET $$ """
+      case regex(pname, bname) =>
+        s"""$BLUE$pname $YELLOW[$bname]$RESET $$ """
+      case pname =>
+        s"""$BLUE$pname$RESET $$ """
+    }
 
-      }
+  }
 
   val dependencies = Common.Dependencies
 
@@ -62,6 +63,12 @@ object Build extends sbt.Build {
     Project("lampetia-mysql", file("lampetia-mysql"))
       .dependsOn(`lampetia-sql`)
 
+  lazy val `lampetia-metamodel` =
+    Project("lampetia-metamodel", file("lampetia-metamodel"))
+
+  lazy val `lampetia-code-gen` =
+    Project("lampetia-code-gen", file("lampetia-code-gen"))
+      .dependsOn(`lampetia-metamodel`)
 
   lazy val `lampetia` =
     Project("lampetia", file("."))
@@ -69,6 +76,8 @@ object Build extends sbt.Build {
         `lampetia-model`,
         `lampetia-core`,
         `lampetia-sql`,
+        `lampetia-metamodel`,
+        `lampetia-code-gen`,
         `lampetia-spray`,
         `lampetia-postgresql`,
         `lampetia-mysql`)

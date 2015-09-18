@@ -14,8 +14,8 @@ import ${module.basePackage}.model._
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 #if (module.secure)
-import lampetia.security.format.SecuritySqlFormat
-import lampetia.security.model._
+import nxt.security.format.SecuritySqlFormat
+import nxt.security.model._
 #end
 <%@val imports: Seq[String] %>
 #for (i <- imports)
@@ -34,6 +34,7 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
 #end
 
 #for (model <- metamodels.optionalProperties)
+  #if (!model.external)
   #match (model)
   #case (v: Value)
   implicit lazy val consume${model.modelName}Option: Consume[Option[${model.modelName}]] = consume[Option[String]].fmap(_.map(${model.modelName}))  
@@ -43,6 +44,7 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
   implicit lazy val consume${model.modelName}Option: Consume[Option[${model.modelName}]] = consume[Option[String]].fmap(_.map(Json.parse).map(Json.fromJson[${model.modelName}](_)).map(_.get))
   implicit lazy val produce${model.modelName}Option: Produce[Option[${model.modelName}]] = a => produce(a.map(Json.toJson(_)).map(Json.stringify(_)))
 
+  #end
   #end
 #end
 

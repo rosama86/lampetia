@@ -13,6 +13,7 @@
 package ${module.basePackage}.module
 
 import lampetia.conf.{Configuration => LampetiaConfiguration}
+import lampetia.sql.{ConnectionSourceFactories, JdbcConnectionSource}
 import lampetia.sql.dialect.postgresql.{PostgresqlConfiguration, Postgresql}
 import ${module.basePackage}.conf.${module.modelName}Configuration
 import ${module.basePackage}.format.{${module.modelName}SqlFormat, ${module.modelName}JsonFormat}
@@ -27,7 +28,7 @@ trait ${module.modelName}Module {
   val dialect: Postgresql
 
   trait Configuration extends LampetiaConfiguration with ${module.modelName}Configuration with PostgresqlConfiguration {
-    def close(): Unit = sql.context.shutdown()
+    def close(): Unit = connectionSource.shutdown()
   }
   def configuration: Configuration
 
@@ -36,21 +37,13 @@ trait ${module.modelName}Module {
 
   trait Sql extends ${module.modelName}Model with ${module.modelName}SqlFormat {
     def schema = configuration.schema
-    val securitySchema = configuration.securitySchema
-    implicit lazy val context: dialect.ConnectionSource = dialect.hikari(
-      configuration.pgJdbcDataSourceClassName,
-      configuration.pgHost,
-      configuration.pgPort,
-      configuration.pgDatabase,
-      configuration.pgUser,
-      configuration.pgPassword,
-      configuration.pgMaximumPoolSize,
-      configuration.pgLeakDetectionThreshold)
   }
   def sql: Sql
+
+  def connectionSource: JdbcConnectionSource
 }
 
-object ${module.modelName}Module extends ${module.modelName}Module {
+object ${module.modelName}Module extends ${module.modelName}Module {  self =>
 
   val dialect = Postgresql
 
@@ -58,5 +51,20 @@ object ${module.modelName}Module extends ${module.modelName}Module {
 
   object json extends super.Json
 
-  object sql extends super.Sql
+  object sql extends super.Sql  {
+   val dialect = self.dialect
+  }
+
+  def connectionSourceFactories = new ConnectionSourceFactories {}
+
+  lazy val connectionSource = connectionSourceFactories.hikari(
+    configuration.pgJdbcDataSourceClassName,
+    configuration.pgHost,
+    configuration.pgPort,
+    configuration.pgDatabase,
+    configuration.pgUser,
+    configuration.pgPassword,
+    configuration.pgMaximumPoolSize,
+    configuration.pgLeakDetectionThreshold)
+
 }

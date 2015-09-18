@@ -13,6 +13,7 @@
 package ${module.basePackage}.service
 
 import ${module.basePackage}.model._
+import nxt.security.model._
 
 trait ${model.modelName}Service {
 
@@ -98,7 +99,7 @@ case _ => ""
 
 #if (model.hasReferenceModel)
 #for (property <- model.entityRefProperties.toList)
-  def find${model.modelName}By${property.tpe.modelName}(${property.propertyName}: ${property.tpe.modelName}): Seq[${model.modelName}] = {
+  def find${model.modelName}By${property.tpe.modelName}(${property.propertyName}: ${property.tpe.modelName}): IO[Seq[${model.modelName}]] = {
    val m = ${model.modelName}Model
     select(m.properties: _*)
       .from(m.schemaPrefixed)
@@ -109,5 +110,7 @@ case _ => ""
 
 #end
 #end
+
+
 
 }

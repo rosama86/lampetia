@@ -15,7 +15,7 @@ import lampetia.format.JsonFormat
 import ${module.basePackage}.model._
 import play.api.libs.json._
 #if (module.secure)
-import lampetia.security.format.SecurityJsonFormat
+import nxt.security.format.SecurityJsonFormat
 #end
 
 trait ${module.modelName}JsonFormat extends JsonFormat #if (module.secure) with SecurityJsonFormat #end {

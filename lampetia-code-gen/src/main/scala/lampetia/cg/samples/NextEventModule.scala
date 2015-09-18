@@ -1,6 +1,7 @@
 package lampetia.cg.samples
 
 import lampetia.cg.CodeGenerator
+import lampetia.cg.extensions.Models
 import lampetia.metamodel.Dsl._
 import lampetia.metamodel._
 
@@ -30,7 +31,7 @@ object NextEventModule extends App {
       enumCase("MultipleTrack", "MultipleTrack"))
       .withDiscriminator("value".string) <+ commonFeatures
 
-  val UrlModel = value("Url")("address".string) <+ commonFeatures
+  val UrlModel = value("Url")("address".string) <+ externalModelFeatures
 
   val NameModel = entity("Name")() <+ commonFeatures
 

@@ -19,6 +19,7 @@ val version = "${config.as[String]("cg.template.sbt.default-version")}"
 object Versions {
     val scalaVersion = "2.11.7"
     val lampetiaVersion = "0.1-SNAPSHOT"
+    val nxtVersion = "0.1-SNAPSHOT"
     val jodaTimeVersion = "2.8"
     val jodaConvertVersion = "1.7"
     val ficusVersion = "1.1.1"
@@ -55,9 +56,9 @@ object Dependencies {
     val lampetiaPostgresql = "io.lampetia" %% "lampetia-postgresql" % lampetiaVersion
     val lampetiaMysql = "io.lampetia" %% "lampetia-mysql" % lampetiaVersion
     val lampetiaSpray = "io.lampetia" %% "lampetia-spray" % lampetiaVersion
-    val lampetiaSecurityModel = "io.lampetia" %% "lampetia-security-model" % lampetiaVersion
-    val lampetiaSecurityService = "io.lampetia" %% "lampetia-security-service" % lampetiaVersion
-    val lampetiaSecuritySpray = "io.lampetia" %% "lampetia-security-spray" % lampetiaVersion
+    val nxtSecurityModel = "nxt" %% "nxt-security-model" % nxtVersion
+    val nxtSecurityService = "nxt" %% "nxt-security-service" % nxtVersion
+    val nxtSecurityApi = "nxt" %% "nxt-security-api" % nxtVersion
     val ficus = "net.ceedubs" %% "ficus" % ficusVersion
     val jodaTime = "joda-time" % "joda-time" % jodaTimeVersion
     val jodaConvert = "org.joda" % "joda-convert" % jodaConvertVersion

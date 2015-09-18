@@ -14,7 +14,7 @@ package ${module.basePackage}.model
 import lampetia.meta.feature.sql
 import lampetia.meta._
 import lampetia.model._
-import lampetia.security.model._
+import nxt.security.model._
 import org.joda.time.DateTime
 import scala.util.{Success, Try}
 <%@val imports: Seq[String] %>
