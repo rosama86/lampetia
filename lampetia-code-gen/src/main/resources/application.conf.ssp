@@ -4,7 +4,7 @@
 <%@ val module: Module%>
 <% val schema = "${?PG_SCHEMA}" %>
 <% val securitySchema = "${?PG_SECURITY_SCHEMA}" %>
-nxt {
+${module.organizationName} {
   module {
     ${module.modelName.lispCase} {
       schema = ${schema}#if (module.secure)

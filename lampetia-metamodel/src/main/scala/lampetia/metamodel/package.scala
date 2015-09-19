@@ -80,11 +80,13 @@ package object metamodel {
     name: String,
     basePackage: String,
     databaseSchema: String,
+    organization: Option[String] = None,
     features: Seq[Feature] = Nil,
     options: Seq[ModuleOption] = Seq.empty[ModuleOption],
     mn: Option[String]= None) extends Model {
     type Self = Module
     val modelName = mn.getOrElse(name)
+    val organizationName = organization.getOrElse(name)
     val properties = Nil
     def <<(fs: Feature*): Module = copy(features = fs ++ features)
     def secure: Boolean = options.exists {

@@ -9,6 +9,19 @@ import dependencies._
 
 name := "${project.name.lispCase}"
 
+unmanagedSourceDirectories in Compile <++= baseDirectory { base =>
+  Seq(
+    base / "src/generated/scala",
+    base / "src/generated/java"
+  )
+}
+
+unmanagedResourceDirectories in Compile <++= baseDirectory { base =>
+  Seq(
+    base / "src/generated/resources"
+  )
+}
+
 libraryDependencies ++= Seq(
   lampetiaModel,
   lampetiaCore,

@@ -71,22 +71,23 @@ trait Models {
       models.collect { case m: Id => m }.map(_.entity)
 
     def seqProperties: Set[Model] =models.map(_.properties).flatten.filter(_.list).map(_.tpe).filter(_.isInstanceOf[Model]).toSet
-    def optionalProperties: Set[Model] =models.map(_.properties).flatten.filter(_.optional).map(_.tpe).filter(_.isInstanceOf[Model]).toSet
+    def optionalProperties: Set[Model] =models.map(_.properties).flatten.filter(_.optional).map(_.tpe).filter(pm => pm.isInstanceOf[Model] && !pm.isInstanceOf[LiteralType]).toSet
 
   }
 
   implicit class ModelEx[M <: Model](model: M) {
     def generateInstance: String = model match {
       case m: Id =>
-        val id = s"${m.modelName}-${UUID.randomUUID().toString}".qoute
+        val id = s"UUID.randomUUID().toString"
         s"${m.modelName}($id)"
-      case m: Value => s"${m.modelName}(${m.valueProperty.tpe.generateInstance})"
+      case m: Value => ValueEx(m).generateInstance
       case m: Composite => CompositeEx(m).generateInstance
       case m: Entity => EntityEx(m).generateInstance
       case m: Enum => EnumEx(m).generateInstance
       case m: LiteralType => m.literalTypeName match {
         case "String" => Random.alphanumeric.take(10).toList.foldLeft("")(_ + _).qoute
         case "Int" => Random.nextInt().toString
+        case "Double" => Random.nextDouble().toString
         case "Boolean" => Random.nextBoolean().toString
         case "DateTime" => "DateTime.now"
         case "JsValue" => "JsValue"
@@ -102,6 +103,11 @@ trait Models {
           case _ => false
         }
       }.getOrElse(false)
+
+    def createParameter: String = model match {
+      case e: Entity => e.createParameter
+      case _ => "/*TODO : not yet implemented*/"
+    }
   }
 
   implicit class PropertyEx(p: Property) {
@@ -177,6 +183,12 @@ trait Models {
       case p => s"${p.sqlFlattenName}: ${p.propertyTypeInEntity}"
     }
 
+    def propertyCouple(m: Model) = property match {
+      case p: Property if p.sqlJsonb =>
+        s"""bind.cast(Types.jsonb)"""
+      case _ =>
+        s"""bind"""
+    }
 
     private def defaultSqlColumnProperty(m: Model) = property match {
       case p if p.optional =>
@@ -225,9 +237,9 @@ trait Models {
       case _: CompositeProperty =>
         Sql.keywordsIn(property).collectFirst {
           case JsonComposite | JsonArrayComposite =>
-            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\"))"""
+            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\")"""
           case JsonbComposite | JsonbArrayComposite =>
-            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\"))"""
+            s"""val $sqlFlattenName = property[${mkType(property.tpe.modelName)}](\"${property.propertyName}\")"""
         }.getOrElse(defaultSqlColumnProperty(m))
 
       case _ => defaultSqlColumnProperty(m)
@@ -330,6 +342,12 @@ trait Models {
     def jsonWriterProperties: Seq[Property] = properties
   }
 
+  implicit class ValueEx(model: Value) {
+    def generateInstance: String = {
+      s"${model.modelName}(${model.properties.map(_.generateNameValue).mkString(",\n")})"
+    }
+  }
+
   implicit class CompositeEx(model: Composite) {
 
     def refModelName = s"${model.modelName}Ref"
@@ -410,7 +428,7 @@ trait Models {
   implicit class EnumEx(enum: Enum) {
 
     def generateInstance: String = {
-      enum.cases.map(_.name).reduce(_ + ", " +  _)
+      enum.cases.map(_.name).head.toString
     }
   }
 
@@ -491,13 +509,19 @@ trait Models {
 
     lazy val dataModel: Composite = composite(dataModelName)(entityDataProperties:_*) <+ model.features
 
+    def createParameter: String =  (model.hasReferenceModel, model.hasData) match {
+      case (true, true) => s"${model.modelName.camelCase}.ref, ${model.modelName.camelCase}.data"
+      case (true, false) => s"${model.modelName.camelCase}.ref"
+      case (false, true) => s"${model.modelName.camelCase}.data"
+      case (false, false) => ""
+    }
+
     def generateInstance: String = {
       s"""
          |${model.modelName}(
-         |  ${model.id.generateNameValue},
-         |  ${if (model.hasReferenceModel) s"ref = ${model.referenceModel.generateInstance}," else ""}
-         |  data = $generateDataInstance,
-         |  timestamp = Timestamp(DateTime.now, DateTime.now)
+         |  ${model.id.generateNameValue}  ${if (model.hasReferenceModel || model.hasData) ", " else ""}
+         |  ${if (model.hasReferenceModel) s"ref = ${model.referenceModel.generateInstance}" else ""} ${if (model.hasReferenceModel && model.hasData) ", " else ""}
+         |  ${if (model.hasData) s"data = $generateDataInstance" else ""}
          |)
        """.stripMargin
     }
@@ -688,7 +712,7 @@ trait Models {
        """.stripMargin
     }
 
-    def sqlFeatures(hasId: Boolean = false): String = {
+    def sqlFeatures: String = {
 
       def foreignKeys: Seq[String] = {
         model.properties.zipWithIndex.collect {
@@ -733,11 +757,7 @@ trait Models {
         }
       }
 
-      def basic = hasId match {
-        case true => List("sql.schema(schema)", s"sql.name(${model.modelName.snakeCase.qoute})", primaryKey)
-        case false => List("sql.schema(schema)", s"sql.name(${model.modelName.snakeCase.qoute})")
-      }
-
+      def basic = List("sql.schema(schema)", s"sql.name(${model.modelName.snakeCase.qoute})", primaryKey)
 
       (basic ++ foreignKeys).mkString(",\n").stripMargin
     }

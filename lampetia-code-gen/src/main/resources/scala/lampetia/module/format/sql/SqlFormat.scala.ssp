@@ -10,6 +10,7 @@
 package ${module.basePackage}.format
 
 import lampetia.model._
+import lampetia.sql.dialect.postgresql.Postgresql
 import ${module.basePackage}.model._
 import org.joda.time.DateTime
 import play.api.libs.json.Json
@@ -24,7 +25,8 @@ import nxt.security.model._
 
 trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlFormat  #end{
 
-  import ${module.basePackage}.module.${module.modelName}Module.dialect._
+  val dialect: Postgresql
+  import dialect._
   import nxt.event.module.EventModule.json._
 
 #for (model <- metamodels.seqProperties)
@@ -42,7 +44,7 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
 
   #otherwise
   implicit lazy val consume${model.modelName}Option: Consume[Option[${model.modelName}]] = consume[Option[String]].fmap(_.map(Json.parse).map(Json.fromJson[${model.modelName}](_)).map(_.get))
-  implicit lazy val produce${model.modelName}Option: Produce[Option[${model.modelName}]] = a => produce(a.map(Json.toJson(_)).map(Json.stringify(_)))
+  implicit lazy val produce${model.modelName}Option: Produce[Option[${model.modelName}]] = a => produce(a.map(Json.toJson(_)).map(Json.stringify))
 
   #end
   #end
@@ -53,6 +55,51 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
   <%val pType = model.valueProperty.tpe.modelName %>
   implicit lazy val consume${name}: Consume[${name}] = consume[${pType}].fmap(${name})
   implicit lazy val produce${name}: Produce[${name}] = a => produce(a.value)
+#end
+
+
+  <%
+
+    // consume
+    val cprefix = "consume["
+    val cpostfix = "]"
+
+    // produce
+    val pprefix = "produce(a."
+    val ppostfix = ")"
+
+    def producer(f:Property => String )(props: Seq[Property], pp: List[String]): List[String] = props match {
+      case Nil  => pp
+      case hp :: t =>
+        val np: String =  f(hp)
+        producer(f)(t, pp :+ np)
+    }
+
+    def consumeProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
+      case jp: JsonType => prefix + "String" + postfix + ".fmap(Json.parse)"
+      case _ => prefix + p.typeName + postfix
+    }
+
+    def produceProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
+      case jp: JsonType => "produce(Json.stringify(a.json))"
+      case _ => prefix + p.propertyName + postfix
+    }
+  %>
+
+#for (model <- metamodels.compositeModels)
+  <%
+    val consumeData =
+    producer(p => consumeProperty(p, cprefix, cpostfix))(model.properties.toList, Nil) match {
+    case h :: Nil =>  h + ".fmap"
+    case l => "(" + l.mkString(" and ") + ")"
+    }
+
+    val produceData =
+    producer(p => produceProperty(p, pprefix, ppostfix))(model.properties.toList, Nil).mkString(" andThen ")
+  %>
+
+  implicit lazy val consume${model.modelName}: Consume[${model.modelName}] = ${consumeData}(${model.modelName})
+  implicit lazy val produce${model.modelName}: Produce[${model.modelName}] = a => ${produceData}
 #end
 
 #for (model <- metamodels.idModels)
@@ -72,12 +119,9 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
 #for (model <- metamodels.entityModels)
   <%
     val name = model.modelName
-    val hasId = metamodels.idEntity.contains(model)
 
     // consume
-    val cprefix = "consume["
-    val cpostfix = "]"
-    val cid = if(hasId) cprefix + model.idModelName + cpostfix else ""
+    val cid = cprefix + model.idModelName + cpostfix
     val cref = if(model.hasReferenceModel) cprefix + model.refModelName + cpostfix else ""
     val cdata = if(model.hasData) cprefix  + model.dataModelName + cpostfix else ""
     val consume = List(cid, cref,cdata).filter(_ != "") match {
@@ -86,34 +130,13 @@ trait ${module.modelName}SqlFormat #if (module.secure)  extends SecuritySqlForma
     }
 
     // produce
-    val pprefix = "produce(a."
-    val ppostfix = ")"
-    val pid = if(hasId) pprefix + model.id.propertyName + ppostfix else ""
+    val pid = pprefix + model.id.propertyName + ppostfix
     val pref = if(model.hasReferenceModel) pprefix + "ref" + ppostfix else ""
     val pdata = if(model.hasData) pprefix  + "data" + ppostfix else ""
     val produce = List(pid, pref, pdata).filter(_ != "").mkString(" andThen ")
   %>
   implicit lazy val consume${name}: Consume[${name}] = ${consume}(${name})
   implicit lazy val produce${name}: Produce[${name}] = a => ${produce}
-
-  <%
-    def producer(f:Property => String )(props: Seq[Property], pp: List[String]): List[String] = props match {
-      case Nil  => pp
-      case hp :: t =>
-        val np: String =  f(hp)
-        producer(f)(t, pp :+ np)
-    }
-
-    def consumeProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
-      case jp: JsonType => prefix + "String" + postfix + ".fmap(Json.parse)"
-      case _ => prefix + p.typeName + postfix
-    }
-
-    def produceProperty(p:Property, prefix: String, postfix: String) = p.tpe match {
-      case jp: JsonType => "produce(Json.stringify(a.json))"
-      case _ => prefix + p.propertyName + postfix
-    }
-  %>
 
   #if (model.hasData)
   <%

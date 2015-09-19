@@ -17,20 +17,27 @@ import ${module.basePackage}.module.${module.modelName}TestModule
 import org.scalatest.concurrent.ScalaFutures
 import nxt.event.module.EventTestModule.configuration
 import org.scalatest._
+import ${module.basePackage}.spec.${module.modelName}InstanceFactory
+import org.scalatest.time.{Minutes, Span}
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 
 class  ${model.modelName}ServiceSpec extends FlatSpec with Matchers with ScalaFutures {
 
   implicit val ec = configuration.concurrent.executionContext
   implicit val connectionSource = ${module.modelName}TestModule.connectionSource
 
-  val service = new ${model.modelName}Service {}
+  def oneMinute: Timeout = Timeout(Span(1, Minutes))
 
-  it should "create ${module.modelName.camelCase}" in {
-    //val user = service.createUser(testProfileData).run
-    //whenReady(user, oneMinute) { result =>
-    //  result.id.value shouldNot be('empty)
-    //}
-    true shouldNot be(false)
-  }
+  val service = new ${model.modelName}Service {}
+  val factory = ${module.modelName}InstanceFactory
+
+  #match (model)
+  #case (m:Composite)
+  // TODO
+  #case (m: Entity)
+  ${render("EntityServiceSpec.scala.ssp", Map("model" -> m))}
+
+  #otherwise
+  #end
 
 }

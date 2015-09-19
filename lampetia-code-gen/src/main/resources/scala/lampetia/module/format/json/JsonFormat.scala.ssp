@@ -24,6 +24,9 @@ trait ${module.modelName}JsonFormat extends JsonFormat #if (module.secure) with 
     #case (m: Enum)
     implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
         stringValueTypeFormat[${model.modelName}](${model.modelName}.apply)(_.value)
+    #case (m: Composite)
+    implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
+        Json.format[${model.modelName}]
     #case (m: Id)
     implicit lazy val ${model.modelName.camelCase}JsonFormat: Format[${model.modelName}] =
         stringValueTypeFormat[${model.modelName}](${model.modelName})(_.value)

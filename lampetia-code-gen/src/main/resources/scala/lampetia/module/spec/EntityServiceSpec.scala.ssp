@@ -1,0 +1,28 @@
+#import(lampetia.metamodel.Module)
+#import(lampetia.metamodel._)
+#import(lampetia.extensions.Strings)
+#import(lampetia.cg.extensions.Models)
+#import(lampetia.cg.extensions.Scalate)
+#import(com.typesafe.config.Config)
+#import(Strings._)
+#import(Models._)
+<%@ val metamodels: Seq[Model] %>
+<%@ val module: Module%>
+<%@ val config: Config%>
+<%@ val model: Entity %>
+
+    it should "create ${model.modelName.camelCase}" in {
+        val ${model.modelName.camelCase} = factory.create${model.modelName}
+<%--/*
+        for {
+        #for (p <- model.entityRefProperties)
+            ${p.propertyName} <- ${p.typeName.camelCase}.create${p.propertyTypeInEntity}(${p.tpe.createParameter})
+            ${model.modelName.camelCase} <- service.create${model.modelName}(${model.createParameter})
+        #end
+        } yield ${model.modelName.camelCase}
+*/--%>
+        val ${model.modelName.camelCase}Run = service.create${model.modelName}(${model.createParameter}).run
+        whenReady(${model.modelName.camelCase}Run, oneMinute) { result =>
+          result.id.value shouldNot be('empty)
+        }
+    }

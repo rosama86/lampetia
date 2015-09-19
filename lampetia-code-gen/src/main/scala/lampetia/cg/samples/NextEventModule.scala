@@ -13,7 +13,7 @@ object NextEventModule extends App {
 
   val base = "nxt.event"
 
-  val module = Module("nxt-event", base, "nxt-event", options = Seq(Secure), mn = Some("Event"))
+  val module = Module("nxt-event", base, "nxt-event", organization = Some("nxt"), options = Seq(Secure), mn = Some("Event"))
 
   val SponsorshipTypeModel: Value = value("SponsorshipType")("value".string) <+ commonFeatures
 
@@ -31,17 +31,17 @@ object NextEventModule extends App {
       enumCase("MultipleTrack", "MultipleTrack"))
       .withDiscriminator("value".string) <+ commonFeatures
 
-  val UrlModel = value("Url")("address".string) <+ externalModelFeatures
+  val UrlModel = value("Url")("value".string) <+ externalModelFeatures
 
-  val NameModel = entity("Name")() <+ commonFeatures
+  val NameModel = value("Name")("value".string) <+ commonFeatures
 
-  val TitleModel = entity("Title")() <+ commonFeatures
+  val TitleModel = value("Title")("value".string) <+ commonFeatures
 
   val GroupModel = entity("Group")() <+ commonFeatures
 
-  val LocaleModel = entity("Locale")() <+ commonFeatures
+  val LocaleModel = value("Locale")("value".string) <+ commonFeatures
 
-  val LinkModel: Entity = entity("Link")("site".string, "link" of UrlModel) <+ commonFeatures
+  val LinkModel: Composite = composite("Link")("site".string, "link" of UrlModel) <+ commonFeatures
 
   val PhoneModel: Value = value("Phone")("value".string) <+ commonFeatures
 
@@ -59,7 +59,7 @@ object NextEventModule extends App {
 
   val SessionLocationModel: Value = value("SessionLocation")("value".string) <+ commonFeatures
 
-  val TracksModel: Entity = entity("Tracks")("value" listOf TrackModel)
+  val TracksModel: Composite = composite("Tracks")("value" listOf TrackModel) <+ commonFeatures
 
   val SponsorModel: Entity =
     entity("Sponsor")("name" of NameModel,
@@ -162,6 +162,7 @@ object NextEventModule extends App {
     SpeakerModel,
     SessionModel.id.tpe,
     SessionModel,
+    SessionSpeakerModel.id.tpe,
     SessionSpeakerModel,
     TrackTypeModel,
     TrackModel,

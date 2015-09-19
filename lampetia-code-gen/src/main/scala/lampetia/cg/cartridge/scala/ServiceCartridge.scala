@@ -158,6 +158,20 @@ trait ServiceCartridge extends ScalaCartridge {
       CFile("logback.xml"),
       CDir(s"${resourceDir(module)}"))
 
+  def referenceTestConf(module: Module) =
+    CommonScalaFileGenerationTask(
+      module,
+      "application-conf",
+      CFile("application.conf"),
+      CDir(s"${resourceTestDir(module)}"))
+
+  def logbackTestXml(module: Module) =
+    CommonScalaFileGenerationTask(
+      module,
+      "logback-xml",
+      CFile("logback.xml"),
+      CDir(s"${resourceTestDir(module)}"))
+
   def moduleTask(module: Module) =
     CommonScalaFileGenerationTask(
       module,
@@ -238,16 +252,19 @@ class DefaultServiceCartridge(val config: Config) extends ServiceCartridge {
       configuration _,
       moduleTask _,
       referenceConf _,
+      referenceTestConf _,
+      logbackTestXml _,
       sqlFormat _,
       ddl _,
       service _,
       testModuleTask _,
+      instanceFactory _,
       serviceSpec _ /*,
       logbackXml _,
       //scalaFormat _,
       dao _,
       postgresqlModule _,
-      instanceFactory _,
+
       spray _,
       */)
       .map(_(module))

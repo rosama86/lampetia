@@ -14,11 +14,11 @@ import lampetia.conf.{Configuration, Lifecycle}
 trait ${module.modelName}Configuration extends Lifecycle { self: Configuration =>
 
   lazy val schema: String =
-    config.getString("${module.basePackage}.module.${module.modelName.camelCase}.schema")
+    config.getString("${module.organizationName.lispCase}.module.${module.modelName.lispCase}.schema")
 
   #if (module.secure)
     lazy val securitySchema: String =
-      config.getString("${module.basePackage}.module.${module.modelName.camelCase}.security-schema")
+      config.getString("${module.organizationName.lispCase}.module.${module.modelName.lispCase}.security-schema")
   #end
 
 

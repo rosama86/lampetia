@@ -12,79 +12,25 @@
 
 package ${module.basePackage}.spec
 
-import ${module.basePackage}.di.${module.name}TestModule._
 import ${module.basePackage}.model._
-import lampetia.format.sql.ExtendedPostgresDriver.api._
 import lampetia.model._
+import nxt.security.model._
 import org.joda.time.DateTime
-import play.api.libs.json.Json
-import scala.concurrent.ExecutionContext
-import lampetia.Tests._
+import java.util.UUID
 <%@val imports: Seq[String] %>
 #for (i <- imports)
   import ${i}
 #end
 
 
-trait ${module.name}InstanceFactory {
-
-  import ${module.name}Syntax._
-
-  implicit def ec: ExecutionContext = executionContext
+trait ${module.modelName}InstanceFactory {
 
 #for (model <- metamodels.entityModels)
-  object ${model.modelName}NonSecureOps extends EntityOps[${model.modelName}, ${model.modelName.camelCase}SlickEntity.type](${model.modelName.camelCase}SlickEntity)
-  #if (module.secure)
-  object ${model.modelName}SecureOps extends SecureEntityOps[${model.modelName}, ${model.modelName.camelCase}SlickEntity.type](${model.modelName.camelCase}SlickEntity)
-  #end
-#end
-
-
-#for (model <- metamodels.entityModels)
-
-  ${model.generateTestDataInstanceFactoryMethod}
+  def create${model.modelName.CamelCase} = ${model.generateInstance}
 
 #end
 
-#if (module.secure)
-def createUserId: UserId = {
-  val userId = UserId(generateStoreId)
-  val insertion = store.run {
-    userTable += UserRecord(userId)
-  }
-  resultOf(insertion)
-  userId
-}
-
-def insertUserId() = createUserId
-#end
-
-#{
-  def prop(p: Property) =
-    if (p.optional)
-      s"${p.propertyName} = Some(insert${p.tpe.modelName}())"
-    else
-      s"${p.propertyName} = insert${p.tpe.modelName}()"
-
-  def insertInstances(model: Entity) = model.referenceModel.properties.map(prop).mkString(", ")
-}#
-#for (model <- metamodels.entityModels)
-  def insert${model.idModelName}(): ${model.idModelName} = {
-    import ${model.modelName}NonSecureOps._
-    #if (model.hasReferenceModel)
-    val ref = ${model.refModelName}(${insertInstances(model)})
-    val insertion = store.run(Insert(RefData(ref, create${model.dataModelName})))
-    #else
-    val insertion = store.run(Insert(create${model.dataModelName}))
-    #end
-    resultOf(insertion).id
-  }
-#end
-
-#for (model <- metamodels.entityModels)
-  ${model.generateBeforeDeleteMethod(metamodels.entityModels)}
-#end
 
 }
 
-object ${module.name}InstanceFactory extends ${module.name}InstanceFactory
+object ${module.modelName}InstanceFactory extends ${module.modelName}InstanceFactory

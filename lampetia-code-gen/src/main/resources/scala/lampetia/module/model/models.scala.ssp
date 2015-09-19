@@ -69,10 +69,7 @@ case class ${m.modelName}(${m.properties.map(_.nameColonTypeInEntity).mkString("
 <%-- Composite End --%>
 
 #case (m: Entity)
-<% val hasId = metamodels.idEntity.contains(model)%>
-#if (hasId)
 case class ${m.idModelName}(value: String) extends AnyVal
-#end
 
 #if (m.hasReferenceModel)
 case class ${m.modelName}Ref(${m.entityRefProperties.map(_.nameColonTypeInEntity).mkString(",")})
@@ -83,7 +80,7 @@ case class ${m.dataModelName}(${m.entityDataProperties.map(_.nameColonTypeInEnti
 #end
 
 <%
-    val id = if(hasId) "id: "+ m.idModelName else ""
+    val id = "id: "+ m.idModelName
     val ref = if(m.hasReferenceModel) "ref: " + m.refModelName else ""
     val data = if(m.hasData) "data: " + m.dataModelName else ""
     val prop = List(id, ref,data).filter(_ != "").mkString(", ")
@@ -104,9 +101,7 @@ trait ${module.modelName}Model #if (module.secure) extends SecurityModel #end {
     <% val hasId = metamodels.idEntity.contains(model)%>
     implicit object ${model.modelName}Model
     extends Model[${model.modelName}]
-    #if (hasId)
     with HasId[${model.modelName}, ${model.modelName}Id]
-    #end
     #if (model.hasReferenceModel)
     with HasRef[${model.modelName}, ${model.modelName}Ref]
     #end
@@ -146,7 +141,7 @@ trait ${module.modelName}Model #if (module.secure) extends SecurityModel #end {
     #end
 
     override lazy val features: Seq[Feature] = Seq(
-    ${model.sqlFeatures(hasId)}
+    ${model.sqlFeatures}
     )
     }
 #end
