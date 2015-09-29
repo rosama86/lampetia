@@ -39,7 +39,7 @@ trait Ops { self: Dsl with NodeBuilders with SqlIO[_ <: ConnectionSource] with S
 
   implicit class LiftSqlStringImplicits(val context: StringContext) extends LiftSqlString
 
-  implicit class LiftSqlIO[A](val io: IO[A]) extends LiftIO[A]
+  //implicit class LiftSqlIO[A](val io: IO[A]) extends LiftIO[A]
 
   /*def positionalParameter(p: Property[_]) = p.sqlCast match {
     case Some(tn) => ?.cast(tn.typeName)

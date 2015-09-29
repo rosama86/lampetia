@@ -24,6 +24,9 @@ trait BackendIO[C] { self =>
   def resultM: ResultM
 
   trait IO[A] {
+    def map[B](f: A => B): IO[B] = IOFlatMap(this, (a: A) => IOPure(f(a)))
+    def flatMap[B](f: A => IO[B]): IO[B] = IOFlatMap(this, f)
+    def withFilter(f: A => Boolean): IO[A] = IOFilter(this, f)
     def execute(context: C): Result[A]
     def run(implicit ec: ExecutionContext, context: C): Future[A] = self.run(this)
   }
@@ -71,7 +74,7 @@ trait BackendIO[C] { self =>
 
 
 
-  trait LiftIO[A] extends Any {
+  /*trait LiftIO[A] extends Any {
 
     protected def io: IO[A]
 
@@ -81,7 +84,7 @@ trait BackendIO[C] { self =>
 
     def withFilter(f: A => Boolean): IO[A] = IOFilter(io, f)
 
-  }
+  }*/
 }
 
 

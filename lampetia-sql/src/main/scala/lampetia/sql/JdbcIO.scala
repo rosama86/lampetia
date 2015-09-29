@@ -1,6 +1,7 @@
 package lampetia.sql
 
 import java.sql.{ResultSet, PreparedStatement}
+import java.util.UUID
 
 import org.slf4j.LoggerFactory
 
@@ -173,9 +174,10 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
     WriteParameterizedSqlQ(parameterizedSql)
 
   // this proxy will always return the same connection
-  private case class ConnectionSourceProxy(cm: JdbcConnectionSource) extends JdbcConnectionSource {
+  private case class ConnectionSourceProxy(connection: JdbcConnectionSource#Connection) extends JdbcConnectionSource {
+    val id = UUID.randomUUID.toString
     // always return the same connection
-    lazy val connection: Connection = cm.connection
+    //lazy val connection: Connection = connectionSource.connection
     // we are not closing the connection here
     def done(connection: Connection): Unit = ()
     // and never shutting this down
@@ -183,12 +185,24 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
   }
 
   case class TransactionalSqlIOQ[A](sqlIO: IO[A]) extends TransactionalIO[A] {
-    def execute(cm: JdbcConnectionSource): Try[A] = {
 
-      // check if there has been another transaction opened
-      val (proxy, transactionEntryPoint) = cm match {
-        case p@ConnectionSourceProxy(_) => (p, false)
-        case _                          => (ConnectionSourceProxy(cm), true)
+    def execute(connectionSource: JdbcConnectionSource): Try[A] = {
+
+      log.debug(s"TransactionalSqlIOQ: source = $connectionSource")
+
+      connectionSource match {
+        case pxy: ConnectionSourceProxy =>
+          log.debug("Existing Proxy received")
+          log.debug(s"IO: $sqlIO")
+        case pxy =>
+          log.debug("No Proxy received")
+          log.debug(s"IO: $sqlIO")
+      }
+
+      // check if there is a transaction already opened, open one if none is currently opened
+      val (proxy, transactionEntryPoint) = connectionSource match {
+        case p: ConnectionSourceProxy => (p, false)
+        case _                        => (ConnectionSourceProxy(connectionSource.connection), true)
       }
 
       val connection = proxy.connection
@@ -196,8 +210,10 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
       if (connection.getAutoCommit)
         connection.setAutoCommit(false)
 
-      if (transactionEntryPoint && log.isDebugEnabled)
-        log.debug(s"IN TRANSACTION: $connection")
+      if (transactionEntryPoint && log.isDebugEnabled) {
+        log.debug(s"STARTING TRANSACTION: $connection")
+        log.debug(s"Proxy: ${proxy.id}")
+      }
 
       // start the chain reaction
       sqlIO.execute(proxy) match {
@@ -205,20 +221,24 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
           // do not commit unless this call is the transaction entry point
           if (transactionEntryPoint) {
             connection.commit()
-            if (log.isDebugEnabled)
+            if (log.isDebugEnabled) {
               log.debug(s"COMMIT: $connection")
+              log.debug(s"Proxy: ${proxy.id}")
+            }
             // close through the real connection manager
-            cm.done(connection)
+            connectionSource.done(connection)
           }
           // no need to close the connection, since this is really a proxy
           success
         case failure@Failure(_) =>
           if(transactionEntryPoint) {
             connection.rollback()
-            if (log.isDebugEnabled)
+            if (log.isDebugEnabled) {
               log.debug(s"ROLLBACK: $connection")
+              log.debug(s"Proxy: ${proxy.id}")
+            }
             // close through the real connection manager
-            cm.done(connection)
+            connectionSource.done(connection)
           }
           failure
       }
@@ -228,19 +248,14 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
   def createTransactionalIO[R](sqlIO: IO[R]): TransactionalIO[R] = TransactionalSqlIOQ(sqlIO)
 
   def run[A](io: IO[A])(implicit ec: ExecutionContext, source: JdbcConnectionSource): Future[A] = {
-    //val source = connectionSource
-    io match {
-      case IOPure(x)    => Future.successful(x)
-      case IOFailed(ex) => Future.failed[A](ex)
-      case _            =>
-        Future {
-          io.execute(source) match {
-            case Success(result) =>
-              result
-            case Failure(e)      =>
-              throw e
-          }
-        }
+    log.debug(s"RUN: source = $source")
+    Future {
+      io.execute(source) match {
+        case Success(result) =>
+          result
+        case Failure(e)      =>
+          throw e
+      }
     }
 
   }
