@@ -1,7 +1,5 @@
 package lampetia.meta
 
-import lampetia.model._
-import lampetia.model.util._
 import org.joda.time.DateTime
 
 import scala.util.Try
