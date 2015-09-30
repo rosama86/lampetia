@@ -67,6 +67,7 @@ object Build extends sbt.Build {
     Project("lampetia", file("."))
       .aggregate(
         `lampetia-model`,
+        `lampetia-message-pack`,
         `lampetia-core`,
         `lampetia-sql`,
         `lampetia-spray`,

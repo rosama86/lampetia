@@ -120,28 +120,7 @@ trait HasData[E, D] extends HasProperties[E] { this: Model[E] =>
   abstract override def properties: Seq[Property[_]] = super.properties ++ data.properties
 }
 
-trait SignatureComposite extends Composite[Signature] {
-  def prefix: String
-  def by: Property[UserId] = property[UserId](s"${prefix}By")(DefaultProperty)
-  def at: Property[DateTime] = property[DateTime](s"${prefix}At")(DateProperty)
 
-  def properties: Seq[Property[_]] = Seq(by, at)
-}
-
-trait TraceComposite extends Composite[Trace] {
-  object created extends SignatureComposite {
-    def prefix: String = "created"
-  }
-  object updated extends SignatureComposite {
-    def prefix: String = "updated"
-  }
-  def properties = created.properties ++ updated.properties
-}
-
-trait HasTrace[E] extends HasProperties[E] { this: Model[E] =>
-  def trace: TraceComposite = new TraceComposite {}
-  abstract override def properties: Seq[Property[_]] = super.properties ++ trace.properties
-}
 
 trait Model[E] extends HasProperties[E] {
 
@@ -160,15 +139,6 @@ trait Model[E] extends HasProperties[E] {
   def features: Seq[Feature] = Seq.empty[Feature]
 }
 
-trait SecureModel[E, Id] { this: Model[E] with HasId[E, Id] =>
-  def baseResourceUri: ResourceUri = ResourceUri(s"/${modelName.lispCase}")
-  def resourceUri(id: Id)(implicit ev: Stringify[Id]): ResourceUri =
-    baseResourceUri / ResourceUri(ev.stringify(id))
-}
-
-trait GroupModel[E, Id] { this: Model[E] with HasId[E, Id] =>
-  def code(id: Id)(implicit ev: Stringify[Id]): Code = Code(s"${modelName.lispCase}-group-${ev.stringify(id)}")
-}
 
 
 
