@@ -156,9 +156,9 @@ trait SqlIO[C <: ConnectionSource] extends BackendIO[C] { codec: SqlCodec =>
 
   trait TransactionalIO[A] extends IO[A] {
     def sqlIO: IO[A]
-    override def map[B](f: A => B): IO[B] = createTransactionalIO(IOFlatMap(sqlIO, (a: A) => IOPure(f(a))))
-    override def flatMap[B](f: A => IO[B]): IO[B] = createTransactionalIO(IOFlatMap(sqlIO, f))
-    override def withFilter(f: A => Boolean): IO[A] = createTransactionalIO(IOFilter(sqlIO, f))
+    override def map[B](f: A => B): IO[B] = createTransactionalIO(sqlIO.map(f))
+    override def flatMap[B](f: A => IO[B]): IO[B] = createTransactionalIO(sqlIO.flatMap(f))
+    override def withFilter(f: A => Boolean): IO[A] = createTransactionalIO(sqlIO.withFilter(f))
 
   }
 

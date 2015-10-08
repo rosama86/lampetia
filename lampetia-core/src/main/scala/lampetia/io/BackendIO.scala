@@ -1,5 +1,7 @@
 package lampetia.io
 
+import org.slf4j.LoggerFactory
+
 import scala.language.higherKinds
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -8,6 +10,8 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 
 trait BackendIO[C] { self =>
+
+  private val logger = LoggerFactory.getLogger("backend-io")
 
   // the result type of all io actions
   type Result[A]
@@ -41,35 +45,50 @@ trait BackendIO[C] { self =>
   def run[R](io: IO[R])(implicit ec: ExecutionContext, context: C): Future[R]
 
   protected case class IOPure[A](result: A) extends IO[A] {
-    def execute(context: C): Result[A] = resultM.pure(result)
+    def execute(context: C): Result[A] = {
+      logger.debug("IOPure: {}", result)
+      resultM.pure(result)
+    }
   }
 
   protected case class IOFailed[A](exception: Throwable) extends IO[A] {
-    def execute(context: C): Result[A] = resultM.fail[A](exception)
+    def execute(context: C): Result[A] = {
+      logger.debug("IOFailed: {}", exception)
+      resultM.fail[A](exception)
+    }
   }
 
   protected case class IOFlatMap[A, B](fa: IO[A], f: A => IO[B]) extends IO[B] {
-    def execute(context: C): Result[B] =
+    def execute(context: C): Result[B] = {
+      logger.debug("IOFlatMap: {}", fa)
       resultM.flatMap(fa.execute(context))(a => f(a).execute(context))
+    }
   }
 
   protected case class IOSeq[A](seq: Seq[IO[A]]) extends IO[Seq[A]] {
-    def execute(context: C): Result[Seq[A]] =
+    def execute(context: C): Result[Seq[A]] = {
+      logger.debug("IOSeq: {}", seq)
       seq.foldLeft(resultM.pure(Seq.empty[A])) { (rseq, io) =>
         resultM.flatMap(rseq)(seq => resultM.map(io.execute(context))(a => seq :+ a))
       }
+    }
   }
 
   protected case class IOOption[A](option: Option[IO[A]]) extends IO[Option[A]] {
-    def execute(context: C): Result[Option[A]] = option match {
-      case Some(io) => resultM.map(io.execute(context))(Some(_))
-      case None     => resultM.pure(Option.empty[A])
+    def execute(context: C): Result[Option[A]] = {
+      logger.debug("IOOption {}", option)
+      option match {
+        case Some(io) => resultM.map(io.execute(context))(Some(_))
+        case None => resultM.pure(Option.empty[A])
+      }
     }
   }
 
   protected case class IOFilter[A, B](fa: IO[A], f: A => Boolean) extends IO[A] {
-    def execute(context: C): Result[A] =
+    def execute(context: C): Result[A] = {
+      logger.debug("IOFilter {}", fa)
       resultM.withFilter(fa.execute(context))(f)
+    }
   }
 
 

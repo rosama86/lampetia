@@ -91,9 +91,16 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
       val connection = cm.connection
       try {
         ps = connection.prepareStatement(plainSql.sqlString)
+
+        if(log.isDebugEnabled) {
+          log.debug(s"WritePlainSqlQ: $plainSql")
+        }
+
         Success(ps.executeUpdate())
       } catch {
-        case e: Throwable => Failure(e)
+        case e: Throwable =>
+          log.error(s"WriteParameterizedSqlQ Failed. SQL=$plainSql, exception=$e")
+          Failure(e)
       } finally {
 
         if(ps != null) ps.close()
@@ -158,9 +165,16 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
           }
         }
         ps = psFactory(parameterizedSql.sqlString, connection)
+
+        if(log.isDebugEnabled) {
+          log.debug(s"WriteParameterizedSqlQ: $parameterizedSql")
+        }
+
         Success(ps.executeUpdate())
       } catch {
-        case e: Throwable => Failure(e)
+        case e: Throwable =>
+          log.error(s"WriteParameterizedSqlQ Failed. SQL=$parameterizedSql, exception=$e")
+          Failure(e)
       } finally {
         if (ps != null) ps.close()
         cm.done(connection)
@@ -206,6 +220,10 @@ trait JdbcIO extends SqlIO[JdbcConnectionSource] { codec: JdbcCodec =>
 
 
       // start the chain reaction
+      if (log.isDebugEnabled) {
+        log.debug(s"Calling IO.execute on: $sqlIO")
+      }
+
       sqlIO.execute(proxy) match {
         case success@Success(_) =>
           // do not commit unless this call is the transaction entry point
