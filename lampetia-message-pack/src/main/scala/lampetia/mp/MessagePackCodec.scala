@@ -2,7 +2,7 @@ package lampetia.mp
 
 import java.io.ByteArrayOutputStream
 
-import lampetia.codec.{Codec, OptionCodecs, PrimitiveCodecs}
+import lampetia.codec.{Codec, PrimitiveCodecs}
 import org.joda.time.DateTime
 import org.msgpack.core.{MessagePack, MessagePacker, MessageUnpacker}
 
@@ -10,7 +10,7 @@ import org.msgpack.core.{MessagePack, MessagePacker, MessageUnpacker}
  * @author Hossam Karim
  */
 
-trait MessagePackCodec extends Codec with PrimitiveCodecs with OptionCodecs {
+trait MessagePackCodec extends Codec with PrimitiveCodecs /*with OptionCodecs*/ {
 
   type Reader = MessageUnpacker
   type Writer = MessagePacker

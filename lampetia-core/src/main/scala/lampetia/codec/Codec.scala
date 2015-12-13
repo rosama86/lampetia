@@ -71,7 +71,9 @@ trait PrimitiveCodecs { self: Codec =>
   implicit def produceDateTime: Produce[DateTime]
 }
 
+/*
 trait OptionCodecs { self: Codec =>
   implicit def consumeOption[A](implicit consume: Consume[A]): Consume[Option[A]]
   implicit def produceOption[A](implicit produce: Produce[A], codecType: CodecType[A]): Produce[Option[A]]
 }
+*/

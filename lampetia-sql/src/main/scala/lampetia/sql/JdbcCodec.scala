@@ -2,13 +2,9 @@ package lampetia.sql
 
 import java.sql.{PreparedStatement, ResultSet}
 
-import com.zaxxer.hikari.HikariDataSource
 import org.joda.time.DateTime
 
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -60,10 +56,22 @@ trait JdbcCodec extends SqlCodec { self =>
       new DateTime(result.getTime)
     }
 
+    def readDateOption: Option[DateTime] = {
+      val result = rs.getDate(index)
+      index += 1
+      Option(result).map(d => new DateTime(d.getTime))
+    }
+
     def readTimestamp: DateTime = {
       val result = rs.getTimestamp(index)
       index += 1
       new DateTime(result.getTime)
+    }
+
+    def readTimestampOption: Option[DateTime] = {
+      val result = rs.getTimestamp(index)
+      index += 1
+      Option(result).map(d => new DateTime(d.getTime))
     }
   }
 
@@ -121,17 +129,26 @@ trait JdbcCodec extends SqlCodec { self =>
 
   }
 
-  implicit def consumeOption[A](implicit consume: Consume[A]): Consume[Option[A]] = consume andThen Option.apply
-  implicit def produceOption[A](implicit produce: Produce[A], codecType: CodecType[A]): Produce[Option[A]] =
-    (option: Option[A]) => (sqlWriter: SqlWriter) => option match {
-      case Some(value) => produce(value)(sqlWriter)
-      case None => sqlWriter.writeNull(codecType.typeCode)
-    } 
-
   implicit val stringCodecType: CodecType[String] = CodecType[String](java.sql.Types.VARCHAR)
   implicit val intCodecType: CodecType[Int] = CodecType[Int](java.sql.Types.INTEGER)
   implicit val longCodecType: CodecType[Long] = CodecType[Long](java.sql.Types.BIGINT)
   implicit val doubleCodecType: CodecType[Double] = CodecType[Double](java.sql.Types.DOUBLE)
+
+  //implicit def consumeOption[A](implicit consume: Consume[A]): Consume[Option[A]] = consume andThen Option.apply
+  implicit val produceStringOption: Produce[Option[String]] = (option: Option[String]) => (sqlWriter: SqlWriter) => option match {
+    case Some(value) => produceString(value)(sqlWriter)
+    case None        => sqlWriter.writeNull(stringCodecType.typeCode)
+  }
+
+  /*
+  implicit def produceOption[A](implicit produce: Produce[A], codecType: CodecType[A]): Produce[Option[A]] =
+    (option: Option[A]) => (sqlWriter: SqlWriter) => option match {
+      case Some(value) => produce(value)(sqlWriter)
+      case None => sqlWriter.writeNull(codecType.typeCode)
+    }
+  */
+
+
 
 }
 
