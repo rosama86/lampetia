@@ -6,29 +6,31 @@ import javax.sql.DataSource
 import com.zaxxer.hikari.HikariDataSource
 
 /**
- * @author Hossam Karim
- */
+  * @author Hossam Karim
+  */
 
 
 trait ConnectionSourceFactories {
 
   private class FromDataSource(dataSource: DataSource) extends JdbcConnectionSource {
     def connection: sql.Connection = dataSource.getConnection
+
     def done(connection: sql.Connection): Unit = connection.close()
+
     def shutdown(): Unit = ()
   }
 
   def connectionSource(dataSource: DataSource): JdbcConnectionSource = new FromDataSource(dataSource)
 
   private class HikariConnectionSourceFromDataSource(
-    dataSourceClassName: String,
-    serverName: String,
-    portNumber: Int,
-    databaseName: String,
-    user: String,
-    password: String,
-    maximumPoolSize: Int,
-    leakDetectionThreshold: Int) extends JdbcConnectionSource {
+                                                      dataSourceClassName: String,
+                                                      serverName: String,
+                                                      portNumber: Int,
+                                                      databaseName: String,
+                                                      user: String,
+                                                      password: String,
+                                                      maximumPoolSize: Int,
+                                                      leakDetectionThreshold: Int) extends JdbcConnectionSource {
 
     lazy val dataSource = {
       val ds = new HikariDataSource()
@@ -53,11 +55,11 @@ trait ConnectionSourceFactories {
   }
 
   private class HikariConnectionSourceFromJdbcUrl(
-    jdbcUrl: String,
-    user: String,
-    password: String,
-    maximumPoolSize: Int,
-    leakDetectionThreshold: Int) extends JdbcConnectionSource {
+                                                   jdbcUrl: String,
+                                                   user: String,
+                                                   password: String,
+                                                   maximumPoolSize: Int,
+                                                   leakDetectionThreshold: Int) extends JdbcConnectionSource {
 
     lazy val dataSource = {
       val ds = new HikariDataSource()
@@ -77,14 +79,14 @@ trait ConnectionSourceFactories {
 
   }
 
-  def hikari(dataSourceClassName: String,
-             serverName: String,
-             portNumber: Int,
-             databaseName: String,
-             user: String,
-             password: String,
-             maximumPoolSize: Int,
-             leakDetectionThreshold: Int): JdbcConnectionSource =
+  def hikariFromDataSourceClass(dataSourceClassName: String,
+                                serverName: String,
+                                portNumber: Int,
+                                databaseName: String,
+                                user: String,
+                                password: String,
+                                maximumPoolSize: Int = 30,
+                                leakDetectionThreshold: Int = 2000): JdbcConnectionSource =
     new HikariConnectionSourceFromDataSource(
       dataSourceClassName,
       serverName,
@@ -96,11 +98,11 @@ trait ConnectionSourceFactories {
       leakDetectionThreshold)
 
 
-  def hikari(jdbcUrl: String,
-             user: String,
-             password: String,
-             maximumPoolSize: Int,
-             leakDetectionThreshold: Int): JdbcConnectionSource =
+  def hikariFromUrl(jdbcUrl: String,
+                    user: String,
+                    password: String,
+                    maximumPoolSize: Int = 30,
+                    leakDetectionThreshold: Int = 2000): JdbcConnectionSource =
     new HikariConnectionSourceFromJdbcUrl(
       jdbcUrl,
       user,
@@ -109,3 +111,5 @@ trait ConnectionSourceFactories {
       leakDetectionThreshold)
 
 }
+
+object ConnectionSourceFactories extends ConnectionSourceFactories

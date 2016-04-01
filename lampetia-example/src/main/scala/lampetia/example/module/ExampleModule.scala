@@ -47,7 +47,7 @@ object ExampleModule extends ExampleModule { self =>
 
   def connectionSourceFactories = new ConnectionSourceFactories {}
 
-  lazy val connectionSource = connectionSourceFactories.hikari(
+  lazy val connectionSource = connectionSourceFactories.hikariFromDataSourceClass(
     configuration.pgJdbcDataSourceClassName,
     configuration.pgHost,
     configuration.pgPort,

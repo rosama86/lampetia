@@ -1,10 +1,3 @@
-## lampetia
-
-Lampetia is a simple SQL generator and runner
-
-### Example
-
-```scala
 package lampetia.example
 
 import lampetia.sql.ConnectionSourceFactories
@@ -79,12 +72,3 @@ object Minimal {
   }
 
 }
-
-```
-
-
-
-
-
-
-
