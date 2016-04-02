@@ -64,7 +64,7 @@ object Build extends sbt.Build {
 
   lazy val `lampetia-example` =
     Project("lampetia-example", file("lampetia-example"))
-      .dependsOn(`lampetia-postgresql`)
+      .dependsOn(`lampetia-postgresql`, `lampetia-spray`)
 
 
   lazy val `lampetia` =

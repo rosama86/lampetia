@@ -9,4 +9,6 @@ libraryDependencies ++= Seq(
   logback,
   akkaActor,
   sprayCan,
-  scalaTest)
+  sprayRoute,
+  scalaTest,
+  sprayTest)
