@@ -3,6 +3,7 @@ package lampetia.example.module
 import lampetia.conf.{Configuration => LampetiaConfiguration}
 import lampetia.example.conf.ExampleConfiguration
 import lampetia.example.format.{ExampleJsonFormat, ExampleSqlFormat}
+import lampetia.example.model.ExampleModel
 import lampetia.sql.{ConnectionSourceFactories, JdbcConnectionSource}
 import lampetia.sql.dialect.postgresql.{Postgresql, PostgresqlConfiguration}
 
@@ -24,7 +25,7 @@ trait ExampleModule {
   def json: Json
 
 
-  trait Sql extends /*ExampleModel with*/ ExampleSqlFormat {
+  trait Sql extends ExampleModel with ExampleSqlFormat {
     def schema = configuration.schema
   }
 

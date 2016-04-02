@@ -46,7 +46,8 @@ object Minimal {
     val person = Person("p1", "someone")
 
     // select person query, notice the return type
-    val select: IO[Option[Person]] = sql"select id, name from person where id=${person.id}".read[Person].map(_.headOption)
+    val select: IO[Option[Person]] =
+      sql"select id, name from person where id=${person.id}".read[Person].map(_.headOption)
 
     // create, insert, select, drop operations all in a single transaction (Postgres supports transactional DDL)
     val query = for {

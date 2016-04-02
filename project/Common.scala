@@ -8,7 +8,7 @@ object Common {
   val version = "0.1-SNAPSHOT"
 
   object Versions {
-    val scalaVersion = "2.11.7"
+    val scalaVersion = "2.11.8"
     val jodaTimeVersion = "2.8"
     val jodaConvertVersion = "1.7"
     val ficusVersion = "1.1.1"
