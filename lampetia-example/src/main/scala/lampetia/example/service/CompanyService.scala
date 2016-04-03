@@ -30,14 +30,15 @@ trait CompanyService {
   }
 
   def findEmployees(id: CompanyId): IO[Seq[Employee]] = {
-    val c = CompanyModel
-    val e = EmployeeModel
+    val company = CompanyModel
+    val employee = EmployeeModel
 
-    select(e.properties:_*)
-    .from(c.innerJoin(e).on(e.ref.company === c.id))
-    .where(c.id === id.bind)
-    .lifted
-    .read[Employee]
+    select(employee.properties.map('e dot _):_*)
+      .from(company as 'c innerJoin employee as 'e on ('c dot company.id === 'e dot employee.ref.company))
+      .where('c dot company.id === CompanyId("c1").bind)
+      .limit(1.literal)
+      .lifted
+      .read[Employee]
   }
 
 }

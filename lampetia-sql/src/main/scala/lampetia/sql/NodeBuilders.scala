@@ -109,6 +109,10 @@ trait NodeBuilders {
     def apply[E](model: Model[E])(implicit dst: SqlTypes, tb: TableIdentifierNodeBuilder): CreateTableNode[E] =
       DefaultCreateTableNode(model)(dst, tb)
   }
+  implicit lazy val DropTableNodeBuilder: DropTableNodeBuilder = new DropTableNodeBuilder {
+    def apply[E](model: Model[E], cascade: Boolean)(implicit tb: TableIdentifierNodeBuilder): DropTableNode[E] =
+      DefaultDropTableNode(model, cascade)(tb)
+  }
   implicit lazy val PrimaryKeyNodeBuilder: PrimaryKeyNodeBuilder = new PrimaryKeyNodeBuilder {
     def apply[E](model: Model[E], primaryKey: SqlPrimaryKey)(implicit tb: TableIdentifierNodeBuilder): PrimaryKeyNode[E] =
       DefaultPrimaryKeyNode(model, primaryKey)(tb)

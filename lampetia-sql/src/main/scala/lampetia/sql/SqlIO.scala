@@ -243,6 +243,20 @@ trait SqlIO[C <: ConnectionSource] extends BackendIO[C] { codec: SqlCodec =>
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1)))
     def sql[A1: Produce, A2: Produce](a1: A1, a2: A2): Sql =
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2)))
+    def sql[A1: Produce, A2: Produce, A3: Produce](a1: A1, a2: A2, a3: A3): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce](a1: A1, a2: A2, a3: A3, a4: A4): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce, A5: Produce](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4), p(a5)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce, A5: Produce, A6: Produce](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4), p(a5), p(a6)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce, A5: Produce, A6: Produce, A7: Produce](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4), p(a5), p(a6), p(a7)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce, A5: Produce, A6: Produce, A7: Produce, A8: Produce](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4), p(a5), p(a6), p(a7), p(a8)))
+    def sql[A1: Produce, A2: Produce, A3: Produce, A4: Produce, A5: Produce, A6: Produce, A7: Produce, A8: Produce, A9: Produce](a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9): Sql =
+      ParameterizedSql(context.parts.mkString("?"), Seq(p(a1), p(a2), p(a3), p(a4), p(a5), p(a6), p(a7), p(a8), p(a9)))
   }
 
   case class Couple[A](column: ColumnIdentifierNode[A], operand: TypedParameterNode[A])

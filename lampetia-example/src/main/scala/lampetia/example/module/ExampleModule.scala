@@ -46,7 +46,7 @@ object ExampleModule extends ExampleModule { self =>
     val dialect = self.dialect
   }
 
-  def connectionSourceFactories = new ConnectionSourceFactories {}
+  lazy val connectionSourceFactories = new ConnectionSourceFactories {}
 
   lazy val connectionSource = connectionSourceFactories.hikariFromDataSourceClass(
     configuration.pgJdbcDataSourceClassName,
@@ -57,5 +57,7 @@ object ExampleModule extends ExampleModule { self =>
     configuration.pgPassword,
     configuration.pgMaximumPoolSize,
     configuration.pgLeakDetectionThreshold)
+
+  lazy val executionContext = configuration.concurrent.executionContext
 
 }

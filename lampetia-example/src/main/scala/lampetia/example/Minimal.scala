@@ -32,10 +32,10 @@ object Minimal {
   implicit lazy val consumePerson: Consume[Person] = (consume[String] and consume[String])(Person)
 
   // create table action
-  val createTable = sql"create table person(id text, name text)".write
+  val createTable = "create table person(id text, name text)".sql.write
 
   // drop table action
-  val dropTable = sql"drop table person".write
+  val dropTable = "drop table person".sql.write
 
   // insert person action, notice the return type
   def insertPerson(p: Person): IO[Int] = sql"insert into person values (${p.id}, ${p.name})".write
@@ -47,7 +47,7 @@ object Minimal {
 
     // select person query, notice the return type
     val select: IO[Option[Person]] =
-      sql"select id, name from person where id=${person.id}".read[Person].map(_.headOption)
+      sql"select id, name from person where id=${person.id} limit 1".read[Person].map(_.headOption)
 
     // create, insert, select, drop operations all in a single transaction (Postgres supports transactional DDL)
     val query = for {

@@ -125,6 +125,10 @@ trait Ops { self: Dsl with NodeBuilders with SqlIO[_ <: ConnectionSource] with S
       }
     }
 
+    def drop(cascade: Boolean = false): IO[Int] = {
+      dropTable(model, cascade).sql.write
+    }
+
   }
 
 

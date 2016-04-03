@@ -378,7 +378,7 @@ trait JoinNode extends BinaryOperator[Operand, Operand] {
 case class DefaultJoinNode(lhs: Operand, rhs: Operand, joinType: JoinType) extends JoinNode {
   val first: Operand = lhs
   val second: Operand = rhs
-  val sqlString: String = s"${lhs.sqlString} ${joinType.joinString} ${rhs.sqlString}" 
+  val sqlString: String = s"${lhs.sqlString} ${joinType.joinString} ${rhs.sqlString}"
 }
 
 sealed trait UnionType {
@@ -547,6 +547,7 @@ trait CreateTableNode[E] extends DDLNode {
 }
 
 
+
 case class DefaultCreateTableNode[E](model: Model[E])
                                     (implicit dst: SqlTypes,
                                      tb: TableIdentifierNodeBuilder) extends CreateTableNode[E] {
@@ -562,6 +563,24 @@ case class DefaultCreateTableNode[E](model: Model[E])
     else
       s"(${model.properties.map(column).mkString(",")})"
   val sqlString: String = s"""create table $prefixed$body"""
+}
+
+trait DropTableNodeBuilder {
+  def apply[E](model: Model[E], cascade: Boolean)(implicit tb: TableIdentifierNodeBuilder): DropTableNode[E]
+}
+trait DropTableNode[E] extends DDLNode {
+  def model: Model[E]
+  def cascade: Boolean
+}
+
+case class DefaultDropTableNode[E](model: Model[E], cascade: Boolean)(implicit tb: TableIdentifierNodeBuilder) extends DropTableNode[E] {
+  val operands = Seq(tb(model))
+  private val prefixed = model.sqlSchema.fold(model.sqlName)(schema => s"$schema.${model.sqlName}")
+  val sqlString: String =
+    if (cascade)
+      s"drop table $prefixed cascade"
+    else
+      s"drop table $prefixed"
 }
 
 trait PrimaryKeyNodeBuilder {

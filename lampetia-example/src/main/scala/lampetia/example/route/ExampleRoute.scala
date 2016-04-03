@@ -17,7 +17,7 @@ import scala.util.{Failure, Success}
   * @author Hossam Karim
   */
 
-trait DefaultHttpService {
+trait HttpServiceSupport {
 
   implicit def executionContext: ExecutionContext = ExampleModule.configuration.concurrent.executionContext
 
@@ -26,7 +26,7 @@ trait DefaultHttpService {
   def actorRefFactory: ActorSystem = ExampleModule.configuration.akka.defaultActorSystem
 }
 
-trait ExampleRoute extends HttpService with DefaultHttpService {
+trait ExampleRoute extends HttpService with HttpServiceSupport {
 
   import ExampleModule.json._
   import spray.httpx.PlayJsonSupport._
@@ -107,8 +107,8 @@ object ExampleHttpService {
 
     import ExampleModule.dialect._
     import ExampleModule.sql._
-    implicit val ec = ExampleModule.configuration.concurrent.executionContext
-    implicit val cs = ExampleModule.connectionSource
+    implicit val executionContext = ExampleModule.executionContext
+    implicit val connectionSourec = ExampleModule.connectionSource
 
     CompanyModel.create.flatMap(_ => EmployeeModel.create).run
 

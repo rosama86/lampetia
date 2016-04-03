@@ -11,18 +11,18 @@ import scala.util.{Failure, Success}
 object Example {
 
   implicit val connectionSource = ExampleModule.connectionSource
+  implicit val executionContext = ExampleModule.executionContext
 
   import ExampleModule.dialect._
   import ExampleModule.sql._
 
-  import scala.concurrent.ExecutionContext.Implicits.global
 
 
   def main(args: Array[String]): Unit = {
     val company = CompanyModel
     val employee = EmployeeModel
 
-    val query = for {
+    val actions = for {
 
       _ <- company.create.transactionally
 
@@ -46,14 +46,14 @@ object Example {
         .read[Employee]
 
 
-      _ <- "drop table employee cascade".sql.write
+      _ <- employee.drop(cascade = true)
 
-      _ <- "drop table company cascade".sql.write
+      _ <- company.drop(cascade = true)
 
 
     } yield es
 
-    val result = query.run
+    val result = actions.run
 
     result.onComplete {
       case Success(x) => println(x)

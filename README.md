@@ -2,7 +2,9 @@
 
 Lampetia is a simple SQL generator and runner
 
-### Example
+### Minimal Example
+
+The following example demonstrates using plain SQL statements against a Postgresql database
 
 ```scala
 package lampetia.example
@@ -80,6 +82,78 @@ object Minimal {
   }
 
 }
+
+```
+
+### Meta Models
+
+In order to use the SQL builder features, we need to can define a `metamodels` for our models. For example given the following model:
+
+```scala
+case class CompanyId(value: String) extends AnyVal
+case class CompanyData(name: Name)
+case class Company(id: CompanyId, data: CompanyData)
+```
+
+We can define the corresponding `metamodel` as:
+
+```scala
+object CompanyModel
+    extends Model[Company]
+    with HasId[Company, CompanyId]
+    with HasData[Company, CompanyData]
+    with CanGenerate[CompanyId]
+    with CanParse[CompanyId]
+    with UUIDGenerator {
+
+    val modelName = "Company"
+    val id = property[CompanyId]("id")
+
+    def generate = CompanyId(generateStringId)
+    def parse(stringId: String): Try[CompanyId] = parseUUID(stringId)(CompanyId)
+
+    object data extends DataModel[CompanyData] {
+      val name = property[Name]("name")
+      val properties = Seq(name)
+    }
+
+    override val features: Seq[Feature] = Seq(
+      sql.primaryKey("company_pk")(id)
+    )
+
+  }
+```
+
+Once the `metamodel` is defined we can use it in the SQL builder API, for example:
+
+```scala
+
+def insert(data: CompanyData): IO[Company] = {
+    val m = CompanyModel
+    val id = m.generate
+    m.insert(m.id := id.bind, m.data.name := data.name.bind).map(_ => Company(id, data))
+}
+
+def find: IO[Seq[Company]] =
+    select(CompanyModel.properties:_*).from(CompanyModel).lifted.read[Company]
+
+def find[F <: Operator](filter: F): IO[Seq[Company]] = {
+    val m = CompanyModel
+    select(m.properties:_*).from(m).where(filter).lifted.read[Company]
+}
+
+def findEmployees(id: CompanyId): IO[Seq[Employee]] = {
+    val company = CompanyModel
+    val employee = EmployeeModel
+
+    select(employee.properties.map('e dot _):_*)
+      .from(company as 'c innerJoin employee as 'e on ('c dot company.id === 'e dot employee.ref.company))
+      .where('c dot company.id === CompanyId("c1").bind)
+      .limit(1.literal)
+      .lifted
+      .read[Employee]
+}
+
 
 ```
 

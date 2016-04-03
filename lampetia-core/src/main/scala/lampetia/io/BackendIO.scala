@@ -24,7 +24,7 @@ trait BackendIO[C] { self =>
     def flatMap[A, B](fa: Result[A])(f: A => Result[B]): Result[B]
     def withFilter[A](fa: Result[A])(f: A => Boolean): Result[A]
   }
-  
+
   def resultM: ResultM
 
   trait IO[A] {
@@ -92,18 +92,6 @@ trait BackendIO[C] { self =>
   }
 
 
-
-  /*trait LiftIO[A] extends Any {
-
-    protected def io: IO[A]
-
-    def map[B](f: A => B): IO[B] = IOFlatMap(io, (a: A) => IOPure(f(a)))
-
-    def flatMap[B](f: A => IO[B]): IO[B] = IOFlatMap(io, f)
-
-    def withFilter(f: A => Boolean): IO[A] = IOFilter(io, f)
-
-  }*/
 }
 
 
