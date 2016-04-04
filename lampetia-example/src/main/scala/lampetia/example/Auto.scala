@@ -1,9 +1,5 @@
 package lampetia.example
 
-/**
-  * @author Hossam Karim
-  */
-
 import lampetia.example.model._
 import lampetia.example.module.ExampleModule
 
@@ -27,7 +23,7 @@ object Auto {
 
     val actions = for {
 
-      _ <- model.create
+      _ <- model.create.transactionally
 
       _ <- model.insert(model.id := CompanyId("c1").bind, model.data.name := Name("some company").bind)
 
@@ -44,9 +40,9 @@ object Auto {
     val result = actions.run
 
     result.onComplete {
-      case Success(Some(company)) =>
-      case Success(None)          =>
-      case Failure(e)             =>
+      case Success(Some(company)) => println(company)
+      case Success(None)          => println("not found")
+      case Failure(e)             => println(e.getMessage)
     }
 
     Await.ready(result, Duration.Inf)

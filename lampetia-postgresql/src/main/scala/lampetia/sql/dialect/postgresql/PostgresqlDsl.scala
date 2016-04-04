@@ -69,6 +69,14 @@ trait PostgresqlDsl extends Dsl with NodeBuilders {
     def ~*[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" ~* ", value, other)
     def !~[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" !~ ", value, other)
     def !~*[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" !~* ", value, other)
+
+    // Json operators
+    // http://www.postgresql.org/docs/9.5/static/functions-json.html
+
+    def ->[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" -> ", value, other)
+    def ->>[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" ->> ", value, other)
+    def #>[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" #> ", value, other)
+    def #>>[B](other: B)(implicit ev: B => Operand, b: InfixNodeBuilder): InfixNode = b(" #>> ", value, other)
   }
 
   trait PgOperatorOps[V <: Operator] extends OperatorOps[Operator] with PgOperandOps[Operator]

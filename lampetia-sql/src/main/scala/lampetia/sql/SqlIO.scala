@@ -238,7 +238,7 @@ trait SqlIO[C <: ConnectionSource] extends BackendIO[C] { codec: SqlCodec =>
     def context: StringContext
     private def p[A: Produce](a: A): Parameter[A] = Parameter(a, implicitly[Produce[A]])
 
-    def sql(): Sql = ParameterizedSql(context.parts.mkString, Seq.empty[Parameter[_]])
+    //def sql(): Sql = ParameterizedSql(context.parts.mkString, Seq.empty[Parameter[_]])
     def sql[A1: Produce](a1: A1): Sql =
       ParameterizedSql(context.parts.mkString("?"), Seq(p(a1)))
     def sql[A1: Produce, A2: Produce](a1: A1, a2: A2): Sql =
