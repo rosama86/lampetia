@@ -60,4 +60,9 @@ object ExampleModule extends ExampleModule { self =>
 
   lazy val executionContext = configuration.concurrent.executionContext
 
+  def terminate(): Unit = {
+    connectionSource.shutdown()
+    configuration.akka.defaultActorSystem.shutdown()
+  }
+
 }
