@@ -1,6 +1,5 @@
 package lampetia.example
 
-import lampetia.example.model._
 import lampetia.example.module.ExampleModule
 import lampetia.meta._
 import org.joda.time.DateTime
